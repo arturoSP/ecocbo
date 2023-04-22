@@ -1,3 +1,33 @@
+#' Calculate beta and power out of simulated samples
+#'
+#' @param simH0 Simulated community from SSP::simdata in which H0 is true.
+#' @param simHa Simulated community from SSP::simdata in which H0 is false.
+#' @param n Maximum number of samples to consider.
+#' @param m Maximum number of sites.
+#' @param k Number of resamples the process will take. Defaults to 50.
+#' @param alpha Level of significance. Defaults to 5%.
+#'
+#' @return A list with two data frames: a data frame containing the values of beta for different sampling efforts, and a data frame containing the results of the sampling.
+#' @export
+#'
+#' @examples
+#' library("SSP")
+#' # Load data and adjust it.
+#' epiH0 <- epiDat
+#' epiH0[,"site"] <- as.factor("T0")
+#' epiHa <- epiDat
+#' epiHa[,"site"] <- as.factor(epiHa[,"site"])
+#'
+#' # Calculate simulation parameters.
+#' parH0 <- SSP::assempar(data = epiH0, type = "counts", Sest.method = "average")
+#' parHa <- SSP::assempar(data = epiHa, type = "counts", Sest.method = "average")
+#'
+#' # Simulation.
+#' simH0 <- SSP::simdata(parH0, cases = 3, N = 1000, sites = 1)
+#' simHa <- SSP::simdata(parHa, cases = 3, N = 100, sites = 10)
+#'
+#' beta(simH0, simHa, n = 10, m = 3, k = 50, alpha = 0.05)
+
 beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05){
   # Cálculo de potencia y simulación de valores pseudoF en múltiples iteraciones ----
 
@@ -19,7 +49,8 @@ beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05){
 
   labHa <- HaSim[,c((yH0-1):yH0),1]
   colnames(labHa) <- c("N", "sites")
-  labHa <- as.matrix(bind_cols(labHa, index = row_number(labHa[,2])))
+  labHa <- cbind(labHa, index = 1:xH0)
+           #as.matrix(dplyr::bind_cols(labHa, row_number(labHa[,2])))
 
   popH0 <- max(labHa[,1])
 
@@ -75,20 +106,20 @@ beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05){
 
   # Cálculo de potencia y beta ----
   resultsHa <- as.data.frame(resultsHa)
-  fCrit <- aggregate(resultsHa[,5],
+  fCrit <- stats::aggregate(resultsHa[,5],
                      by = list(resultsHa$m, resultsHa$n),
-                     quantile, probs = (1 - alpha), type = 8, na.rm = T)
-  totDim <- aggregate(resultsHa[,5],
+                     stats::quantile, probs = (1 - alpha), type = 8, na.rm = T)
+  totDim <- stats::aggregate(resultsHa[,5],
                       by = list(resultsHa$m, resultsHa$n),
                       length)
-  AMSHa <- aggregate(resultsHa[,8],
+  AMSHa <- stats::aggregate(resultsHa[,8],
                      by = list(resultsHa$m, resultsHa$n),
                      mean, na.rm = T)
-  RMSHa <- aggregate(resultsHa[,7],
+  RMSHa <- stats::aggregate(resultsHa[,7],
                      by = list(resultsHa$m, resultsHa$n),
                      mean, na.rm = T)
   powr <- matrix(nrow = dim(fCrit)[1], ncol = 8)
-  colnames(powr) <- c("m", "n", "power", "beta",
+  colnames(powr) <- c("m", "n", "Power", "Beta",
                       "fCrit", "AMSHa", "RMSHa", "index")
   powr[,1] <- totDim[,1]
   powr[,2] <- totDim[,2]
