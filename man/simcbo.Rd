@@ -24,24 +24,7 @@ A data frame containing the optimized values for b (number of sites) and n (numb
 Simulated cost-benefit optimization
 }
 \examples{
-library("SSP")
-# Load data and adjust it.
-epiH0 <- epiDat
-epiH0[,"site"] <- as.factor("T0")
-epiHa <- epiDat
-epiHa[,"site"] <- as.factor(epiHa[,"site"])
-
-# Calculate simulation parameters.
-parH0 <- SSP::assempar(data = epiH0, type = "counts", Sest.method = "average")
-parHa <- SSP::assempar(data = epiHa, type = "counts", Sest.method = "average")
-
-# Simulation.
-simH0 <- SSP::simdata(parH0, cases = 3, N = 1000, sites = 1)
-simHa <- SSP::simdata(parHa, cases = 3, N = 100, sites = 10)
-
-betaResults <- beta(simH0, simHa, n = 10, m = 3, k = 50, alpha = 0.05)
-
-compVar <- scompvar(data = betaResults)
+compVar <- scompvar(data = epiBetaR)
 
 simcbo(comp.var = compVar, multSE = NULL, ct = 600, ck = 11, cj = 108)
 simcbo(comp.var = compVar, multSE = 0.15, ct = NULL, ck = 11, cj = 108)

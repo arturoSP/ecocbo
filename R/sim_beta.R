@@ -11,7 +11,6 @@
 #' @export
 #'
 #' @examples
-#' library("SSP")
 #' # Load data and adjust it.
 #' epiH0 <- epiDat
 #' epiH0[,"site"] <- as.factor("T0")
@@ -26,9 +25,9 @@
 #' simH0 <- SSP::simdata(parH0, cases = 3, N = 1000, sites = 1)
 #' simHa <- SSP::simdata(parHa, cases = 3, N = 100, sites = 10)
 #'
-#' beta(simH0, simHa, n = 10, m = 3, k = 50, alpha = 0.05)
+#' sim_beta(simH0, simHa, n = 10, m = 3, k = 50, alpha = 0.05)
 
-beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05){
+sim_beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05){
   # Cálculo de potencia y simulación de valores pseudoF en múltiples iteraciones ----
 
   N <- max(simHa[[1]][,'N'])
