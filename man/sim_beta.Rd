@@ -40,5 +40,5 @@ parHa <- SSP::assempar(data = epiHa, type = "counts", Sest.method = "average")
 simH0 <- SSP::simdata(parH0, cases = 3, N = 1000, sites = 1)
 simHa <- SSP::simdata(parHa, cases = 3, N = 100, sites = 10)
 
-sim_beta(simH0, simHa, n = 10, m = 3, k = 50, alpha = 0.05)
+sim_beta(simH0, simHa, n = 10, m = 3, k = 20, alpha = 0.05)
 }

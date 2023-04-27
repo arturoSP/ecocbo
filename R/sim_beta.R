@@ -9,6 +9,7 @@
 #'
 #' @return A list with two data frames: a data frame containing the values of beta for different sampling efforts, and a data frame containing the results of the sampling.
 #' @export
+#' @importFrom stats reshape
 #'
 #' @examples
 #' # Load data and adjust it.
@@ -25,17 +26,25 @@
 #' simH0 <- SSP::simdata(parH0, cases = 3, N = 1000, sites = 1)
 #' simHa <- SSP::simdata(parHa, cases = 3, N = 100, sites = 10)
 #'
-#' sim_beta(simH0, simHa, n = 10, m = 3, k = 50, alpha = 0.05)
+#' sim_beta(simH0, simHa, n = 10, m = 3, k = 20, alpha = 0.05)
 
 sim_beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05){
-  # Cálculo de potencia y simulación de valores pseudoF en múltiples iteraciones ----
+  # Calculate power and pseudoF in multiple iterations ----
 
   N <- max(simHa[[1]][,'N'])
   sites <- max(as.numeric(simHa[[1]][,'sites']))
-  if (n > N){
-    stop("'n' must be equal or less than 'N'")}
-  if (m > sites){
-    stop("'m' must be equal or less than 'sites'")}
+  if (n > N){stop("'n' must be equal or less than 'N'")}
+  if(ceiling(n) != floor(n)){stop("n must be integer")}
+  if(n <= 1){stop("n must be larger than 1")}
+
+  if (m > sites){stop("'m' must be equal or less than 'sites'")}
+  if(ceiling(m) != floor(m)){stop("m must be integer")}
+  if(m <= 1){stop("m must be larger than 1")}
+
+  if(alpha >= 1){stop("alpha must be smaller than 1")}
+
+  if(!is.list(simH0) | !is.list(simHa)){stop("simulation data must be lists")}
+
 
   xH0 <- dim(simH0[[1]])[1]
   yH0 <- dim(simH0[[1]])[2]
@@ -43,20 +52,19 @@ sim_beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05){
   H0Sim <- array(unlist(simH0), dim = c(xH0, yH0, zH0))
   HaSim <- array(unlist(simHa), dim = c(xH0, yH0, zH0))
 
-  # Parámetros de simulación ----
-  casesHa <- dim(HaSim)[zH0]
+  # Simulation parameters ----
+  casesHa <- dim(HaSim)[3]
 
   labHa <- HaSim[,c((yH0-1):yH0),1]
   colnames(labHa) <- c("N", "sites")
   labHa <- cbind(labHa, index = 1:xH0)
-           #as.matrix(dplyr::bind_cols(labHa, row_number(labHa[,2])))
 
   popH0 <- max(labHa[,1])
 
-  # Se asignan etiquetas de Ha a H0 (sitio y N)
+  # Labels from Ha to H0 (for sites and N)
   H0Sim[,c((yH0-1):yH0),] <- labHa[,c(1:2)]
 
-  ## se crea matriz que almacena las etiquetas de sitio (factores) ----
+  ## Helper matrix to store labels ----
   resultsHa <- matrix(nrow = casesHa * k * (m-1) * (n-1), ncol = 8)
   resultsHa[, 1] <- rep(seq(casesHa), times = 1, each = (k * (m-1) * (n-1)))
   resultsHa[, 2] <- rep(1:k, times = (n-1) * (m-1) * casesHa)
@@ -66,8 +74,8 @@ sim_beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05){
                            "pseudoFH0", "pseudoFHa",
                            "AMSHa", "RMSHa")
 
-  # loop para calcular pseudoF ----
-  # objetos para el loop
+  # Loop to calculate pseudoF ----
+  # Loop parameters
   Y <- cbind(1:(N * sites))
   YPU <- as.numeric(as.vector(gl(sites, N)))
   NN <- nrow(resultsHa)
@@ -80,11 +88,11 @@ sim_beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05){
   for (i in seq_len(NN)){
     sel <- sampling::balancedtwostage(Y, selection = 1, m = mm[i], n = nn[i], PU = YPU, FALSE)
 
-    #replace incorrect probabilities (p < 0 and p > 1) produced by balancetwostage
+    # Replace incorrect probabilities (p < 0 and p > 1) produced by balancetwostage
     sel[sel[,1]<= -1, 1] <- 0
     sel[sel[,1]>= 2, 1] <- 1
 
-    #getting data
+    # Getting data
     dat.H0 <- H0Sim
     dat.Ha <- HaSim
     rownames(sel) <- Y
@@ -103,7 +111,7 @@ sim_beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05){
     resultsHa[i,8] <- result2$RMS
   }
 
-  # Cálculo de potencia y beta ----
+  # Calculate power and beta ----
   resultsHa <- as.data.frame(resultsHa)
   fCrit <- stats::aggregate(resultsHa[,5],
                      by = list(resultsHa$m, resultsHa$n),
@@ -137,5 +145,42 @@ sim_beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05){
   powr <- as.data.frame(powr[rowidx, c(1:7)])
 
   BetaResult <- list(Power = powr, Results = resultsHa)
+  class(BetaResult) <- "ecocbo_beta"
   return(BetaResult)
+}
+
+#-------------------------------------------
+## S3Methods print()
+#-------------------------------------------
+
+#' S3Methods for Printing
+#'
+#' @name prints
+#'
+#' @aliases
+#' print.ecocbo_beta
+#'
+#' @usage
+#' \method{print}{ecocbo_beta}(x, ...)
+#'
+#' @description Prints for \code{ecocbo::sim_beta} objects
+#'
+#' @param x Object from \code{ecocbo::sim_beta} package
+#'
+#' @param ... Additional arguments
+#'
+#' @return Prints \code{ecocbo::sim_beta} object
+#'
+# Print ecocbo_beta
+#' @export
+print.ecocbo_beta <- function(x, ...){
+  x$Power[,3] <- round(x$Power[,3], 3)
+  x1 <- reshape(x$Power[,c(1:3)],
+                direction = "wide",
+                idvar = "m", timevar = "n",
+                new.row.names = paste0("m = ",c(2:max(x$Power$m))))
+  x1 <- x1[,-1]
+  colnames(x1) <- paste0("n = ", c(2:max(x$Power$n)))
+  cat("Power at different sampling efforts (m x n):\n")
+  print(x1)
 }

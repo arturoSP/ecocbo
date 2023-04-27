@@ -4,7 +4,7 @@
 \alias{simcbo}
 \title{Simulated cost-benefit optimization}
 \usage{
-simcbo(comp.var, multSE, ct, ck, cj)
+simcbo(comp.var, multSE = NULL, ct = NULL, ck, cj)
 }
 \arguments{
 \item{comp.var}{Data frame from scompvar().}
@@ -26,6 +26,6 @@ Simulated cost-benefit optimization
 \examples{
 compVar <- scompvar(data = epiBetaR)
 
-simcbo(comp.var = compVar, multSE = NULL, ct = 600, ck = 11, cj = 108)
-simcbo(comp.var = compVar, multSE = 0.15, ct = NULL, ck = 11, cj = 108)
+simcbo(comp.var = compVar, multSE = NULL, ct = 20000, ck = 100, cj = 2500)
+simcbo(comp.var = compVar, multSE = 0.15, ct = NULL, ck = 100, cj = 2500)
 }

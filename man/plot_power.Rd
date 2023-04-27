@@ -4,14 +4,14 @@
 \alias{plot_power}
 \title{Power curves for different sampling efforts}
 \usage{
-plot_power(data, m, n = NULL, method = "both")
+plot_power(data, n = NULL, m, method = "both")
 }
 \arguments{
 \item{data}{List that results from beta().}
 
-\item{m}{Site label to be used as basis for the plot.}
-
 \item{n}{Defaults to NULL, and then the function computes the number of samples (n) that results in a sampling effort close to 95\% in power. If provided, said number of samples will be used.}
+
+\item{m}{Site label to be used as basis for the plot.}
 
 \item{method}{The desired plot. Options are "power", "density" or "both". "power" plots the power curve, "density" plots the density distribution of pseudoF, and "both" draws both plots one next to the other.}
 }
@@ -22,7 +22,6 @@ A plot
 Power curves for different sampling efforts
 }
 \examples{
-epiBetaR
-plot_power(data = epiBetaR, m = 2, n = 7, method = "both")
-plot_power(data = epiBetaR, m = 3, n = NULL, method = "both")
+plot_power(data = epiBetaR, n = 4, m = 2, method = "both")
+plot_power(data = epiBetaR, n = NULL, m = 3, method = "both")
 }

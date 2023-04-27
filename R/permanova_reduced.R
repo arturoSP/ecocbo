@@ -25,12 +25,12 @@ SS <- function (d) {
   return(ss)
 }
 
-## PERMANOVA function ----
+## PERMANOVA functions ----
 pseudoF_P <- function(x, factor, method = "bray"){
   d <- vegan::vegdist(x, method = method)
   TSS <- SS(d)[2]
 
-  # size for labels
+  # Size for labels
   nlev <- nlevels(as.factor(as.matrix(factor)))
 
   # Calculate the SS for residuals
@@ -57,15 +57,15 @@ pseudoF_BF <- function(x, factor, method = "bray"){
   d <- vegan::vegdist(x, method = method)
   TSS <- SS(d)[2]
 
-  # Tamaños de etiqueta
+  # Size for labels
   lev <- table(factor)
   nlev <- length(lev)
 
-  # Vectores de apoyo vacíos
+  # Empty helper vectors
   Var <- numeric(nlev)
   d.res <- Var
 
-  # Cálculo de suma de cuadrados y varianzas para residuales
+  # Calculate SS and Var for residuals
   lista <- split(x, factor)
   vdist <- lapply(lista, vegan::vegdist)
   SSi <- lapply(vdist, SS)
@@ -85,7 +85,13 @@ pseudoF_BF <- function(x, factor, method = "bray"){
 }
 
 # Main function which returns pseudoF and MS ----
-#permanova_reduced <- function(x, factor, type = "P", method = "bray"){
+  # Validating data
+  if(dim(x)[1] != length(factor))
+    stop("x and factor dimensions do not match")
+  if(type != "P" & type != "BF")
+    stop("Possible values for type are P and BF")
+
+  # Calculate pseudoF and additional parameters
   Results <- if(type == "P"){
     pseudoF_P(x, factor)[1,c(6,7,8)]
   } else {

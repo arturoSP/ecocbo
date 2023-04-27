@@ -4,14 +4,14 @@
 \alias{scompvar}
 \title{Simulated components of variation}
 \usage{
-scompvar(data, m = NULL, n = NULL)
+scompvar(data, n = NULL, m = NULL)
 }
 \arguments{
 \item{data}{List that results from beta().}
 
-\item{m}{Site label to be used as basis for the computation.}
-
 \item{n}{Number of samples to be considered.}
+
+\item{m}{Site label to be used as basis for the computation.}
 }
 \value{
 A data frame containing the values for the variation component among sites and in the residuals.
@@ -21,5 +21,5 @@ Simulated components of variation
 }
 \examples{
 scompvar(data = epiBetaR)
-scompvar(data = epiBetaR, m = 2, n = 5)
+scompvar(data = epiBetaR, n = 5, m = 2)
 }

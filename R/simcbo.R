@@ -12,43 +12,44 @@
 #' @examples
 #' compVar <- scompvar(data = epiBetaR)
 #'
-#' simcbo(comp.var = compVar, multSE = NULL, ct = 600, ck = 11, cj = 108)
-#' simcbo(comp.var = compVar, multSE = 0.15, ct = NULL, ck = 11, cj = 108)
+#' simcbo(comp.var = compVar, multSE = NULL, ct = 20000, ck = 100, cj = 2500)
+#' simcbo(comp.var = compVar, multSE = 0.15, ct = NULL, ck = 100, cj = 2500)
 
-simcbo <- function(comp.var, multSE, ct, ck, cj){
-# función para calcular el model de optimización de costo-beneficio
+simcbo <- function(comp.var, multSE = NULL, ct = NULL, ck, cj){
+# Optimal cost-benefit model
 
-# funciones de apoyo ----
-# función para determinar el número de sitios a muestrear, conociendo
-# costos de muestreo y número de muestras a tomar.
+# Helper functions ----
+# Function to determine optimal b by setting costs.
 cost_n <- function(n, ct, ck, cj){
   b <- data.frame(nOpt = n, bOpt = NA)
 
-  # aplica la ecuación 9.19 de Underwood, 1997
-  b[,2] <- round(ct / (n * ck + cj))
-  b[,1] <- round(b[,1])
+  # Using equation 9.19 (Underwood, 1997)
+  b[,2] <- floor(ct / (n * ck + cj))
+  b[,1] <- floor(b[,1])
 
   return(b)
 }
 
-# función para determinar el número de sitios a muestrear, conociendo
-# la variabilidad desde sampsd()
+# Function to determine optimal b by setting desired variability.
 cost_v <- function(comp.var, multSE, n){
   b <- data.frame(nOpt = n, bOpt = NA)
 
-  # Aplica la ecuación 9.18 de Underwood, 1997
-  b[,2] <- round((comp.var$compVarR + b$nOpt * comp.var$compVarA) / (multSE * multSE * b$nOpt))
-  b[,1] <- round(b[,1])
+  # Using equation 9.18 (Underwood, 1997)
+  b[,2] <- floor((comp.var[,2] + b$nOpt * comp.var[,1]) / (multSE * multSE * b$nOpt))
+  b[,1] <- floor(b[,1])
 
   return(b)
 }
 
-# función principal ----
-#simcbo <- function(comp.var, multSE, ct, ck, cj){
-  # Cálculo de n óptimo ----
-  nOpt <- sqrt((cj * comp.var$compVarR) / (ck * comp.var$compVarA))
+# Main function ----
+  ## Validating data ----
+  if(is.null(multSE) & is.null(ct)){stop("It is necessary to provide either multSE or ct")}
+  if(dim(comp.var)[1] != 1 | dim(comp.var)[2] != 2){stop("Variation components must be in a 1x2 matrix")}
 
-  # Cálculo de b óptimo ----
+  ## Calculate optimal n ----
+  nOpt <- sqrt((cj * comp.var[,2]) / (ck * comp.var[,1]))
+
+  ## Calculate optimal b ----
   if(is.null(multSE)) {
     b <- cost_n(nOpt, ct, ck, cj)
   } else {
