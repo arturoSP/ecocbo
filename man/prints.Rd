@@ -8,13 +8,13 @@
 \method{print}{ecocbo_beta}(x, ...)
 }
 \arguments{
-\item{x}{Object from \code{ecocbo::sim_beta} package}
+\item{x}{Object from \code{ecocbo::sim_beta} function.}
 
 \item{...}{Additional arguments}
 }
 \value{
-Prints \code{ecocbo::sim_beta} object
+Prints \code{ecocbo::sim_beta} function.
 }
 \description{
-Prints for \code{ecocbo::sim_beta} objects
+Prints for \code{ecocbo::sim_beta} objects.
 }

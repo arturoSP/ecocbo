@@ -2,24 +2,51 @@
 % Please edit documentation in R/scompvar.R
 \name{scompvar}
 \alias{scompvar}
+\alias{compvar}
 \title{Simulated components of variation}
 \usage{
 scompvar(data, n = NULL, m = NULL)
 }
 \arguments{
-\item{data}{List that results from beta().}
+\item{data}{Object of class "ecocbo_beta" that results from \code{
+\link{sim_beta}}.}
 
-\item{n}{Number of samples to be considered.}
+\item{n}{Number of samples to be considered. Defaults to NULL.}
 
-\item{m}{Site label to be used as basis for the computation.}
+\item{m}{Site label to be used as basis for the computation. Defaults to NULL.}
 }
 \value{
-A data frame containing the values for the variation component among sites and in the residuals.
+A data frame containing the values for the variation component
+among sites \code{compVarA} and in the residuals \code{compVarR}.
 }
 \description{
-Simulated components of variation
+\code{scompvar} can be used to calculate the average component of variation
+among units and the average component of variation within samples in terms
+of sampling effort.
+}
+\note{
+If \code{m} or \code{n} are left as NULL, the function will calculate
+the components of variation using the largest available values as set in
+the experimental design in \code{\link{sim_beta}}.
 }
 \examples{
 scompvar(data = epiBetaR)
 scompvar(data = epiBetaR, n = 5, m = 2)
+}
+\references{
+Underwood, A. J., Underwood, A. J., & Wnderwood, A. J. (1997).
+Experiments in ecology: their logical design and interpretation using
+analysis of variance. Cambridge university press.
+
+Underwood, A. J., & Chapman, M. G. (2003). Power, precaution,
+Type II error and sampling design in assessment of environmental impacts.
+Journal of Experimental Marine Biology and Ecology, 296(1), 49-70.
+}
+\seealso{
+\code{\link{sim_beta}}
+\code{\link{plot_power}}
+\code{\link{sim_cbo}}
+}
+\author{
+Edlin Guerra-Castro (\email{edlinguerra@gmail.com}), Arturo Sanchez-Porras
 }

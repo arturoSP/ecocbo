@@ -2,14 +2,17 @@
 % Please edit documentation in R/sim_beta.R
 \name{sim_beta}
 \alias{sim_beta}
+\alias{simbeta}
 \title{Calculate beta and power out of simulated samples}
 \usage{
 sim_beta(simH0, simHa, n, m, k = 50, alpha = 0.05)
 }
 \arguments{
-\item{simH0}{Simulated community from SSP::simdata in which H0 is true.}
+\item{simH0}{Simulated community from \code{SSP::simdata} in which H0 is
+true.}
 
-\item{simHa}{Simulated community from SSP::simdata in which H0 is false.}
+\item{simHa}{Simulated community from \code{SSP::simdata} in which H0 is
+false.}
 
 \item{n}{Maximum number of samples to consider.}
 
@@ -17,13 +20,29 @@ sim_beta(simH0, simHa, n, m, k = 50, alpha = 0.05)
 
 \item{k}{Number of resamples the process will take. Defaults to 50.}
 
-\item{alpha}{Level of significance. Defaults to 5\%.}
+\item{alpha}{Level of significance. Defaults to 0.05.}
 }
 \value{
-A list with two data frames: a data frame containing the values of beta for different sampling efforts, and a data frame containing the results of the sampling.
+\code{sim_data} returns an object of class "ecocbo_beta".
+
+The function \code{print} is used to present a matrix that summarizes the
+results by showing the estimate power according to different sampling efforts.
+
+An object of class "ecocbo_beta" is a list containing the following components:
+\itemize{
+\item \code{Power} a data frame containing the estimation of power and beta for
+several combination of sampling efforts (\code{m} sites and \code{n} samples).
+\item \code{Results} a data frame containing the estimates of pseudoF for \code{simH0}
+and \code{simHa}.
+}
 }
 \description{
-Calculate beta and power out of simulated samples
+\code{sim_beta} can be used to assess the power of a study by comparing the
+variation when one can assume an ecological community has composition
+differences (H0 true) or not (H0 false). For example, if the beta error is
+0.25, then there is a 25\% chance of failing to detect a difference even if
+the difference is real. The power of the study is \eqn{1 - \beta}, so in this
+example, the power of the study is 0.75.
 }
 \examples{
 # Load data and adjust it.
@@ -41,4 +60,30 @@ simH0 <- SSP::simdata(parH0, cases = 3, N = 1000, sites = 1)
 simHa <- SSP::simdata(parHa, cases = 3, N = 100, sites = 10)
 
 sim_beta(simH0, simHa, n = 10, m = 3, k = 20, alpha = 0.05)
+}
+\references{
+Underwood, A. J., Underwood, A. J., & Wnderwood, A. J. (1997).
+Experiments in ecology: their logical design and interpretation using
+analysis of variance. Cambridge university press.
+
+Underwood, A. J., & Chapman, M. G. (2003). Power, precaution,
+Type II error and sampling design in assessment of environmental impacts.
+Journal of Experimental Marine Biology and Ecology, 296(1), 49-70.
+
+Anderson, M. J. (2014). Permutational multivariate analysis of
+variance (PERMANOVA). Wiley statsref: statistics reference online, 1-15.
+
+Guerra‐Castro, E. J., Cajas, J. C., Simões, N., Cruz‐Motta, J.
+J., & Mascaró, M. (2021). SSP: an R package to estimate sampling effort in
+studies of ecological communities. Ecography, 44(4), 561-573.
+}
+\seealso{
+\code{\link[SSP]{assempar}}
+\code{\link[SSP]{simdata}}
+\code{\link{plot_power}}
+\code{\link{scompvar}}
+\code{\link{sim_cbo}}
+}
+\author{
+Edlin Guerra-Castro (\email{edlinguerra@gmail.com}), Arturo Sanchez-Porras
 }

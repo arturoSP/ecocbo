@@ -1,10 +1,16 @@
 Package: ecocbo
 Title: Cost-benefit optimization for ecological sampling
-Version: 0.0.0.9000
-Authors@R: c(person(given = "Edlin", family = "Guerra-Castro", role = c("aut", "cre"), email = "edlinguerra@gmail.com"),
-             person(given = "Arturo", family = "Sanchez-Porras", role = c("aut"), email = "sp.arturo@gmail.com", comment = c(ORCID = "0000-0002-1691-286X")))
-Description: What the package does (one paragraph).
-License: MIT + file LICENSE
+Version: 0.9.0
+Authors@R: c(person(given = "Edlin", family = "Guerra-Castro", 
+        role = c("aut", "cre"), email = "edlinguerra@gmail.com"),
+    person(given = "Arturo", family = "Sanchez-Porras", 
+        role = c("aut"), email = "sp.arturo@gmail.com", 
+        comment = c(ORCID = "0000-0002-1691-286X")))
+Description: ecocbo is an R package designed to calculate the optimal
+    cost-benefit for ecological sampling, based on data from simulated 
+    ecological communities. The optimization follows the procedure proposed
+    by Underwood (1997), through the processes of four functions. 
+License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3

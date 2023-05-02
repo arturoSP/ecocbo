@@ -1,21 +1,32 @@
 #' Calculate pseudoF by using PERMANOVA
 #'
+#' \code{permanova_oneway} performs a "permutational multivariate analysis
+#' of variance", which can be used to asses the significance of differences
+#' in community structure between groups.
+#'
 #' @param x Ecological community to be used.
 #' @param factor List of labels for the sites.
 #' @param type PERMANOVA algorithm to be used. Options are "P" and "BF". "P" will also throw out the values for MeanSquares, as they are used for other functions in the package.
 #' @param method Dissimilaty index to be used to calculate dissimilarity matrix.
 #'
-#' @return A data frame with information regarding pseudoF and, if required, mean square values.
-#' @export
+#' @return A data frame with information regarding pseudoF and, if required,
+#' mean square values.
+#'
+#' @author Edlin Guerra-Castro (edlinguerra@@gmail.com), Arturo Sanchez-Porras
+#'
+#' @references Anderson, M. J. (2014). Permutational multivariate analysis of
+#' variance (PERMANOVA). Wiley statsref: statistics reference online, 1-15.
+#'
+#' @importFrom vegan vegdist
 #'
 #' @examples
 #' perHa1 <- epiDat[,-1]
 #' envHa1 <- epiDat[,1]
 #'
-#' permanova_reduced(x = perHa1, factor = envHa1, type = "P", method = "bray")
-#' permanova_reduced(x = perHa1, factor = envHa1, type = "BF", method = "bray")
+#' permanova_oneway(x = perHa1, factor = envHa1, type = "P", method = "bray")
+#' permanova_oneway(x = perHa1, factor = envHa1, type = "BF", method = "bray")
 
-permanova_reduced <- function(x, factor, type = "P", method = "bray"){
+permanova_oneway <- function(x, factor, type = "P", method = "bray"){
 # Helper functions ----
 ## Sum of Squares using Huygen theorem ----
 SS <- function (d) {

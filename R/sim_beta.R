@@ -1,15 +1,62 @@
 #' Calculate beta and power out of simulated samples
 #'
-#' @param simH0 Simulated community from SSP::simdata in which H0 is true.
-#' @param simHa Simulated community from SSP::simdata in which H0 is false.
+#' \code{sim_beta} can be used to assess the power of a study by comparing the
+#' variation when one can assume an ecological community has composition
+#' differences (H0 true) or not (H0 false). For example, if the beta error is
+#' 0.25, then there is a 25% chance of failing to detect a difference even if
+#' the difference is real. The power of the study is \eqn{1 - \beta}, so in this
+#' example, the power of the study is 0.75.
+#'
+#' @param simH0 Simulated community from \code{SSP::simdata} in which H0 is
+#' true.
+#' @param simHa Simulated community from \code{SSP::simdata} in which H0 is
+#' false.
 #' @param n Maximum number of samples to consider.
 #' @param m Maximum number of sites.
 #' @param k Number of resamples the process will take. Defaults to 50.
-#' @param alpha Level of significance. Defaults to 5%.
+#' @param alpha Level of significance. Defaults to 0.05.
 #'
-#' @return A list with two data frames: a data frame containing the values of beta for different sampling efforts, and a data frame containing the results of the sampling.
+#' @return \code{sim_data} returns an object of class "ecocbo_beta".
+#'
+#' The function \code{print} is used to present a matrix that summarizes the
+#' results by showing the estimate power according to different sampling efforts.
+#'
+#' An object of class "ecocbo_beta" is a list containing the following components:
+#' \itemize{
+#'   \item \code{Power} a data frame containing the estimation of power and beta for
+#' several combination of sampling efforts (\code{m} sites and \code{n} samples).
+#'   \item \code{Results} a data frame containing the estimates of pseudoF for \code{simH0}
+#' and \code{simHa}.
+#' }
+#'
+#' @author Edlin Guerra-Castro (\email{edlinguerra@@gmail.com}), Arturo Sanchez-Porras
+#'
+#' @references Underwood, A. J., Underwood, A. J., & Wnderwood, A. J. (1997).
+#' Experiments in ecology: their logical design and interpretation using
+#' analysis of variance. Cambridge university press.
+#' @references Underwood, A. J., & Chapman, M. G. (2003). Power, precaution,
+#' Type II error and sampling design in assessment of environmental impacts.
+#' Journal of Experimental Marine Biology and Ecology, 296(1), 49-70.
+#' @references Anderson, M. J. (2014). Permutational multivariate analysis of
+#' variance (PERMANOVA). Wiley statsref: statistics reference online, 1-15.
+#' @references  Guerra‐Castro, E. J., Cajas, J. C., Simões, N., Cruz‐Motta, J.
+#'  J., & Mascaró, M. (2021). SSP: an R package to estimate sampling effort in
+#'  studies of ecological communities. Ecography, 44(4), 561-573.
+#'
+#' @seealso
+#' \code{\link[SSP]{assempar}}
+#' \code{\link[SSP]{simdata}}
+#' \code{\link{plot_power}}
+#' \code{\link{scompvar}}
+#' \code{\link{sim_cbo}}
+#'
+#' @aliases simbeta
+#'
 #' @export
 #' @importFrom stats reshape
+#' @importFrom stats aggregate
+#' @importFrom stats quantile
+#' @importFrom sampling balancedtwostage
 #'
 #' @examples
 #' # Load data and adjust it.
@@ -86,7 +133,8 @@ sim_beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05){
   }
 
   for (i in seq_len(NN)){
-    sel <- sampling::balancedtwostage(Y, selection = 1, m = mm[i], n = nn[i], PU = YPU, FALSE)
+    sel <- sampling::balancedtwostage(Y, selection = 1, m = mm[i],
+                                      n = nn[i], PU = YPU, FALSE)
 
     # Replace incorrect probabilities (p < 0 and p > 1) produced by balancetwostage
     sel[sel[,1]<= -1, 1] <- 0
@@ -103,8 +151,8 @@ sim_beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05){
     perHa <- as.data.frame(ya[ , 1:(yH0-2)])
     perH0Env <- y0[,yH0]
 
-    result1 <- ecocbo::permanova_reduced(perH0, perH0Env)
-    result2 <- ecocbo::permanova_reduced(perHa, perH0Env)
+    result1 <- permanova_oneway(perH0, perH0Env)
+    result2 <- permanova_oneway(perHa, perH0Env)
     resultsHa[i,5] <- result1$Fobs
     resultsHa[i,6] <- result2$Fobs
     resultsHa[i,7] <- result2$AMS
@@ -163,19 +211,19 @@ sim_beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05){
 #' @usage
 #' \method{print}{ecocbo_beta}(x, ...)
 #'
-#' @description Prints for \code{ecocbo::sim_beta} objects
+#' @description Prints for \code{ecocbo::sim_beta} objects.
 #'
-#' @param x Object from \code{ecocbo::sim_beta} package
+#' @param x Object from \code{ecocbo::sim_beta} function.
 #'
 #' @param ... Additional arguments
 #'
-#' @return Prints \code{ecocbo::sim_beta} object
+#' @return Prints \code{ecocbo::sim_beta} function.
 #'
 # Print ecocbo_beta
 #' @export
 print.ecocbo_beta <- function(x, ...){
   x$Power[,3] <- round(x$Power[,3], 3)
-  x1 <- reshape(x$Power[,c(1:3)],
+  x1 <- stats::reshape(x$Power[,c(1:3)],
                 direction = "wide",
                 idvar = "m", timevar = "n",
                 new.row.names = paste0("m = ",c(2:max(x$Power$m))))
