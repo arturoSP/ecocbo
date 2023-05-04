@@ -1,11 +1,11 @@
 #' Calculate beta and power out of simulated samples
 #'
 #' \code{sim_beta} can be used to assess the power of a study by comparing the
-#' variation when one can assume an ecological community has composition
-#' differences (H0 true) or not (H0 false). For example, if the beta error is
-#' 0.25, then there is a 25% chance of failing to detect a difference even if
-#' the difference is real. The power of the study is \eqn{1 - \beta}, so in this
-#' example, the power of the study is 0.75.
+#' variation when one can assume wether an ecological community does not have
+#' composition differences (H0 true) or it does (H0 false). For example, if the
+#' beta error is 0.25, then there is a 25% chance of failing to detect a
+#' difference even if the difference is real. The power of the study is
+#' \eqn{1 - \beta}, so in this example, the power of the study is 0.75.
 #'
 #' @param simH0 Simulated community from \code{SSP::simdata} in which H0 is
 #' true.
@@ -14,7 +14,7 @@
 #' @param n Maximum number of samples to consider.
 #' @param m Maximum number of sites.
 #' @param k Number of resamples the process will take. Defaults to 50.
-#' @param alpha Level of significance. Defaults to 0.05.
+#' @param alpha Level of significance for Type I error. Defaults to 0.05.
 #'
 #' @return \code{sim_data} returns an object of class "ecocbo_beta".
 #'
