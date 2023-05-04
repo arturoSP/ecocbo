@@ -158,7 +158,8 @@ density_plot <- function(results, powr, m, n, method){
 # Main function ----
 # plot_power <- function(data, n = NULL, m, method = "both")
   ## Reading data ----
-  if(!is(data, "ecocbo_beta"))
+  if(!inherits(data, "ecocbo_beta"))
+  #if(!is(data, "ecocbo_beta"))
     stop("data is not the right class(\"ecocbo_beta\")")
 
   powr <- data[["Power"]]

@@ -43,7 +43,8 @@ scompvar <- function(data, n = NULL, m = NULL){
   # Determine variation components  ----
   # as these values are necessary for the cost-benefit optimization model.
 
-  if(!is(data, "ecocbo_beta"))
+  if(!inherits(data, "ecocbo_beta"))
+  #if(!is(data, "ecocbo_beta"))
     stop("data is not the right class(\"ecocbo_beta\")")
 
   # read the results matrix to use Ha mean squares
