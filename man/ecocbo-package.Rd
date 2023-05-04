@@ -36,6 +36,32 @@ The \pkg{ecocbo} development team is Edlin Guerra-Castro and Arturo Sanchez-Porr
 }
 
 \examples{
+library(SSP)
+# Load data and adjust it.
+data(epiDat)
+
+epiH0 <- epiDat
+epiH0[,"site"] <- as.factor("T0")
+epiHa <- epiDat
+epiHa[,"site"] <- as.factor(epiHa[,"site"])
+
+# Calculate simulation parameters.
+parH0 <- SSP::assempar(data = epiH0, type = "counts", Sest.method = "average")
+parHa <- SSP::assempar(data = epiHa, type = "counts", Sest.method = "average")
+
+# Simulation.
+simH0 <- SSP::simdata(parH0, cases = 3, N = 1000, sites = 1)
+simHa <- SSP::simdata(parHa, cases = 3, N = 100, sites = 10)
+
+betaResult <- sim_beta(simH0, simHa, n = 10, m = 3, k = 20, alpha = 0.05)
+betaResult
+
+plot_power(data = betaResult, n = NULL, m = 2, method = "both")
+
+compVar <- scompvar(data = betaResult)
+compVar
+
+cboResult <- sim_cbo(comp.var = compVar, ct = 20000, ck = 100, cj = 2500)
 
 }
 
