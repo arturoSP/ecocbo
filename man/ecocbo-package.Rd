@@ -36,6 +36,7 @@ The \pkg{ecocbo} development team is Edlin Guerra-Castro and Arturo Sanchez-Porr
 }
 
 \examples{
+\dontrun{
 library(SSP)
 # Load data and adjust it.
 data(epiDat)
@@ -50,18 +51,23 @@ parH0 <- SSP::assempar(data = epiH0, type = "counts", Sest.method = "average")
 parHa <- SSP::assempar(data = epiHa, type = "counts", Sest.method = "average")
 
 # Simulation.
-simH0 <- SSP::simdata(parH0, cases = 3, N = 1000, sites = 1)
-simHa <- SSP::simdata(parHa, cases = 3, N = 100, sites = 10)
-
-betaResult <- sim_beta(simH0, simHa, n = 10, m = 3, k = 20, alpha = 0.05)
+simH0Dat <- SSP::simdata(parH0, cases = 3, N = 1000, sites = 1)
+simHaDat <- SSP::simdata(parHa, cases = 3, N = 100, sites = 10)
+}
+# Determination of power
+betaResult <- sim_beta(simH0 = simH0Dat, simHa = simHaDat, n = 10, m = 3, k = 20, alpha = 0.05)
 betaResult
 
+# Visualization of power
 plot_power(data = betaResult, n = NULL, m = 2, method = "both")
 
+# Computing components of variation
 compVar <- scompvar(data = betaResult)
 compVar
 
+# Cost-benefit optimization
 cboResult <- sim_cbo(comp.var = compVar, ct = 20000, ck = 100, cj = 2500)
+cboResult
 
 }
 

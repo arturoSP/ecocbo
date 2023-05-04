@@ -31,7 +31,7 @@ List of 2
  - attr(*, "class")= chr "ecocbo_beta"
 }
 \details{
-This dataset comes from applying `ecocbo::sim_beta()` to the basic data from said package `ecocbo::epiDat`
+This dataset comes from applying `ecocbo::sim_beta()` to the basic data from `ecocbo::epiDat`
 }
 \source{
 Data available from the Dryad Digital Repository: <http://dx.doi.org/10.5061/dryad.3bk3j9kj5> (Guerra-Castro et al. 2020).
