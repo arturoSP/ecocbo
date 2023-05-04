@@ -3,7 +3,7 @@ title: "ecocbo-guide"
 author: "Edlin Guerra-Castro and Arturo Sanchez-Porras"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Cost-benefit optimization for ecological sampling, from simulated communty data}
+  %\VignetteIndexEntry{ecocbo-guide}
   %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
 editor_options: 

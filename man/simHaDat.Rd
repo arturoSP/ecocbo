@@ -41,7 +41,6 @@ This dataset contains half of the necessary data to test \code{sim_beta}, the ot
   ...
   ..$ N    : int [1:1000] 1 2 3 4 5 6 7 8 9 10 ...
   ..$ sites: Factor w/ 1 level "1": 1 1 1 1 1 1 1 1 1 1 ...
-  }
 }
 \source{
 Data available from the Dryad Digital Repository: <http://dx.doi.org/10.5061/dryad.3bk3j9kj5> (Guerra-Castro et al. 2020).
@@ -51,6 +50,8 @@ Guerra-Castro, E. J. et al. 2016. Scales of spatial variation in tropical benthi
 }
 \examples{
 data(simHaDat)
+\dontrun{
 sim_beta(simHaDat, simHaDat, n = 10, m = 3, k = 20, alpha = 0.05)
+}
 }
 \keyword{datasets}
