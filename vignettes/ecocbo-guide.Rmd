@@ -30,11 +30,14 @@ knitr::opts_chunk$set(
 
 ## ecocbo: A package to optimize the experiment design through simulated data
 
-**ecocbo** is ah R package designed to help in the task of defining an optimal sampling effort for community ecology studies based on either the definition of a desired level of precission, or the requirement of adjusting to a set economic budget, as proposed by Underwood (1997).
+**ecocbo** is an R package that helps scientists determine the optimal sampling effort for community ecology studies. It can be used to calculate the minimum number of samples needed to achieve a desired level of precision, or to fit within a set economic budget as proposed by Underwood (1997). **ecocbo** is based on the principles of ecological simulation as done in the [SSP](https://github.com/edlinguerra/SSP) package. A pilot study can be used to estimate the natural variability of the system, which in turn is used to calculate the optimal sampling effort. **ecocbo** is a valuable tool for scientists who need to design efficient sampling plans. It can save time and money by ensuring that scientists collect the minimum amount of data necessary to achieve their research goals.
 
-This package uses as basis the procedures to simulate ecological communities, considering the natural variability of the studied system, as was proposed by the package **SSP**, to further cut costs as it only requires to do a pilot study in order to determine the optimal number of sites and samples necessary to reach a given statistical power.
+**ecocbo** is composed of four main functions:
 
-**ecocbo** is composed by four main functions: `sim_beta` for computing the statistical power at different sampling efforts, `plot_power` allows the user to visualize the changes in statistical power given the certain number of sampling units or sites, `scompvar` calculates the components of variation among sites and within samples, and `sim_cbo` estimates the optimal number of replicated units and replicates per unit depending on the major constrains of budget or precision to be achieved.
+- **sim_beta** computes the statistical power at different sampling efforts.
+- **plot_power** allows the user to visualize the changes in statistical power given the certain number of sampling units or sites. .
+- **scompvar** calculates the components of variation among sites and within samples. This information is necessary for calculating the optimal sampling effort.
+- **sim_cbo** estimates the optimal number of replicated units and replicates per unit depending on the major constrains of budget or precision to be achieved.
 
 ------------
 
@@ -43,13 +46,13 @@ This package uses as basis the procedures to simulate ecological communities, co
 
 As it was stated in the introduction, **ecocbo** uses simulated ecological communities as produced by `SSP:simdata` to take advantage of the considerations of natural variability that it produces. As such, it is necessary to prepare the data using the tools provided by **SSP**.
 
-To demonstrate the functionality of **ecocbo**, a basic example that is based on the documentation of **SSP** is provided.
+To get a feeling of the functionality of **ecocbo**, you can follow the next basic example.
 
-The provided data `epiDat` is a subset of the original `epibionts` (Guerra-Castro, et al., 2021) that was prepared by looking for communities that were as different as possible within the dataset. The data is prepared by saving it on two different objects: `epiH0` in which the data is treated as if it came from the same site thus accepting the null hypothesis, and `epiHa` in which the opposite is true, so that the samples come from different sites and portray different characteristics. The defining variable for doing so is `site` which will be set to a single label for `epiH0`, and left as-is for `epiHa`.
+The provided data `epiDat` is a subset of the original `epibionts` (Guerra-Castro, et al., 2021). It was prepared by looking for communities that were as different as possible within the dataset. The first step or preparing the data is to save it in two different objects: `epiH0` in which the data is treated as if it came from the same site thus accepting the null hypothesis, and `epiHa` in which the opposite is true, so that the samples come from different sites and portray different characteristics. The defining variable for doing so is `site` which will be set to a single label for `epiH0`, and left as-is for `epiHa`.
 
-**SSP** workflow then requires simulation parameters to be computed, this is done with `SSP::assempar` with the same parameters for both datasets. This data is then used for the simulation of ecological communities, which is done by `SSP::simdata`, and that results in the data that will be used to work with **ecocbo**.
+The workflow fir **SSP** requires the computation of simulation parameters, this is done with `SSP::assempar` and using the same arguments for both datasets. Both datasets are then used for the simulation of ecological communities, which is done by `SSP::simdata`, and that results in the data that we will use to work with **ecocbo**.
 
-It is important to consider that in order for the resulting datasets to be the same size, the parameters `sites` and `N` for `SSP::simdata(parH0, ...)` will be 1 and the result of multiplying `sites` and `N` in `SSP::simdata(parHa, ...)`, respectively. For this example the values used to calculate `simH0` are `sites=1` and `N=1000`, and then `sites=10` and `N=100` for `simHa`, which results in (`cases`=)3 matrices of (`sites`*`N`=)1000 rows and 95 columns (this depends on the simulation parameters from `assempar`) for both of the resulting datasets.
+To ensure that the resulting datasets are the same size, the parameters `sites` and `N` for `SSP::simdata(parH0, ...)` must be set to 1 and the product of `sites` and `N` in `SSP::simdata(parHa, ...)`, respectively. For this example, the values used to calculate **simH0** are `sites=1` and `N=1000`, and then `sites=10` and `N=100` for **simHa**, which results in 3 matrices (`cases=3`) of 1000 rows and 95 columns (the number of columns depends on the simulation parameters from `SSP::assempar`) for both of the resulting datasets.
 
 ```{r eval=FALSE}
 # Load data and adjust it.
@@ -75,16 +78,16 @@ simHaDat <- SSP::simdata(parHa, cases = 3, N = 100, sites = 10)
 
 | Argument | Description |
 |:---------|:------------|
-| simH0 | Simulated community from `SSP::simdata` in which H0 is true. |
-| simHa| Simulated community from `SSP::simdata` in which H0 is false. |
+| simH0 | Simulated community from `SSP::simdata` in which there is only one site. |
+| simHa| Simulated community from `SSP::simdata` in which there are more than one site. |
 | n | Maximum number of samples to consider. |
 | m | Maximum number of sites. |
 | k | Number of resamples the process will take. Defaults to 50. |
 | alpha | Level of significance for Type I error. Defaults to 0.05. |
 
-The value of `k` defines the number of times that the combination of sites and samples will be considered to form a statistical distribution that will establish, along with `alpha`, the probability of type I error from the simulated data.
+The value of `k` defines the number of times that the combination of sites and samples will be considered to form a statistical distribution that will establish, along with `alpha`, the probability of type I error from the simulated data. Higher values of `k` will increase the computational intensity of the process, which may result in slower execution times.
 
-The function returns an object of class "ecocbo_beta" which prints to a table showing the statistical power at different sampling efforts, and is a list that contains two data frames, one containing the information about power and beta, and a second one that contains the results of the resampling of values indicated by `k`.
+The function returns an object of class *ecocbo_beta* which prints to a table showing the statistical power at different sampling efforts. The object, however, is a list that contains two data frames, one comprising the information about power and beta, and a second one that lists the results of the resampling of values indicated by `k`.
 
 ```{r}
 betaResult <- sim_beta(simH0 = simH0Dat, simHa = simHaDat, 
@@ -106,8 +109,6 @@ betaResult
 The power curve plot shows that the power of the study increases as the sample size increases, and the density plot shows the overlapping areas where alpha and beta are significant.
 
 The argument `n` is set to NULL by default, if it is left like that, the the function looks for a number of samples that allows for a power that is close to 95%, otherwise it uses the value stated by the user. In either case, the computed or provided value is marked in red in the plot.
-
-The density plot shows a helping vertical line that marks the value of pseudoF that is critical according to the alpha that was set in **sim_beta**.
 
 ```{r}
 plot_power(data = betaResult, n = NULL, m = 3, method = "both")
@@ -145,15 +146,17 @@ compVar
 It is necessary to indicate one of the two optional arguments, as that parameter dictates if the function will work either based on budget or precision.
 
 ```{r}
-cboResult <- sim_cbo(comp.var = compVar, ct = 20000, ck = 100, cj = 2500)
-cboResult
+cboCost <- sim_cbo(comp.var = compVar, ct = 20000, ck = 100, cj = 2500)
+cboPrecision <- sim_cbo(comp.var = compVar, multSE = 0.10, ck = 100, cj = 2500)
+cboCost
+cboPrecision
 
 ```
 
 -----------
 ## References 
 
-- Underwood, A. J., Underwood, A. J., & Wnderwood, A. J. (1997). Experiments in ecology: their logical design and interpretation using analysis of variance. Cambridge university press.
+- Underwood, A. J. (1997). Experiments in ecology: their logical design and interpretation using analysis of variance. Cambridge university press.
 
 - Underwood, A. J., & Chapman, M. G. (2003). Power, precaution, Type II error and sampling design in assessment of environmental impacts. Journal of Experimental Marine Biology and Ecology, 296(1), 49-70.
 

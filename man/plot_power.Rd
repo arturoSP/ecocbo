@@ -44,9 +44,9 @@ plot_power(data = epiBetaR, n = NULL, m = 3, method = "power")
 plot_power(data = epiBetaR, n = NULL, m = 3, method = "density")
 }
 \references{
-Underwood, A. J., Underwood, A. J., & Wnderwood, A. J. (1997).
-Experiments in ecology: their logical design and interpretation using
-analysis of variance. Cambridge university press.
+Underwood, A. J. (1997). Experiments in ecology: their logical
+design and interpretation using analysis of variance. Cambridge university
+press.
 
 Underwood, A. J., & Chapman, M. G. (2003). Power, precaution,
 Type II error and sampling design in assessment of environmental impacts.

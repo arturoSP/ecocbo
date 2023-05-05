@@ -16,9 +16,9 @@
 #'
 #' @author Edlin Guerra-Castro (\email{edlinguerra@@gmail.com}), Arturo Sanchez-Porras
 #'
-#' @references Underwood, A. J., Underwood, A. J., & Wnderwood, A. J. (1997).
-#' Experiments in ecology: their logical design and interpretation using
-#' analysis of variance. Cambridge university press.
+#' @references Underwood, A. J. (1997). Experiments in ecology: their logical
+#' design and interpretation using analysis of variance. Cambridge university
+#' press.
 #' @references Underwood, A. J., & Chapman, M. G. (2003). Power, precaution,
 #' Type II error and sampling design in assessment of environmental impacts.
 #' Journal of Experimental Marine Biology and Ecology, 296(1), 49-70.

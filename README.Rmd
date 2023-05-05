@@ -17,7 +17,11 @@ library(ecocbo)
 # ecocbo
 
 <!-- badges: start -->
- [![R-CMD-check](https://github.com/arturoSP/ecocbo/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/arturoSP/ecocbo/actions/workflows/R-CMD-check.yaml)
+
+[![R-CMD-check](https://github.com/arturoSP/ecocbo/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/arturoSP/ecocbo/actions/workflows/R-CMD-check.yaml)
+
+[![License](https://img.shields.io/github/license/arturoSP/ecocbo)](https://github.com/arturoSP/ecocbo/blob/master/LICENSE.md)
+ 
 <!-- badges: end -->
 
 ## A Tool for Calculating Optimum Sampling Effort in Community Ecology
@@ -71,10 +75,12 @@ betaResult
 
 ### Plot the power progression as sampling increases.
 
-```{r}
+```{r eval=FALSE}
 plot_power(data = betaResult, n = NULL, m = 3, method = "power")
 
 ```
+
+![This plot will look different in every simulation](man/figures/plotm3n4.png)
 
 ### Calculate components of variation.
 
@@ -86,6 +92,8 @@ compVar
 
 ### Determine optimal sampling effort
 
+The sampling effort can be evaluated depending on an economic budget (ct) or desired precision level (multSE), depending on the proposed parameter, the function will calculate optimal values for number of treatments (bOpt) and replicates (nOpt).
+
 ```{r}
 cboCost <- sim_cbo(comp.var = compVar, ct = 20000, ck = 100, cj = 2500)
 cboPrecision <- sim_cbo(comp.var = compVar, multSE = 0.10, ck = 100, cj = 2500)
@@ -93,3 +101,12 @@ cboCost
 cboPrecision
 
 ```
+
+## R packages required for running ecocbo
+
+- Required: ggplot2, ggpubr, sampling, stats, vegan
+- Suggested: SSP, knitr, rmarkdown, testthat
+    
+## Sponsored by
+
+![](man/figures/logoCONACYT.png){height=121}  ![](man/figures/logoENES.png){height=121} 

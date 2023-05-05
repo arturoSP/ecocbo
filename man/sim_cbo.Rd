@@ -35,9 +35,9 @@ sim_cbo(comp.var = compVar, multSE = NULL, ct = 20000, ck = 100, cj = 2500)
 sim_cbo(comp.var = compVar, multSE = 0.15, ct = NULL, ck = 100, cj = 2500)
 }
 \references{
-Underwood, A. J., Underwood, A. J., & Wnderwood, A. J. (1997).
-Experiments in ecology: their logical design and interpretation using
-analysis of variance. Cambridge university press.
+Underwood, A. J. (1997). Experiments in ecology: their logical
+design and interpretation using analysis of variance. Cambridge university
+press.
 
 Underwood, A. J., & Chapman, M. G. (2003). Power, precaution,
 Type II error and sampling design in assessment of environmental impacts.

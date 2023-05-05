@@ -6,6 +6,9 @@
 <!-- badges: start -->
 
 [![R-CMD-check](https://github.com/arturoSP/ecocbo/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/arturoSP/ecocbo/actions/workflows/R-CMD-check.yaml)
+
+[![License](https://img.shields.io/github/license/arturoSP/ecocbo)](https://github.com/arturoSP/ecocbo/blob/master/LICENSE.md)
+
 <!-- badges: end -->
 
 ## A Tool for Calculating Optimum Sampling Effort in Community Ecology
@@ -67,8 +70,8 @@ betaResult <- sim_beta(simH0 = simH0Dat, simHa = simHaDat,
 betaResult
 #> Power at different sampling efforts (m x n):
 #>       n = 2 n = 3 n = 4 n = 5 n = 6 n = 7 n = 8 n = 9 n = 10
-#> m = 2 0.083 0.567 0.617 0.717 0.767  0.95 0.983     1      1
-#> m = 3 0.483 0.833 0.800 0.967 1.000  1.00 1.000     1      1
+#> m = 2 0.300 0.367 0.783 0.850 0.883 0.933 0.983  0.95      1
+#> m = 3 0.383 0.800 0.883 0.967 0.983 1.000 1.000  1.00      1
 ```
 
 ### Plot the power progression as sampling increases.
@@ -77,26 +80,42 @@ betaResult
 plot_power(data = betaResult, n = NULL, m = 3, method = "power")
 ```
 
-<img src="man/figures/README-unnamed-chunk-4-1.png" width="100%" />
+![This plot will look different in every
+simulation](man/figures/plotm3n4.png)
 
 ### Calculate components of variation.
 
 ``` r
 compVar <- scompvar(data = betaResult)
 compVar
-#>    compVarA compVarR
-#> 1 0.0686065  0.33291
+#>     compVarA  compVarR
+#> 1 0.06962267 0.3333533
 ```
 
 ### Determine optimal sampling effort
+
+The sampling effort can be evaluated depending on an economic budget
+(ct) or desired precision level (multSE), depending on the proposed
+parameter, the function will calculate optimal values for number of
+treatments (bOpt) and replicates (nOpt).
 
 ``` r
 cboCost <- sim_cbo(comp.var = compVar, ct = 20000, ck = 100, cj = 2500)
 cboPrecision <- sim_cbo(comp.var = compVar, multSE = 0.10, ck = 100, cj = 2500)
 cboCost
 #>   nOpt bOpt
-#> 1   11    5
+#> 1   10    5
 cboPrecision
 #>   nOpt bOpt
-#> 1   11    9
+#> 1   10   10
 ```
+
+## R packages required for running ecocbo
+
+- Required: ggplot2, ggpubr, sampling, stats, vegan
+- Suggested: SSP, knitr, rmarkdown, testthat
+
+## Sponsored by
+
+<img src="man/figures/logoCONACYT.png" height="121" />
+<img src="man/figures/logoENES.png" height="121" />

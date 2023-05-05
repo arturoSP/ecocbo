@@ -31,9 +31,9 @@
 #'
 #' @author Edlin Guerra-Castro (\email{edlinguerra@@gmail.com}), Arturo Sanchez-Porras
 #'
-#' @references Underwood, A. J., Underwood, A. J., & Wnderwood, A. J. (1997).
-#' Experiments in ecology: their logical design and interpretation using
-#' analysis of variance. Cambridge university press.
+#' @references Underwood, A. J. (1997). Experiments in ecology: their logical
+#' design and interpretation using analysis of variance. Cambridge university
+#' press.
 #' @references Underwood, A. J., & Chapman, M. G. (2003). Power, precaution,
 #' Type II error and sampling design in assessment of environmental impacts.
 #' Journal of Experimental Marine Biology and Ecology, 296(1), 49-70.
@@ -78,6 +78,8 @@ sim_beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05){
   if(alpha >= 1){stop("alpha must be smaller than 1")}
 
   if(!is.list(simH0) | !is.list(simHa)){stop("simulation data must be lists")}
+
+  # FALTA AGREGAR UN CHECK QUE VERIFIQUE LAS DIMENSIONES DE SIMH0 VS SIMHa
 
 
   xH0 <- dim(simH0[[1]])[1]
