@@ -1,7 +1,7 @@
 \name{epiDat}
 \alias{epiDat}
 \docType{data}
-\title{Marine communities}
+\title{Dataset on species count of marine communities}
 \description{This is a dataset containing a subset from the epibionts dataset from `SSP` which was made by using the three local communities that differ the most.}
 \usage{data("epiDat")}
 \format{
@@ -159,9 +159,6 @@
     \item{\code{Viatrix.globulifera}}{a numeric vector}
     \item{\code{Zoobotryon.verticillatum}}{a numeric vector}
   }
-}
-\details{
-Algún detalle en caso de ser necesario
 }
 \source{
 Data available from the Dryad Digital Repository: <http://dx.doi.org/10.5061/dryad.3bk3j9kj5> (Guerra-Castro et al. 2020).

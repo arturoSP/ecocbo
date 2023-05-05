@@ -6,8 +6,7 @@
 <!-- badges: start -->
 
 [![R-CMD-check](https://github.com/arturoSP/ecocbo/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/arturoSP/ecocbo/actions/workflows/R-CMD-check.yaml)
-
-[![License](https://img.shields.io/github/license/arturoSP/ecocbo)](https://github.com/arturoSP/ecocbo/blob/master/LICENSE.md)
+[![License](https://img.shields.io/badge/License-GPL3-blue.svg)](https://github.com/arturoSP/ecocbo/blob/master/LICENSE.md)
 
 <!-- badges: end -->
 
@@ -70,8 +69,8 @@ betaResult <- sim_beta(simH0 = simH0Dat, simHa = simHaDat,
 betaResult
 #> Power at different sampling efforts (m x n):
 #>       n = 2 n = 3 n = 4 n = 5 n = 6 n = 7 n = 8 n = 9 n = 10
-#> m = 2 0.300 0.367 0.783 0.850 0.883 0.933 0.983  0.95      1
-#> m = 3 0.383 0.800 0.883 0.967 0.983 1.000 1.000  1.00      1
+#> m = 2 0.367 0.433 0.767 0.800  0.85 0.933  0.95 0.983      1
+#> m = 3 0.217 0.467 0.917 0.983  1.00 0.983  1.00 1.000      1
 ```
 
 ### Plot the power progression as sampling increases.
@@ -88,8 +87,8 @@ simulation](man/figures/plotm3n4.png)
 ``` r
 compVar <- scompvar(data = betaResult)
 compVar
-#>     compVarA  compVarR
-#> 1 0.06962267 0.3333533
+#>     compVarA compVarR
+#> 1 0.07397367 0.330455
 ```
 
 ### Determine optimal sampling effort
