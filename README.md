@@ -8,15 +8,21 @@
 [![R-CMD-check](https://github.com/arturoSP/ecocbo/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/arturoSP/ecocbo/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
-The goal of ecocbo is to help scientists to calculate an optimum
-sampling effort for community ecology projects, based on data from a
-pilot study only. This package is based on the principles developed on
-[SSP](https://github.com/edlinguerra/SSP), an R package that simulates
+## A Tool for Calculating Optimum Sampling Effort in Community Ecology
+
+**ecocbo** is an R package that helps scientists calculate the optimum
+sampling effort for community ecology projects. The package is based on
+the principles developed in the
+[SSP](https://github.com/edlinguerra/SSP) package, which simulates
 ecological communities by extracting and using parameters that control
 the simulation. The simulated communities are then compared with
-PERMANOVA, to estimate its componrnts of variation and consequently the
-optimal sampling effort depending on wether the relevant issue is an
-economic budget or a required level of precision.
+PERMANOVA to estimate their components of variation and consequently the
+optimal sampling effort.
+
+**ecocbo** is a valuable tool for scientists who need to design
+efficient sampling plans. The package can help scientists to save time
+and money by ensuring that they collect the minimum amount of data
+necessary to achieve their research goals.
 
 ## Installation
 
@@ -33,8 +39,9 @@ devtools::install_github("edlinguerra/ecocbo")
 This is a basic example which shows you how to use the different
 functions in the package:
 
+### Prepare the data
+
 ``` r
-# Prepare the data.
 # Load data and adjust it.
 data(epiDat)
 
@@ -52,36 +59,44 @@ simH0Dat <- SSP::simdata(parH0, cases = 3, N = 1000, sites = 1)
 simHaDat <- SSP::simdata(parHa, cases = 3, N = 100, sites = 10)
 ```
 
+### Calculate statistical power
+
 ``` r
-# Calculate statistical power.
 betaResult <- sim_beta(simH0 = simH0Dat, simHa = simHaDat, 
                        n = 10, m = 3, k = 20, alpha = 0.05)
 betaResult
 #> Power at different sampling efforts (m x n):
 #>       n = 2 n = 3 n = 4 n = 5 n = 6 n = 7 n = 8 n = 9 n = 10
-#> m = 2 0.167 0.350 0.717 0.750 0.800 0.983 0.983 0.983      1
-#> m = 3 0.433 0.817 0.850 0.967 0.983 1.000 1.000 1.000      1
+#> m = 2 0.083 0.567 0.617 0.717 0.767  0.95 0.983     1      1
+#> m = 3 0.483 0.833 0.800 0.967 1.000  1.00 1.000     1      1
 ```
 
+### Plot the power progression as sampling increases.
+
 ``` r
-# Plot the power progression as sampling increases.
 plot_power(data = betaResult, n = NULL, m = 3, method = "power")
 ```
 
 <img src="man/figures/README-unnamed-chunk-4-1.png" width="100%" />
 
-``` r
-#Calculate components of variation.
-compVar <- scompvar(data = betaResult)
-compVar
-#>   compVarA compVarR
-#> 1 0.070026 0.332595
-```
+### Calculate components of variation.
 
 ``` r
-# Determine optimal sampling effort
-cboResult <- sim_cbo(comp.var = compVar, ct = 20000, ck = 100, cj = 2500)
-cboResult
+compVar <- scompvar(data = betaResult)
+compVar
+#>    compVarA compVarR
+#> 1 0.0686065  0.33291
+```
+
+### Determine optimal sampling effort
+
+``` r
+cboCost <- sim_cbo(comp.var = compVar, ct = 20000, ck = 100, cj = 2500)
+cboPrecision <- sim_cbo(comp.var = compVar, multSE = 0.10, ck = 100, cj = 2500)
+cboCost
 #>   nOpt bOpt
-#> 1   10    5
+#> 1   11    5
+cboPrecision
+#>   nOpt bOpt
+#> 1   11    9
 ```
