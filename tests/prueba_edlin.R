@@ -1,4 +1,5 @@
 library(devtools)
+load_all()
 build()
 
 
@@ -7,6 +8,7 @@ library(ecocbo)
 library(dplyr)
 library(tidyr)
 
+raw_dat <- readxl::read_xls("./data-raw/dat.Abundancias.Playas.PAPIIT.xls")
 
 # Importar datos playas proyecto PAPIIT2020
 # Filtrar para datos de Sisal, 1era campaña
@@ -15,8 +17,7 @@ datos <- raw_dat|>
   filter(locality == "Sisal" & campaign == 1 & zone == "Wet")|>
   select(-c(locality, zone, campaign))|>
   relocate(site, .before = "labels")|>
-  select(-labels)|>
-  mutate(dummy = 1)
+  select(-labels)
 
 # Simulación de datos para H0 cierta, Ha cierta
 
@@ -44,11 +45,21 @@ simHaDat <- simdata(Par = parHa, cases = 10, N = 100, sites = 10)
 
 betaResult <- sim_beta(simH0 = simH0Dat,
                        simHa = simHaDat,
-                       n = 10, m = 5, k = 10,
-                       alpha = 0.05) #Agregar argumentos: transformation (ver sampsd), method, dummy (agrega especie con valores 1)
+                       n = 15, m = 5, k = 20,
+                       alpha = 0.05,
+                       transformation = "fourth root",
+                       method = "bray",
+                       dummy = TRUE)
+
+profvis::profvis(sim_beta(simH0 = simH0Dat,
+                       simHa = simHaDat,
+                       n = 10, m = 3, k = 20,
+                       alpha = 0.05,
+                       transformation = "square root")) #Agregar argumentos: transformation (ver sampsd), method, dummy (agrega especie con valores 1)
 
 # Componentes de variación
-cv <- scompvar(data = betaResult, n = 10, m = 10)
+cv <- scompvar(data = betaResult)
 cv
 
-plot_power(data = betaResult, n = 6, m = 4)
+plot_power(data = betaResult, m = 5)
+plot_power(data = betaResult2, m = 5)

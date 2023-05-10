@@ -6,3 +6,5 @@
 ^README\.Rmd$
 ^doc$
 ^Meta$
+^data-raw/dat\.Abundancias\.Playas\.PAPIIT\.xls$
+^tests/prueba_edlin\.R$
