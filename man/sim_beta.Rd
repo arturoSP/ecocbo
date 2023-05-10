@@ -5,7 +5,17 @@
 \alias{simbeta}
 \title{Calculate beta and power out of simulated samples}
 \usage{
-sim_beta(simH0, simHa, n, m, k = 50, alpha = 0.05)
+sim_beta(
+  simH0,
+  simHa,
+  n,
+  m,
+  k = 50,
+  alpha = 0.05,
+  transformation = "none",
+  method = "bray",
+  dummy = FALSE
+)
 }
 \arguments{
 \item{simH0}{Simulated community from \code{SSP::simdata} in which H0 is
@@ -21,6 +31,16 @@ false.}
 \item{k}{Number of resamples the process will take. Defaults to 50.}
 
 \item{alpha}{Level of significance for Type I error. Defaults to 0.05.}
+
+\item{transformation}{Mathematical function to reduce the weight of very
+dominant species: 'square root', 'fourth root', 'Log (X+1)', 'P/A', 'none'}
+
+\item{method}{The appropriate distance/dissimilarity metric (e.g. Gower,
+Bray–Curtis, Jaccard, etc). The function \code{\link[vegan]{vegdist}} is
+called for that purpose.}
+
+\item{dummy}{Logical. It is recommended to use TRUE in cases when there are
+observations that are empty.}
 }
 \value{
 \code{sim_data} returns an object of class "ecocbo_beta".
@@ -45,7 +65,8 @@ difference even if the difference is real. The power of the study is
 \eqn{1 - \beta}, so in this example, the power of the study is 0.75.
 }
 \examples{
-sim_beta(simH0Dat, simHaDat, n = 10, m = 3, k = 20, alpha = 0.05)
+sim_beta(simH0Dat, simHaDat, n = 10, m = 3, k = 20,
+transformation = "square root", method = "bray", dummy = FALSE)
 
 }
 \references{

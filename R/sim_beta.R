@@ -15,6 +15,13 @@
 #' @param m Maximum number of sites.
 #' @param k Number of resamples the process will take. Defaults to 50.
 #' @param alpha Level of significance for Type I error. Defaults to 0.05.
+#' @param transformation Mathematical function to reduce the weight of very
+#' dominant species: 'square root', 'fourth root', 'Log (X+1)', 'P/A', 'none'
+#' @param method The appropriate distance/dissimilarity metric (e.g. Gower,
+#' Bray–Curtis, Jaccard, etc). The function \code{\link[vegan]{vegdist}} is
+#' called for that purpose.
+#' @param dummy Logical. It is recommended to use TRUE in cases when there are
+#' observations that are empty.
 #'
 #' @return \code{sim_data} returns an object of class "ecocbo_beta".
 #'
@@ -59,11 +66,13 @@
 #' @importFrom sampling balancedtwostage
 #'
 #' @examples
-#' sim_beta(simH0Dat, simHaDat, n = 10, m = 3, k = 20, alpha = 0.05)
+#' sim_beta(simH0Dat, simHaDat, n = 10, m = 3, k = 20,
+#' transformation = "square root", method = "bray", dummy = FALSE)
 #'
 
-sim_beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05){
-  # Calculate power and pseudoF in multiple iterations ----
+sim_beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05,
+                     transformation = "none", method = "bray", dummy = FALSE){
+  # Check the inputs ----
 
   N <- max(simHa[[1]][,'N'])
   sites <- max(as.numeric(simHa[[1]][,'sites']))
@@ -81,27 +90,36 @@ sim_beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05){
 
   # FALTA AGREGAR UN CHECK QUE VERIFIQUE LAS DIMENSIONES DE SIMH0 VS SIMHa
 
+  # Simulation parameters ---
+  xH0 <- dim(simHa[[1]])[1]
+  yH0 <- dim(simHa[[1]])[2]
+  casesHa <- length(simHa)
 
-  xH0 <- dim(simH0[[1]])[1]
-  yH0 <- dim(simH0[[1]])[2]
-  zH0 <- length(simH0)
-  H0Sim <- array(unlist(simH0), dim = c(xH0, yH0, zH0))
-  HaSim <- array(unlist(simHa), dim = c(xH0, yH0, zH0))
+  H0Sim <- simH0
+  HaSim <- simHa
 
-  # Simulation parameters ----
-  casesHa <- dim(HaSim)[3]
+  if(dummy == TRUE){
+    yH0 <- yH0 + 1
+    for(i in seq_len(casesHa)){
+      H0Sim[[i]] <- cbind(simH0[[i]], dummy = 1)
+      H0Sim[[i]] <- H0Sim[[i]][,c(1:(yH0-3), (yH0), (yH0-2):(yH0-1))]
+      HaSim[[i]] <- cbind(simHa[[i]], dummy = 1)
+      HaSim[[i]] <- HaSim[[i]][,c(1:(yH0-3), (yH0), (yH0-2):(yH0-1))]
+    }
+  }
 
-  labHa <- HaSim[,c((yH0-1):yH0),1]
+  H0Sim <- array(unlist(H0Sim), dim = c(xH0, yH0, casesHa))
+  HaSim <- array(unlist(HaSim), dim = c(xH0, yH0, casesHa))
+
+  labHa <- HaSim[,c((yH0-1):(yH0)),1]
   colnames(labHa) <- c("N", "sites")
-  labHa <- cbind(labHa, index = 1:xH0)
 
-  popH0 <- max(labHa[,1])
-
-  # Labels from Ha to H0 (for sites and N)
-  H0Sim[,c((yH0-1):yH0),] <- labHa[,c(1:2)]
+  # Stamp Ha labels to H0 (for sites and N)
+  H0Sim[,c((yH0-1):yH0),] <- labHa
 
   ## Helper matrix to store labels ----
-  resultsHa <- matrix(nrow = casesHa * k * (m-1) * (n-1), ncol = 8)
+  NN <- casesHa * k * (m-1) * (n-1)
+  resultsHa <- matrix(nrow = NN, ncol = 8)
   resultsHa[, 1] <- rep(seq(casesHa), times = 1, each = (k * (m-1) * (n-1)))
   resultsHa[, 2] <- rep(1:k, times = (n-1) * (m-1) * casesHa)
   resultsHa[, 3] <- rep(seq(2, m), times = (n-1), each = k)
@@ -113,19 +131,15 @@ sim_beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05){
   # Loop to calculate pseudoF ----
   # Loop parameters
   Y <- cbind(1:(N * sites))
-  YPU <- as.numeric(as.vector(gl(sites, N)))
-  NN <- nrow(resultsHa)
+  YPU <- as.numeric(gl(sites, N))
   mm <- resultsHa[,3]
-  nn <- rep(NA, NN)
-  for (i in seq_len(NN)){
-    nn[i] <- resultsHa[i, 3] * resultsHa[i, 4]
-  }
+  nn <- resultsHa[,3] * resultsHa[,4]
 
   for (i in seq_len(NN)){
     sel <- sampling::balancedtwostage(Y, selection = 1, m = mm[i],
                                       n = nn[i], PU = YPU, FALSE)
 
-    # Replace incorrect probabilities (p < 0 and p > 1) produced by balancetwostage
+    # Replace incorrect probabilities (p < 0 and p > 1) produced by balancedtwostage
     sel[sel[,1]<= -1, 1] <- 0
     sel[sel[,1]>= 2, 1] <- 1
 
@@ -136,12 +150,14 @@ sim_beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05){
     ones <- sel[, 1]
     y0 <- dat.H0[,,resultsHa[i,1]][ones == 1,]
     ya <- dat.Ha[,,resultsHa[i,1]][ones == 1,]
-    perH0 <- as.data.frame(y0[ , 1:(yH0-2)])
-    perHa <- as.data.frame(ya[ , 1:(yH0-2)])
+    perH0 <- y0[ , 1:(yH0-2)]
+    perHa <- ya[ , 1:(yH0-2)]
     perH0Env <- y0[,yH0]
 
-    result1 <- permanova_oneway(perH0, perH0Env)
-    result2 <- permanova_oneway(perHa, perH0Env)
+    result1 <- permanova_oneway(perH0, perH0Env,
+                                transformation = transformation, method = method)
+    result2 <- permanova_oneway(perHa, perH0Env,
+                                transformation = transformation, method = method)
     resultsHa[i,5] <- result1$Fobs
     resultsHa[i,6] <- result2$Fobs
     resultsHa[i,7] <- result2$AMS
@@ -211,7 +227,7 @@ sim_beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05){
 # Print ecocbo_beta
 #' @export
 print.ecocbo_beta <- function(x, ...){
-  x$Power[,3] <- round(x$Power[,3], 3)
+  x$Power[,3] <- round(x$Power[,3], 2)
   x1 <- stats::reshape(x$Power[,c(1:3)],
                 direction = "wide",
                 idvar = "m", timevar = "n",
