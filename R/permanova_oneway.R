@@ -37,7 +37,6 @@ pseudoF_P <- function(x, factEnv, method = "bray", transformation = "none"){
     d <- vegan::vegdist(x.t, method = method)
   }
 
-  # d <- vegan::vegdist(x, method = method)
   TSS <- SS(d)[2]
 
   # Size for labels
@@ -46,10 +45,6 @@ pseudoF_P <- function(x, factEnv, method = "bray", transformation = "none"){
   # Calculate the SS for residuals
   lista <- split(as.data.frame(x.t), factEnv)
   dimxt <- dim(x.t)
-  #lista <- split(x.t, factEnv)
-  #arrayL <- array(unlist(lista), dim = c(dimxt[1]/nlev, dimxt[2], nlev))
-  #vdist <- apply(arrayL, MARGIN = 3, FUN = vegan::vegdist, method = method, simplify = F)
-  #SSi <- lapply(vdist, SS)
   vdist <- lapply(lista, vegan::vegdist, method = method)
   SSi <- lapply(vdist, SS)
   SSi <- array(unlist(SSi), dim = c(1,2,nlev))
@@ -59,9 +54,8 @@ pseudoF_P <- function(x, factEnv, method = "bray", transformation = "none"){
   denR <- dimxt[1] - nlev
 
   # Results
-  #RSS <- sum(SSi[2,])
   RSS <- sum(SSi[,2,])
-  ASS <- TSS - RSS
+  ASS <- abs(TSS - RSS)
   AMS <- (ASS/denA)
   RMS <- (RSS/denR)
   Fobs <- AMS/RMS
@@ -69,6 +63,8 @@ pseudoF_P <- function(x, factEnv, method = "bray", transformation = "none"){
   return(Fobs)
 }
 
+# Prueba Brown-Forsythe ---
+# está desactivada, pero guardada por si se quiere usar algún día
 # pseudoF_BF <- function(x, factor, method = "bray"){
 #   d <- vegan::vegdist(x, method = method)
 #   TSS <- SS(d)[2]
@@ -93,7 +89,7 @@ pseudoF_P <- function(x, factEnv, method = "bray", transformation = "none"){
 #
 #   # Resultados
 #   RSS <- sum(SSi[,2,])
-#   ASS<-TSS-RSS
+#   ASS<- abs(TSS-RSS)
 #   Fobs<- ASS/den
 #
 #   Fobs <- data.frame(ASS, RSS, TSS, den, Fobs)
@@ -107,12 +103,6 @@ pseudoF_P <- function(x, factEnv, method = "bray", transformation = "none"){
   if(type != "P" & type != "BF")
     stop("Possible values for type are P and BF")
 
-  # Calculate pseudoF and additional parameters
-  # Results <- if(type == "P"){
-  #   pseudoF_P(x, factEnv, method, transformation)[1,c(6,7,8)]
-  # } else {
-  #   pseudoF_BF(x, factEnv, method, transformation)[1,5]
-  # }
   Results <- pseudoF_P(x, factEnv, method, transformation)[1,c(6,7,8)]
   Fobs <- Results
   return(Fobs)
