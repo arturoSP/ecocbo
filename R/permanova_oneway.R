@@ -1,67 +1,67 @@
-
 permanova_oneway <- function(x, factEnv, type = "P", method = "bray", transformation = "none"){
-# Helper functions ----
-## Sum of Squares using Huygen theorem ----
-SS <- function (d) {
-  ss <- numeric(2)
-  ss[1] <- dim(as.matrix(d))[1]
-  ss[2] <- sum(d^2)/ss[1]
-  return(ss)
-}
 
-## PERMANOVA functions ----
-pseudoF_P <- function(x, factEnv, method = "bray", transformation = "none"){
-  if (transformation == "square root") {
-    x.t <- sqrt(x)
-    rm(x)
-    d <- vegan::vegdist(x.t, method = method)
-  }
-  if (transformation == "fourth root") {
-    x.t <- sqrt(sqrt(x))
-    rm(x)
-    d <- vegan::vegdist(x.t, method = method)
-  }
-  if (transformation == "Log (X+1)") {
-    x.t <- log(x + 1)
-    rm(x)
-    d <- vegan::vegdist(x.t, method = method)
-  }
-  if (transformation == "P/A") {
-    x.t <- 1 * (x > 0)
-    rm(x)
-    d <- vegan::vegdist(x.t, method = method, binary = TRUE)
-  }
-  if (transformation == "none") {
-    x.t <- x
-    rm(x)
-    d <- vegan::vegdist(x.t, method = method)
+  # Helper functions ----
+  ## Sum of Squares using Huygen theorem ----
+  SS <- function (d) {
+    ss <- numeric(2)
+    ss[1] <- dim(as.matrix(d))[1]
+    ss[2] <- sum(d^2)/ss[1]
+    return(ss)
   }
 
-  TSS <- SS(d)[2]
+  ## PERMANOVA functions ----
+  pseudoF_P <- function(x, factEnv, method = "bray", transformation = "none"){
+    if (transformation == "square root") {
+      x.t <- sqrt(x)
+      rm(x)
+      d <- vegan::vegdist(x.t, method = method)
+    }
+    if (transformation == "fourth root") {
+      x.t <- sqrt(sqrt(x))
+      rm(x)
+      d <- vegan::vegdist(x.t, method = method)
+    }
+    if (transformation == "Log (X+1)") {
+      x.t <- log(x + 1)
+      rm(x)
+      d <- vegan::vegdist(x.t, method = method)
+    }
+    if (transformation == "P/A") {
+      x.t <- 1 * (x > 0)
+      rm(x)
+      d <- vegan::vegdist(x.t, method = method, binary = TRUE)
+    }
+    if (transformation == "none") {
+      x.t <- x
+      rm(x)
+      d <- vegan::vegdist(x.t, method = method)
+    }
 
-  # Size for labels
-  nlev <- nlevels(as.factor(factEnv))
+    TSS <- SS(d)[2]
 
-  # Calculate the SS for residuals
-  lista <- split(as.data.frame(x.t), factEnv)
-  dimxt <- dim(x.t)
-  vdist <- lapply(lista, vegan::vegdist, method = method)
-  SSi <- lapply(vdist, SS)
-  SSi <- array(unlist(SSi), dim = c(1,2,nlev))
+    # Size for labels
+    nlev <- nlevels(as.factor(factEnv))
 
-  # Calculate denominators
-  denA <- nlev - 1
-  denR <- dimxt[1] - nlev
+    # Calculate the SS for residuals
+    lista <- split(as.data.frame(x.t), factEnv)
+    dimxt <- dim(x.t)
+    vdist <- lapply(lista, vegan::vegdist, method = method)
+    SSi <- lapply(vdist, SS)
+    SSi <- array(unlist(SSi), dim = c(1,2,nlev))
 
-  # Results
-  RSS <- sum(SSi[,2,])
-  ASS <- abs(TSS - RSS)
-  AMS <- (ASS/denA)
-  RMS <- (RSS/denR)
-  Fobs <- AMS/RMS
-  Fobs <- data.frame(ASS, RSS, TSS, denA, denR, AMS, RMS, Fobs)
-  return(Fobs)
-}
+    # Calculate denominators
+    denA <- nlev - 1
+    denR <- dimxt[1] - nlev
+
+    # Results
+    RSS <- sum(SSi[,2,])
+    ASS <- abs(TSS - RSS)
+    AMS <- (ASS/denA)
+    RMS <- (RSS/denR)
+    Fobs <- AMS/RMS
+    Fobs <- data.frame(ASS, RSS, TSS, denA, denR, AMS, RMS, Fobs)
+    return(Fobs)
+  }
 
 # Prueba Brown-Forsythe ---
 # está desactivada, pero guardada por si se quiere usar algún día

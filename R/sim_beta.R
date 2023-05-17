@@ -22,6 +22,8 @@
 #' called for that purpose.
 #' @param dummy Logical. It is recommended to use TRUE in cases where there are
 #' observations that are empty.
+#' @param useParallel Logical. Perform the analysis in parallel? Defaults to TRUE.
+#' @param nCores Number of cores to use if the analysis is performed in parallel.
 #'
 #' @return \code{sim_data} returns an object of class "ecocbo_beta".
 #'
@@ -68,15 +70,28 @@
 #' @importFrom doParallel registerDoParallel
 #' @importFrom foreach foreach
 #' @importFrom foreach %dopar%
+#' @importFrom foreach %do%
 #'
 #' @examples
 #' sim_beta(simH0Dat, simHaDat, n = 10, m = 3, k = 20, alpha = 0.05,
-#' transformation = "square root", method = "bray", dummy = FALSE)
+#' transformation = "square root", method = "bray", dummy = FALSE,
+#' nCores = 2)
 #'
 
 sim_beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05,
-                     transformation = "none", method = "bray", dummy = FALSE){
+                     transformation = "none", method = "bray", dummy = FALSE,
+                     useParallel = TRUE, nCores = NULL){
   # Check the inputs ----
+
+  if(useParallel){
+    if(is.null(nCores)){
+      nCores <- parallel::detectCores()-2
+      doParallel::registerDoParallel(cores = nCores)
+    }
+    if(!is.null(nCores)){
+      doParallel::registerDoParallel(cores = nCores)
+    }
+  }
 
   N <- max(simHa[[1]][,'N'])
   sites <- max(as.numeric(simHa[[1]][,'sites']))
@@ -92,7 +107,11 @@ sim_beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05,
 
   if(!is.list(simH0) | !is.list(simHa)){stop("simulation data must be lists")}
 
-  # FALTA AGREGAR UN CHECK QUE VERIFIQUE LAS DIMENSIONES DE SIMH0 VS SIMHa
+  if(length(simH0) != length(simHa) |
+     dim(simH0[[1]])[1] != dim(simHa[[1]])[1] |
+     dim(simH0[[1]])[2] != dim(simHa[[1]])[2]){stop("dimensions for simH0 and simHa do not match")}
+
+  if(nCores < 2){useParallel = FALSE}
 
   # Simulation parameters ---
   xH0 <- dim(simHa[[1]])[1]
@@ -139,42 +158,24 @@ sim_beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05,
   mm <- resultsHa[,3]
   nn <- resultsHa[,3] * resultsHa[,4]
 
-  # mCores <- parallel::detectCores() - 1
-
-  chk <- Sys.getenv("_R_CHECK_LIMIT_CORES_", "")
-
-  if (nzchar(chk) && chk == "TRUE") {
-    # use 2 cores in CRAN/Travis/AppVeyor
-    mCores <- 2L
-  } else {
-    # use all cores in devtools::test()
-    mCores <- parallel::detectCores() - 1
-  }
-
-  if(mCores > 0){
-    doParallel::registerDoParallel(cores = mCores)
-
+  if(useParallel){
     result1 <- foreach::foreach(i=1:NN, .combine = rbind) %dopar% {
       balanced_sampling(i, Y, mm, nn, YPU,
                         H0Sim, HaSim, resultsHa,
                         transformation, method)
     }
-    resultsHa[,5] <- result1[,1]
-    resultsHa[,6] <- result1[,2]
-    resultsHa[,7] <- result1[,3]
-    resultsHa[,8] <- result1[,4]
   } else {
-    for (i in seq_len(NN)){
-        result1 <- balanced_sampling(i, Y, mm, nn, YPU,
-                                     H0Sim, HaSim, resultsHa,
-                                     transformation, method)
-
-        resultsHa[i,5] <- result1[,1]
-        resultsHa[i,6] <- result1[,2]
-        resultsHa[i,7] <- result1[,3]
-        resultsHa[i,8] <- result1[,4]
+    result1 <- foreach::foreach(i=1:NN, .combine = rbind) %do% {
+      balanced_sampling(i, Y, mm, nn, YPU,
+                        H0Sim, HaSim, resultsHa,
+                        transformation, method)
     }
   }
+
+  resultsHa[,5] <- result1[,1]
+  resultsHa[,6] <- result1[,2]
+  resultsHa[,7] <- result1[,3]
+  resultsHa[,8] <- result1[,4]
 
   resultsHa <- resultsHa[!is.na(resultsHa[,5] | !is.na(resultsHa[,6])),]
 

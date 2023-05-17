@@ -1,12 +1,12 @@
-# chk <- Sys.getenv("_R_CHECK_LIMIT_CORES_", "")
-#
-# if (nzchar(chk) && chk == "TRUE") {
-#   # use 2 cores in CRAN/Travis/AppVeyor
-#   num_workers <- 2L
-# } else {
-#   # use all cores in devtools::test()
-#   num_workers <- parallel::detectCores()
-# }
+chk <- Sys.getenv("_R_CHECK_LIMIT_CORES_", "")
+
+if (nzchar(chk) && chk == "TRUE") {
+# use 2 cores in CRAN/Travis/AppVeyor
+nCores <- 2L
+} else {
+# use all cores in devtools::test()
+nCores <- parallel::detectCores() - 2
+}
 
 test_that("sim_beta returns an object with certain characteristics",{
   n = 10
@@ -14,7 +14,8 @@ test_that("sim_beta returns an object with certain characteristics",{
   k = 20
   alpha = 0.05
   results <- sim_beta(simH0Dat, simHaDat, n, m, k, alpha,
-                      transformation = "none", method = "bray", dummy = FALSE)
+                      transformation = "none", method = "bray", dummy = FALSE,
+                      nCores = nCores)
 
   expect_s3_class(results, "ecocbo_beta")
   expect_equal(nrow(results$Power), (m-1) * (n-1))

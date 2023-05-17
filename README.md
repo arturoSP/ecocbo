@@ -65,12 +65,13 @@ simHaDat <- SSP::simdata(parHa, cases = 3, N = 100, sites = 10)
 
 ``` r
 betaResult <- sim_beta(simH0 = simH0Dat, simHa = simHaDat, 
-                       n = 10, m = 3, k = 20, alpha = 0.05)
+                       n = 10, m = 3, k = 20, alpha = 0.05,
+                       nCores = 2)
 betaResult
 #> Power at different sampling efforts (m x n):
 #>       n = 2 n = 3 n = 4 n = 5 n = 6 n = 7 n = 8 n = 9 n = 10
-#> m = 2 0.367 0.433 0.767 0.800  0.85 0.933  0.95 0.983      1
-#> m = 3 0.217 0.467 0.917 0.983  1.00 0.983  1.00 1.000      1
+#> m = 2  0.43  0.33  0.63  0.60  0.93  0.95  0.97  0.98   0.98
+#> m = 3  0.13  0.68  0.85  0.98  0.98  1.00  1.00  1.00   1.00
 ```
 
 ### Plot the power progression as sampling increases.
@@ -87,8 +88,8 @@ simulation](man/figures/plotm3n4.png)
 ``` r
 compVar <- scompvar(data = betaResult)
 compVar
-#>     compVarA compVarR
-#> 1 0.07397367 0.330455
+#>     compVarA  compVarR
+#> 1 0.07516266 0.3305723
 ```
 
 ### Determine optimal sampling effort

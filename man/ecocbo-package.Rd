@@ -55,7 +55,8 @@ simH0Dat <- SSP::simdata(parH0, cases = 3, N = 1000, sites = 1)
 simHaDat <- SSP::simdata(parHa, cases = 3, N = 100, sites = 10)
 }
 # Determination of power
-betaResult <- sim_beta(simH0 = simH0Dat, simHa = simHaDat, n = 10, m = 3, k = 20, alpha = 0.05)
+betaResult <- sim_beta(simH0 = simH0Dat, simHa = simHaDat,
+n = 10, m = 3, k = 20, alpha = 0.05, nCores = 2)
 betaResult
 
 # Visualization of power

@@ -14,7 +14,9 @@ sim_beta(
   alpha = 0.05,
   transformation = "none",
   method = "bray",
-  dummy = FALSE
+  dummy = FALSE,
+  useParallel = TRUE,
+  nCores = NULL
 )
 }
 \arguments{
@@ -41,6 +43,10 @@ called for that purpose.}
 
 \item{dummy}{Logical. It is recommended to use TRUE in cases where there are
 observations that are empty.}
+
+\item{useParallel}{Logical. Perform the analysis in parallel? Defaults to TRUE.}
+
+\item{nCores}{Number of cores to use if the analysis is performed in parallel.}
 }
 \value{
 \code{sim_data} returns an object of class "ecocbo_beta".
@@ -66,7 +72,8 @@ difference even if the difference is real. The power of the study is
 }
 \examples{
 sim_beta(simH0Dat, simHaDat, n = 10, m = 3, k = 20, alpha = 0.05,
-transformation = "square root", method = "bray", dummy = FALSE)
+transformation = "square root", method = "bray", dummy = FALSE,
+nCores = 2)
 
 }
 \references{
