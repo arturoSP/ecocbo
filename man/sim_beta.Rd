@@ -39,7 +39,7 @@ dominant species: 'square root', 'fourth root', 'Log (X+1)', 'P/A', 'none'}
 Bray–Curtis, Jaccard, etc). The function \code{\link[vegan]{vegdist}} is
 called for that purpose.}
 
-\item{dummy}{Logical. It is recommended to use TRUE in cases when there are
+\item{dummy}{Logical. It is recommended to use TRUE in cases where there are
 observations that are empty.}
 }
 \value{

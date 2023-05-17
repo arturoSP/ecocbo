@@ -84,6 +84,9 @@ simHaDat <- SSP::simdata(parHa, cases = 3, N = 100, sites = 10)
 | m | Maximum number of sites. |
 | k | Number of resamples the process will take. Defaults to 50. |
 | alpha | Level of significance for Type I error. Defaults to 0.05. |
+| transformation | Mathematical function to reduce the weight of very dominant species. Options are: 'square root', 'fourth root', 'Log (X+1)', 'P/A', 'none' |
+| method | The appropriate distance/dissimilarity metric that will be used by `vegan::vegdist` (e.g. Gower, Bray–Curtis, Jaccard, etc).|
+| dummy | Logical. It is recommended to use TRUE in cases where there are observations that are empty.|
 
 The value of `k` defines the number of times that the combination of sites and samples will be considered to form a statistical distribution that will establish, along with `alpha`, the probability of type I error from the simulated data. Higher values of `k` will increase the computational intensity of the process, which may result in slower execution times.
 
@@ -91,7 +94,8 @@ The function returns an object of class *ecocbo_beta* which prints to a table sh
 
 ```{r}
 betaResult <- sim_beta(simH0 = simH0Dat, simHa = simHaDat, 
-                       n = 10, m = 3, k = 20, alpha = 0.05)
+                       n = 10, m = 3, k = 20, alpha = 0.05,
+                       transformation = "none", method = "bray", dummy = FALSE)
 betaResult
 
 ```

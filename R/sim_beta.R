@@ -20,7 +20,7 @@
 #' @param method The appropriate distance/dissimilarity metric (e.g. Gower,
 #' Bray–Curtis, Jaccard, etc). The function \code{\link[vegan]{vegdist}} is
 #' called for that purpose.
-#' @param dummy Logical. It is recommended to use TRUE in cases when there are
+#' @param dummy Logical. It is recommended to use TRUE in cases where there are
 #' observations that are empty.
 #'
 #' @return \code{sim_data} returns an object of class "ecocbo_beta".
