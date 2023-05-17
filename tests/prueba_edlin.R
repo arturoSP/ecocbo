@@ -1,6 +1,6 @@
 library(devtools)
 load_all()
-build()
+#build()
 
 
 library(SSP)
@@ -47,7 +47,7 @@ betaResult <- sim_beta(simH0 = simH0Dat,
                        simHa = simHaDat,
                        n = 15, m = 5, k = 20,
                        alpha = 0.05,
-                       transformation = "fourth root",
+                       transformation = "none",
                        method = "bray",
                        dummy = TRUE)
 
@@ -62,4 +62,5 @@ cv <- scompvar(data = betaResult)
 cv
 
 plot_power(data = betaResult, m = 5)
-plot_power(data = betaResult2, m = 5)
+
+sim_cbo(comp.var = cv, ct = 20000, ck = 1200, cj = 400)

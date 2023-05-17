@@ -67,7 +67,8 @@ plot_power <- function(data, n = NULL, m, method = "both"){
 
 # Helper functions ----
 ## Power curve ----
-power_curve <- function(powr, m, n){
+power_curve <- function(powr, m, n, cVar){
+  nn <- n
   dummy <- data.frame(m = m, n = 1, Power = 0, Beta = NA,
                       fCrit = NA)
   powrPl <- powr[powr$m == m,]
@@ -79,17 +80,20 @@ power_curve <- function(powr, m, n){
                aes(x = powrPl[powrPl$n != 1, "n"],
                    y = powrPl[powrPl$n != 1, "Power"]),
                shape = 1, size = 2)+
-    geom_point(data = powrPl[powrPl$n == n,],
-               aes(x = powrPl[powrPl$n == n, "n"],
-                   y = powrPl[powrPl$n == n, "Power"]), color = "red")+
-    geom_label(aes(x = 1, y = 1, label = paste0("m = ", m)))+
+    geom_point(data = powrPl[powrPl$n == nn,],
+               aes(x = powrPl[powrPl$n == nn, "n"],
+                   y = powrPl[powrPl$n == nn, "Power"]), color = "red")+
+    geom_label(aes(x = 1.25, y = 0.9, label = paste0("m = ", m,
+                                                      "\nn = ", nn,
+                                                      "\nCV = ", cVar[1])))+
     theme_bw()+
-    scale_x_continuous(name = "Sample size", breaks = function(x)seq(0, max(powrPl$n, na.rm = T)))+
+    scale_x_continuous(name = "Sample size",
+                       breaks = function(x)seq(0, max(powrPl$n, na.rm = T)))+
     scale_y_continuous(name = "Power", limits = c(0, 1))
 }
 
 ## Probability density curve ----
-density_plot <- function(results, powr, m, n, method){
+density_plot <- function(results, powr, m, n, method, cVar){
   # intersection point (Fcrit)
   xIntersect <- powr[powr$m == m & powr$n == n,][,5]
 
@@ -150,7 +154,9 @@ density_plot <- function(results, powr, m, n, method){
     coord_cartesian(xlim = c(bottom,top))
   if(method == "density"){
     p1 <- p1 +
-      geom_label(aes(x = bottom, y = 1, label = paste0("m = ", m)))
+      geom_label(aes(x = bottom, y = 0.9, label = paste0("m = ", m,
+                                                          "\nn = ", n,
+                                                          "\nCV = ", cVar[1])))
   }
   return(p1)
 }
@@ -179,14 +185,16 @@ density_plot <- function(results, powr, m, n, method){
     stop("Available methods are \"power\", \"density\" and \"both\"")
 
   ## Plot according to the parameters ----
+  cVar <- round(scompvar(data, n, m),3)
+
   if(method == "both") {
-    p1 <- power_curve(powr, m, n)
-    p2 <- density_plot(results, powr, m, n, method)
+    p1 <- power_curve(powr, m, n, cVar)
+    p2 <- density_plot(results, powr, m, n, method, cVar = NULL)
     plotF <- ggpubr::ggarrange(p1, p2)
   } else if(method == "power") {
-    plotF <- power_curve(powr, m, n)
+    plotF <- power_curve(powr, m, n, cVar)
   } else if(method == "density") {
-    plotF <- density_plot(results, powr, m, n, method)
+    plotF <- density_plot(results, powr, m, n, method, cVar)
   }
   return(plotF)
 }
