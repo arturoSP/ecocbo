@@ -19,6 +19,9 @@ Imports:
     ggpubr,
     sampling,
     stats,
+    foreach,
+    parallel,
+    doParallel,
     vegan
 Depends: 
     R (>= 2.10)

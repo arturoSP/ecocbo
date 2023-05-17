@@ -1,4 +1,3 @@
-library(ecocbo)
 data("epiBetaR")
 
 test_that("plots are plotted", {

@@ -64,9 +64,13 @@
 #' @importFrom stats aggregate
 #' @importFrom stats quantile
 #' @importFrom sampling balancedtwostage
+#' @importFrom parallel detectCores
+#' @importFrom doParallel registerDoParallel
+#' @importFrom foreach foreach
+#' @importFrom foreach %dopar%
 #'
 #' @examples
-#' sim_beta(simH0Dat, simHaDat, n = 10, m = 3, k = 20,
+#' sim_beta(simH0Dat, simHaDat, n = 10, m = 3, k = 20, alpha = 0.05,
 #' transformation = "square root", method = "bray", dummy = FALSE)
 #'
 
@@ -135,34 +139,44 @@ sim_beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05,
   mm <- resultsHa[,3]
   nn <- resultsHa[,3] * resultsHa[,4]
 
-  for (i in seq_len(NN)){
-    sel <- sampling::balancedtwostage(Y, selection = 1, m = mm[i],
-                                      n = nn[i], PU = YPU, FALSE)
+  # mCores <- parallel::detectCores() - 1
 
-    # Replace incorrect probabilities (p < 0 and p > 1) produced by balancedtwostage
-    sel[sel[,1]<= -1, 1] <- 0
-    sel[sel[,1]>= 2, 1] <- 1
+  chk <- Sys.getenv("_R_CHECK_LIMIT_CORES_", "")
 
-    # Getting data
-    dat.H0 <- H0Sim
-    dat.Ha <- HaSim
-    rownames(sel) <- Y
-    ones <- sel[, 1]
-    y0 <- dat.H0[,,resultsHa[i,1]][ones == 1,]
-    ya <- dat.Ha[,,resultsHa[i,1]][ones == 1,]
-    perH0 <- y0[ , 1:(yH0-2)]
-    perHa <- ya[ , 1:(yH0-2)]
-    perH0Env <- y0[,yH0]
-
-    result1 <- permanova_oneway(perH0, perH0Env,
-                                transformation = transformation, method = method)
-    result2 <- permanova_oneway(perHa, perH0Env,
-                                transformation = transformation, method = method)
-    resultsHa[i,5] <- result1$Fobs
-    resultsHa[i,6] <- result2$Fobs
-    resultsHa[i,7] <- result2$AMS
-    resultsHa[i,8] <- result2$RMS
+  if (nzchar(chk) && chk == "TRUE") {
+    # use 2 cores in CRAN/Travis/AppVeyor
+    mCores <- 2L
+  } else {
+    # use all cores in devtools::test()
+    mCores <- parallel::detectCores() - 1
   }
+
+  if(mCores > 0){
+    doParallel::registerDoParallel(cores = mCores)
+
+    result1 <- foreach::foreach(i=1:NN, .combine = rbind) %dopar% {
+      balanced_sampling(i, Y, mm, nn, YPU,
+                        H0Sim, HaSim, resultsHa,
+                        transformation, method)
+    }
+    resultsHa[,5] <- result1[,1]
+    resultsHa[,6] <- result1[,2]
+    resultsHa[,7] <- result1[,3]
+    resultsHa[,8] <- result1[,4]
+  } else {
+    for (i in seq_len(NN)){
+        result1 <- balanced_sampling(i, Y, mm, nn, YPU,
+                                     H0Sim, HaSim, resultsHa,
+                                     transformation, method)
+
+        resultsHa[i,5] <- result1[,1]
+        resultsHa[i,6] <- result1[,2]
+        resultsHa[i,7] <- result1[,3]
+        resultsHa[i,8] <- result1[,4]
+    }
+  }
+
+  resultsHa <- resultsHa[!is.na(resultsHa[,5] | !is.na(resultsHa[,6])),]
 
   # Calculate power and beta ----
   resultsHa <- as.data.frame(resultsHa)
@@ -195,7 +209,7 @@ sim_beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05,
 
   powr[,4] <- 1 - powr[,3]
   rowidx <- order(powr[,1], powr[,2])
-  powr <- as.data.frame(powr[rowidx, c(1:7)])
+  powr <- as.data.frame(powr[rowidx, c(1:5)])
 
   BetaResult <- list(Power = powr, Results = resultsHa)
   class(BetaResult) <- "ecocbo_beta"

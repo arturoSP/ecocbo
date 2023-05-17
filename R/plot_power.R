@@ -69,7 +69,7 @@ plot_power <- function(data, n = NULL, m, method = "both"){
 ## Power curve ----
 power_curve <- function(powr, m, n){
   dummy <- data.frame(m = m, n = 1, Power = 0, Beta = NA,
-                      fCrit = NA, AMSHa = NA, RMSHa = NA)
+                      fCrit = NA)
   powrPl <- powr[powr$m == m,]
   powrPl <- rbind(powrPl, dummy)
   ggplot(data = powrPl,
