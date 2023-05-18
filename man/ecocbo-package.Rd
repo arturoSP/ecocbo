@@ -53,17 +53,18 @@ parHa <- SSP::assempar(data = epiHa, type = "counts", Sest.method = "average")
 # Simulation.
 simH0Dat <- SSP::simdata(parH0, cases = 3, N = 1000, sites = 1)
 simHaDat <- SSP::simdata(parHa, cases = 3, N = 100, sites = 10)
-}
+
 # Determination of power
-betaResult <- sim_beta(simH0 = simH0Dat, simHa = simHaDat,
+epiBetaR <- sim_beta(simH0 = simH0Dat, simHa = simHaDat,
 n = 10, m = 3, k = 20, alpha = 0.05, nCores = 2)
-betaResult
+}
+epiBetaR
 
 # Visualization of power
-plot_power(data = betaResult, n = NULL, m = 2, method = "both")
+plot_power(data = epiBetaR, n = NULL, m = 3, method = "both")
 
 # Computing components of variation
-compVar <- scompvar(data = betaResult)
+compVar <- scompvar(data = epiBetaR)
 compVar
 
 # Cost-benefit optimization
