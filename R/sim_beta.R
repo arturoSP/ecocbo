@@ -259,13 +259,13 @@ sim_beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05,
   nn <- resultsHa[,3] * resultsHa[,4]
 
   if(useParallel){
-    result1 <- foreach::foreach(i=1:NN, .combine = rbind, .packages = "ecocbo") %dopar% {
+    result1 <- foreach::foreach(i=1:NN, .combine = rbind) %dopar% {
       balanced_sampling(i, Y, mm, nn, YPU,
                         H0Sim, HaSim, resultsHa,
                         transformation, method)
     }
   } else {
-    result1 <- foreach::foreach(i=1:NN, .combine = rbind, .packages = "ecocbo") %do% {
+    result1 <- foreach::foreach(i=1:NN, .combine = rbind) %do% {
       balanced_sampling(i, Y, mm, nn, YPU,
                         H0Sim, HaSim, resultsHa,
                         transformation, method)
