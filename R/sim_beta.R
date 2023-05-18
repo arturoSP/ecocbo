@@ -70,7 +70,6 @@
 #' @importFrom doParallel registerDoParallel
 #' @importFrom foreach foreach
 #' @importFrom foreach %dopar%
-#' @importFrom foreach %do%
 #'
 #' @examples
 #' sim_beta(simH0Dat, simHaDat, n = 10, m = 3, k = 20, alpha = 0.05,
@@ -91,6 +90,8 @@ sim_beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05,
     if(!is.null(nCores)){
       doParallel::registerDoParallel(cores = nCores)
     }
+  } else {
+    nCores = 1
   }
 
   N <- max(simHa[[1]][,'N'])
@@ -164,18 +165,21 @@ sim_beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05,
                         H0Sim, HaSim, resultsHa,
                         transformation, method)
     }
+    resultsHa[,5] <- result1[,1]
+    resultsHa[,6] <- result1[,2]
+    resultsHa[,7] <- result1[,3]
+    resultsHa[,8] <- result1[,4]
   } else {
-    result1 <- foreach::foreach(i=1:NN, .combine = rbind, .packages = "ecocbo") %do% {
-      balanced_sampling(i, Y, mm, nn, YPU,
-                        H0Sim, HaSim, resultsHa,
-                        transformation, method)
+    for (i in seq_len(NN)){
+      result1 <- balanced_sampling(i, Y, mm, nn, YPU,
+                                   H0Sim, HaSim, resultsHa,
+                                   transformation, method)
+      resultsHa[i,5] <- result1[,1]
+      resultsHa[i,6] <- result1[,2]
+      resultsHa[i,7] <- result1[,3]
+      resultsHa[i,8] <- result1[,4]
     }
   }
-
-  resultsHa[,5] <- result1[,1]
-  resultsHa[,6] <- result1[,2]
-  resultsHa[,7] <- result1[,3]
-  resultsHa[,8] <- result1[,4]
 
   resultsHa <- resultsHa[!is.na(resultsHa[,5] | !is.na(resultsHa[,6])),]
 
