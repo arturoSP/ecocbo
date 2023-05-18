@@ -70,8 +70,8 @@ betaResult <- sim_beta(simH0 = simH0Dat, simHa = simHaDat,
 betaResult
 #> Power at different sampling efforts (m x n):
 #>       n = 2 n = 3 n = 4 n = 5 n = 6 n = 7 n = 8 n = 9 n = 10
-#> m = 2  0.43  0.33  0.63  0.60  0.93  0.95  0.97  0.98   0.98
-#> m = 3  0.13  0.68  0.85  0.98  0.98  1.00  1.00  1.00   1.00
+#> m = 2  0.28  0.25  0.65  0.80  0.88  0.87  0.97  0.98      1
+#> m = 3  0.30  0.68  0.95  0.95  0.98  1.00  1.00  1.00      1
 ```
 
 ### Plot the power progression as sampling increases.
@@ -89,7 +89,7 @@ simulation](man/figures/plotm3n4.png)
 compVar <- scompvar(data = betaResult)
 compVar
 #>     compVarA  compVarR
-#> 1 0.07516266 0.3305723
+#> 1 0.06914077 0.3336566
 ```
 
 ### Determine optimal sampling effort
@@ -107,7 +107,7 @@ cboCost
 #> 1   10    5
 cboPrecision
 #>   nOpt bOpt
-#> 1   10   10
+#> 1   10    9
 ```
 
 ## R packages required for running ecocbo
