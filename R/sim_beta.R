@@ -234,13 +234,15 @@ sim_beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05,
 #' @usage
 #' \method{print}{ecocbo_beta}(x, ...)
 #'
-#' @description Prints for \code{ecocbo::sim_beta} objects.
+#' @description prints for \code{ecocbo::sim_beta} objects.
 #'
 #' @param x Object from \code{ecocbo::sim_beta} function.
 #'
 #' @param ... Additional arguments
 #'
-#' @return Prints \code{ecocbo::sim_beta} function.
+#' @return Prints the result of \code{ecocbo::sim_beta} function, showing in an
+#' ordered matrix the estimated power for the different experimental designs
+#' that were considered.
 #'
 # Print ecocbo_beta
 #' @export

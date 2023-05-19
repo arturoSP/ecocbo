@@ -10,25 +10,23 @@ The dataset contains the results of applying ecocbo::sim_beta to epiDat. The res
 \usage{data("epiBetaR")}
 \format{
   An object of class "ecocbo_beta", also a list of two data frames. The format is:
-  \describe{
-  \item{code{$Power}}{a data frame with 12 obs. of 7 variables}
-    \item{code{m}}{a numeric vector}
-    \item{code{n}}{a numeric vector}
-    \item{code{Power}}{a numeric vector}
-    \item{code{Beta}}{a numeric vector}
-    \item{code{fCrit}}{a numeric vector}
-    \item{code{AMSHa}}{a numeric vector}
-    \item{code{RMSHa}}{a numeric vector}
-  \item{code{$Results}}{a data frame with 720 obs. of 8 variables}
-    \item{code{dat.sim}}{a numeric vector}
-    \item{code{k}}{a numeric vector}
-    \item{code{m}}{a numeric vector}
-    \item{code{n}}{a numeric vector}
-    \item{code{pseudoFH0}}{a numeric vector}
-    \item{code{pseudoFHa}}{a numeric vector}
-    \item{code{AMSHa}}{a numeric vector}
-    \item{code{RMSHa}}{a numeric vector}
-}
+  \tabular{rll}{
+  $Power   \tab             \tab a data frame that contains power levels at different experimental designs.\cr
+           \tab m           \tab number of sites. \cr
+           \tab n           \tab number of replicates within each site. \cr
+           \tab Power       \tab estimation of power for the experimental design. \cr
+           \tab Beta        \tab estimation of error type II for the experimental design. \cr
+           \tab fCrit       \tab value of observed F according to the required alpha. \cr
+  $Results \tab             \tab a data frame that contains the results of the evaluation of sim_beta. \cr
+           \tab dat.sim     \tab simulation from which the results are obtained. \cr
+           \tab k           \tab number of resample for the result. \cr
+           \tab m           \tab number of sites considered for the result. \cr
+           \tab n           \tab number of replicates within each site for the result. \cr
+           \tab pseudoFH0   \tab observed F value for the experimental design, when all observations belong to one site. \cr
+           \tab pseudoFHa   \tab observed F value for the experimental design, when observations belong to different sites. \cr
+           \tab AMSHa       \tab calculated mean squares among sites in the experiment. \cr
+           \tab RMSHa       \tab calculated mean squares for the residuals in the experiment. \cr
+  }
 }
 \details{
 This dataset comes from applying `ecocbo::sim_beta()` to the basic data from `ecocbo::epiDat`
