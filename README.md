@@ -66,12 +66,12 @@ simHaDat <- SSP::simdata(parHa, cases = 3, N = 100, sites = 10)
 ``` r
 betaResult <- sim_beta(simH0 = simH0Dat, simHa = simHaDat, 
                        n = 10, m = 3, k = 20, alpha = 0.05,
-                       nCores = 2)
+                       useParallel = F)
 betaResult
 #> Power at different sampling efforts (m x n):
 #>       n = 2 n = 3 n = 4 n = 5 n = 6 n = 7 n = 8 n = 9 n = 10
-#> m = 2  0.28  0.25  0.65  0.80  0.88  0.87  0.97  0.98      1
-#> m = 3  0.30  0.68  0.95  0.95  0.98  1.00  1.00  1.00      1
+#> m = 2  0.17  0.58  0.57  0.73  0.93  0.93  0.92  0.95   0.98
+#> m = 3  0.47  0.67  0.93  0.98  0.97  0.98  1.00  1.00   1.00
 ```
 
 ### Plot the power progression as sampling increases.
@@ -89,7 +89,7 @@ simulation](man/figures/plotm3n4.png)
 compVar <- scompvar(data = betaResult)
 compVar
 #>     compVarA  compVarR
-#> 1 0.06914077 0.3336566
+#> 1 0.06991422 0.3326456
 ```
 
 ### Determine optimal sampling effort
@@ -107,7 +107,7 @@ cboCost
 #> 1   10    5
 cboPrecision
 #>   nOpt bOpt
-#> 1   10    9
+#> 1   10   10
 ```
 
 ## R packages required for running ecocbo

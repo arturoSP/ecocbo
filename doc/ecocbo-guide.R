@@ -34,7 +34,7 @@ knitr::opts_chunk$set(
 betaResult <- sim_beta(simH0 = simH0Dat, simHa = simHaDat, 
                        n = 10, m = 3, k = 20, alpha = 0.05,
                        transformation = "none", method = "bray", dummy = FALSE,
-                       nCores = 2)
+                       useParallel = F)
 betaResult
 
 

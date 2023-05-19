@@ -96,7 +96,7 @@ The function returns an object of class *ecocbo_beta* which prints to a table sh
 betaResult <- sim_beta(simH0 = simH0Dat, simHa = simHaDat, 
                        n = 10, m = 3, k = 20, alpha = 0.05,
                        transformation = "none", method = "bray", dummy = FALSE,
-                       nCores = 2)
+                       useParallel = F)
 betaResult
 
 ```

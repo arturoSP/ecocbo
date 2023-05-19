@@ -22,8 +22,7 @@
 #' called for that purpose.
 #' @param dummy Logical. It is recommended to use TRUE in cases where there are
 #' observations that are empty.
-#' @param useParallel Logical. Perform the analysis in parallel? Defaults to TRUE.
-#' @param nCores Number of cores to use if the analysis is performed in parallel.
+#' @param useParallel Logical. Perform the analysis in parallel? Defaults to FALSE.
 #'
 #' @return \code{sim_data} returns an object of class "ecocbo_beta".
 #'
@@ -67,6 +66,9 @@
 #' @importFrom stats quantile
 #' @importFrom sampling balancedtwostage
 #' @importFrom parallel detectCores
+#' @importFrom parallel makeCluster
+#' @importFrom parallel stopCluster
+#' @importFrom parallel clusterExport
 #' @importFrom doParallel registerDoParallel
 #' @importFrom foreach foreach
 #' @importFrom foreach %dopar%
@@ -74,24 +76,18 @@
 #' @examples
 #' sim_beta(simH0Dat, simHaDat, n = 10, m = 3, k = 20, alpha = 0.05,
 #' transformation = "square root", method = "bray", dummy = FALSE,
-#' nCores = 2)
+#' useParallel = FALSE)
 #'
 
 sim_beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05,
                      transformation = "none", method = "bray", dummy = FALSE,
-                     useParallel = TRUE, nCores = NULL){
+                     useParallel = FALSE){
+  #source("./R/utils.R")
   # Check the inputs ----
 
   if(useParallel){
-    if(is.null(nCores)){
-      nCores <- parallel::detectCores()-2
-      doParallel::registerDoParallel(cores = nCores)
-    }
-    if(!is.null(nCores)){
-      doParallel::registerDoParallel(cores = nCores)
-    }
-  } else {
-    nCores = 1
+    cl <- parallel::makeCluster(parallel::detectCores() - 2)
+    doParallel::registerDoParallel(cl)
   }
 
   N <- max(simHa[[1]][,'N'])
@@ -111,8 +107,6 @@ sim_beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05,
   if(length(simH0) != length(simHa) |
      dim(simH0[[1]])[1] != dim(simHa[[1]])[1] |
      dim(simH0[[1]])[2] != dim(simHa[[1]])[2]){stop("dimensions for simH0 and simHa do not match")}
-
-  if(nCores < 2){useParallel = FALSE}
 
   # Simulation parameters ---
   xH0 <- dim(simHa[[1]])[1]
@@ -160,7 +154,8 @@ sim_beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05,
   nn <- resultsHa[,3] * resultsHa[,4]
 
   if(useParallel){
-    result1 <- foreach::foreach(i=1:NN, .combine = rbind, .packages = "ecocbo") %dopar% {
+    parallel::clusterExport(cl, list("balanced_sampling", "permanova_oneway"))
+    result1 <- foreach::foreach(i=1:NN, .combine = rbind) %dopar% {
       balanced_sampling(i, Y, mm, nn, YPU,
                         H0Sim, HaSim, resultsHa,
                         transformation, method)
@@ -169,17 +164,20 @@ sim_beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05,
     resultsHa[,6] <- result1[,2]
     resultsHa[,7] <- result1[,3]
     resultsHa[,8] <- result1[,4]
-  } else {
-    for (i in seq_len(NN)){
-      result1 <- balanced_sampling(i, Y, mm, nn, YPU,
-                                   H0Sim, HaSim, resultsHa,
-                                   transformation, method)
-      resultsHa[i,5] <- result1[,1]
-      resultsHa[i,6] <- result1[,2]
-      resultsHa[i,7] <- result1[,3]
-      resultsHa[i,8] <- result1[,4]
+
+    parallel::stopCluster(cl)
+    } else {
+      for (i in seq_len(NN)){
+        result1 <- balanced_sampling(i, Y, mm, nn, YPU,
+                                     H0Sim, HaSim, resultsHa,
+                                     transformation, method)
+        resultsHa[i,5] <- result1[,1]
+        resultsHa[i,6] <- result1[,2]
+        resultsHa[i,7] <- result1[,3]
+        resultsHa[i,8] <- result1[,4]
+      }
     }
-  }
+
 
   resultsHa <- resultsHa[!is.na(resultsHa[,5] | !is.na(resultsHa[,6])),]
 
@@ -218,6 +216,7 @@ sim_beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05,
 
   BetaResult <- list(Power = powr, Results = resultsHa)
   class(BetaResult) <- "ecocbo_beta"
+
   return(BetaResult)
 }
 
