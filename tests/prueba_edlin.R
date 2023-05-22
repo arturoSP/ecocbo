@@ -45,11 +45,12 @@ simHaDat <- simdata(Par = parHa, cases = 10, N = 100, sites = 10)
 
 betaResult <- sim_beta(simH0 = simH0Dat,
                        simHa = simHaDat,
-                       n = 15, m = 5, k = 20,
+                       n = 10, m = 5, k = 20,
                        alpha = 0.05,
-                       transformation = "none",
+                       transformation = "square root",
                        method = "bray",
-                       dummy = TRUE)
+                       dummy = TRUE,
+                       useParallel = F)
 
 profvis::profvis(sim_beta(simH0 = simH0Dat,
                        simHa = simHaDat,

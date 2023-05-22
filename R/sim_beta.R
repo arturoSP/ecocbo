@@ -65,13 +65,9 @@
 #' @importFrom stats aggregate
 #' @importFrom stats quantile
 #' @importFrom sampling balancedtwostage
-#' @importFrom parallel detectCores
-#' @importFrom parallel makeCluster
-#' @importFrom parallel stopCluster
-#' @importFrom parallel clusterExport
-#' @importFrom doParallel registerDoParallel
-#' @importFrom foreach foreach
-#' @importFrom foreach %dopar%
+#' @import parallel
+#' @import doParallel
+#' @import foreach
 #'
 #' @examples
 #' sim_beta(simH0Dat, simHaDat, n = 10, m = 3, k = 20, alpha = 0.05,
