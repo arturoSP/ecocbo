@@ -50,7 +50,7 @@ betaResult <- sim_beta(simH0 = simH0Dat,
                        transformation = "square root",
                        method = "bray",
                        dummy = TRUE,
-                       useParallel = F)
+                       useParallel = T)
 
 profvis::profvis(sim_beta(simH0 = simH0Dat,
                        simHa = simHaDat,

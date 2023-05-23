@@ -11,6 +11,8 @@
 #' @param transformation Mathematical function to reduce the weight of very
 #' dominant species
 #'
+#' @export
+#'
 #' @noRd
 
 permanova_oneway <- function(x, factEnv, type = "P", method = "bray", transformation = "none"){
@@ -141,6 +143,8 @@ permanova_oneway <- function(x, factEnv, type = "P", method = "bray", transforma
 #' Bray–Curtis, Jaccard, etc)
 #' @param transformation Mathematical function to reduce the weight of very
 #' dominant species
+#'
+#' @export
 #'
 #' @noRd
 
