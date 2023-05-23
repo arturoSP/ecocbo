@@ -25,7 +25,7 @@
 #'
 #' @export
 #' @keywords internal
-
+#' @noRd
 
 permanova_oneway <- function(x, factEnv, type = "P", method = "bray", transformation = "none"){
 
@@ -169,6 +169,7 @@ permanova_oneway <- function(x, factEnv, type = "P", method = "bray", transforma
 #'
 #' @export
 #' @keywords internal
+#' @noRd
 
 balanced_sampling <- function(i, Y, mm, nn, YPU, H0Sim, HaSim, resultsHa, transformation, method){
   # Get the samples index
