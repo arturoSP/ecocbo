@@ -1,6 +1,7 @@
 #' PERMANOVA one-way
 #'
-#' Calculates observed F and mean squares for the residuals and among sites
+#' Calculates observed F and mean squares for the residuals and among sites. This
+#' function is a helper for \code{\link{sim_beta}}.
 #'
 #' @param x ecological community data
 #' @param factEnv label for the community data
@@ -11,9 +12,20 @@
 #' @param transformation Mathematical function to reduce the weight of very
 #' dominant species
 #'
-#' @export
+#' @return A data frame containing the resulting PERMANOVA table.
+#' @author Edlin Guerra-Castro (\email{edlinguerra@@gmail.com}), Arturo Sanchez-Porras
 #'
-#' @noRd
+#' @references Underwood, A. J. (1997). Experiments in ecology: their logical
+#' design and interpretation using analysis of variance. Cambridge university
+#' press.
+#' @references Anderson, M. J. (2014). Permutational multivariate analysis of
+#' variance (PERMANOVA). Wiley statsref: statistics reference online, 1-15.
+#'
+#' @importFrom vegan vegdist
+#'
+#' @export
+#' @keywords internal
+
 
 permanova_oneway <- function(x, factEnv, type = "P", method = "bray", transformation = "none"){
 
@@ -144,9 +156,19 @@ permanova_oneway <- function(x, factEnv, type = "P", method = "bray", transforma
 #' @param transformation Mathematical function to reduce the weight of very
 #' dominant species
 #'
-#' @export
+#' @return a data frame with values for observed F (for H0 and Ha), and the Ha mean
+#' squares for residuals and variation among sites.
 #'
-#' @noRd
+#' @author Edlin Guerra-Castro (\email{edlinguerra@@gmail.com}), Arturo Sanchez-Porras
+#'
+#' @references Underwood, A. J. (1997). Experiments in ecology: their logical
+#' design and interpretation using analysis of variance. Cambridge university
+#' press.
+#'
+#' @importFrom sampling balancedtwostage
+#'
+#' @export
+#' @keywords internal
 
 balanced_sampling <- function(i, Y, mm, nn, YPU, H0Sim, HaSim, resultsHa, transformation, method){
   # Get the samples index

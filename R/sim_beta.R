@@ -64,7 +64,6 @@
 #' @importFrom stats reshape
 #' @importFrom stats aggregate
 #' @importFrom stats quantile
-#' @importFrom sampling balancedtwostage
 #' @import parallel
 #' @import doParallel
 #' @import foreach
