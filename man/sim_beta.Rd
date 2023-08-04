@@ -57,6 +57,7 @@ An object of class "ecocbo_beta" is a list containing the following components:
 several combination of sampling efforts (\code{m} sites and \code{n} samples).
 \item \code{Results} a data frame containing the estimates of pseudoF for \code{simH0}
 and \code{simHa}.
+\item \code{alpha} level of significance for Type I error.
 }
 }
 \description{

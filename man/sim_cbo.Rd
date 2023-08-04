@@ -20,7 +20,7 @@ sampling experiment.}
 \item{cj}{Cost per unit.}
 }
 \value{
-A data frame containing the optimized values for \code{b} number of
+A data frame containing the optimized values for \code{m} number of
 sites and \code{n} number of samples to consider.
 }
 \description{

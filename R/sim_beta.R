@@ -35,6 +35,7 @@
 #' several combination of sampling efforts (\code{m} sites and \code{n} samples).
 #'   \item \code{Results} a data frame containing the estimates of pseudoF for \code{simH0}
 #' and \code{simHa}.
+#'   \item \code{alpha} level of significance for Type I error.
 #' }
 #'
 #' @author Edlin Guerra-Castro (\email{edlinguerra@@gmail.com}), Arturo Sanchez-Porras
@@ -87,11 +88,11 @@ sim_beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05,
 
   N <- max(simHa[[1]][,'N'])
   sites <- max(as.numeric(simHa[[1]][,'sites']))
-  if (n > N){stop("'n' must be equal or less than 'N'")}
+  if (n > N){stop("'n' must be equal or less than 'N' on simulated data")}
   if(ceiling(n) != floor(n)){stop("n must be integer")}
   if(n <= 1){stop("n must be larger than 1")}
 
-  if (m > sites){stop("'m' must be equal or less than 'sites'")}
+  if (m > sites){stop("'m' must be equal or less than 'sites' on simulated data")}
   if(ceiling(m) != floor(m)){stop("m must be integer")}
   if(m <= 1){stop("m must be larger than 1")}
 
@@ -184,10 +185,10 @@ sim_beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05,
   totDim <- stats::aggregate(resultsHa[,5],
                       by = list(resultsHa$m, resultsHa$n),
                       length)
-  AMSHa <- stats::aggregate(resultsHa[,8],
+  AMSHa <- stats::aggregate(resultsHa[,7],
                      by = list(resultsHa$m, resultsHa$n),
                      mean, na.rm = T)
-  RMSHa <- stats::aggregate(resultsHa[,7],
+  RMSHa <- stats::aggregate(resultsHa[,8],
                      by = list(resultsHa$m, resultsHa$n),
                      mean, na.rm = T)
   powr <- matrix(nrow = dim(fCrit)[1], ncol = 8)
@@ -209,7 +210,7 @@ sim_beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05,
   rowidx <- order(powr[,1], powr[,2])
   powr <- as.data.frame(powr[rowidx, c(1:5)])
 
-  BetaResult <- list(Power = powr, Results = resultsHa)
+  BetaResult <- list(Power = powr, Results = resultsHa, alpha = alpha)
   class(BetaResult) <- "ecocbo_beta"
 
   return(BetaResult)

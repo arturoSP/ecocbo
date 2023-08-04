@@ -118,8 +118,8 @@ density_plot <- function(results, powr, m, n, method, cVar){
 
   # Compute density matrices form FHa and FH0.
   # Values for Y are normalized 0-1
-  denHa <- density(resultsPl$pseudoFHa, n = 128, adjust = 1.5, na.rm = T) # n = 128 as it has to be a power of 2
-  denH0 <- density(resultsPl$pseudoFH0, n = 128, adjust = 1.5, na.rm = T)
+  denHa <- stats::density(resultsPl$pseudoFHa, n = 128, adjust = 1.5, na.rm = T) # n = 128 as it has to be a power of 2
+  denH0 <- stats::density(resultsPl$pseudoFH0, n = 128, adjust = 1.5, na.rm = T)
   densHa <- data.frame(x = 1:128, y = NA)
   densHa[,1] <- denHa[["x"]]
   densHa[,2] <- denHa[["y"]]
@@ -164,25 +164,32 @@ density_plot <- function(results, powr, m, n, method, cVar){
 # Main function ----
 # plot_power <- function(data, n = NULL, m, method = "both")
   ## Reading data ----
-  if(!inherits(data, "ecocbo_beta"))
-  #if(!is(data, "ecocbo_beta"))
+  if(!inherits(data, "ecocbo_beta")){
     stop("data is not the right class(\"ecocbo_beta\")")
+  }
 
   powr <- data[["Power"]]
   results <- data[["Results"]]
+  alpha <- data[["alpha"]]
 
   ## Validating data  ----
   if(ceiling(m) != floor(m)){stop("m must be integer")}
   if(m <= 1){stop("m must be larger than 1")}
   if(m > max(powr$m)){stop("m is langer than the simulated m value")}
 
-  if(is.null(n)){n <- max(powr[powr$m == m & powr$Power<1,][2])}
+  #if(is.null(n)){n <- max(powr[powr$m == m & powr$Power<1,][2])}
+  if(is.null(n)){
+    powm <- powr[powr$m == m,]
+    n <- powm[which.min(abs(powm$Power - (1 - alpha))),2]
+    remove(powm)
+  }
   if(ceiling(n) != floor(n)){stop("n must be integer")}
   if(n <= 1){stop("n must be larger than 1")}
   if(n > max(powr$n)){stop("n is larger than the simulated n value")}
 
-  if(method != "both" & method != "power" & method != "density")
+  if(method != "both" & method != "power" & method != "density"){
     stop("Available methods are \"power\", \"density\" and \"both\"")
+  }
 
   ## Plot according to the parameters ----
   cVar <- round(scompvar(data, n, m),3)

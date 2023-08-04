@@ -11,7 +11,7 @@
 #' @param ck Cost per replicate.
 #' @param cj Cost per unit.
 #'
-#' @return A data frame containing the optimized values for \code{b} number of
+#' @return A data frame containing the optimized values for \code{m} number of
 #' sites and \code{n} number of samples to consider.
 #'
 #' @author Edlin Guerra-Castro (\email{edlinguerra@@gmail.com}), Arturo Sanchez-Porras
@@ -42,27 +42,27 @@ sim_cbo <- function(comp.var, multSE = NULL, ct = NULL, ck, cj){
 # Optimal cost-benefit model
 
 # Helper functions ----
-# Function to determine optimal b by setting costs.
+# Function to determine optimal m by setting costs.
 cost_n <- function(n, ct, ck, cj){
-  b <- data.frame(nOpt = n, bOpt = NA)
+  m <- data.frame(nOpt = n, mOpt = NA)
 
   # Using equation 9.19 (Underwood, 1997)
-  b[,2] <- floor(ct / (n * ck + cj))
-  b[,1] <- floor(b[,1])
+  m[,2] <- floor(ct / (n * ck + cj))
+  m[,1] <- floor(m[,1])
 
-  return(b)
+  return(m)
 }
 
-# Function to determine optimal b by setting desired variability.
-cost_v <- function(comp.var, multSE, n){
-  b <- data.frame(nOpt = n, bOpt = NA)
+# Function to determine optimal m by setting desired variability.
+cost_v <- function(n, comp.var, multSE){
+  m <- data.frame(nOpt = n, mOpt = NA)
 
   # Using equation 9.18 (Underwood, 1997)
-  b[,2] <- floor((comp.var[,2] + b$nOpt * comp.var[,1]) /
-                   (multSE * multSE * b$nOpt))
-  b[,1] <- floor(b[,1])
+  m[,2] <- floor((comp.var[,2] + m$nOpt * comp.var[,1]) /
+                   (multSE * multSE * m$nOpt))
+  m[,1] <- floor(m[,1])
 
-  return(b)
+  return(m)
 }
 
 # Main function ----
@@ -77,12 +77,12 @@ cost_v <- function(comp.var, multSE, n){
   ## Calculate optimal n ----
   nOpt <- sqrt((cj * comp.var[,2]) / (ck * comp.var[,1]))
 
-  ## Calculate optimal b ----
+  ## Calculate optimal m ----
   if(is.null(multSE)) {
-    b <- cost_n(nOpt, ct, ck, cj)
+    m <- cost_n(nOpt, ct, ck, cj)
   } else {
-    b <- cost_v(comp.var, multSE, nOpt)
+    m <- cost_v(nOpt, comp.var, multSE)
   }
-  return(b)
+  return(m)
 }
 
