@@ -22,7 +22,7 @@ library(ecocbo)
  
 <!-- badges: end -->
 
-## A Tool for Calculating Optimum Sampling Effort in Community Ecology
+## Calculating Optimum Sampling Effort in Community Ecology
 
 **ecocbo** is an R package that helps scientists calculate the optimum sampling effort for community ecology projects. The package is based on the principles developed in the [SSP](https://github.com/edlinguerra/SSP) package, which simulates ecological communities by extracting and using parameters that control the simulation. The simulated communities are then compared with PERMANOVA to estimate their components of variation and consequently the optimal sampling effort.
 
@@ -30,11 +30,13 @@ library(ecocbo)
 
 ## Installation
 
-You can install the development version of ecocbo from [GitHub](https://github.com/) with:
-
 ``` r
+# You can easilly obtain 'ecocbo' from CRAN:
+install.packages("ecocbo")
+
+# Alternatively, you can install the development version of ecocbo from [GitHub](https://github.com/):
 # install.packages("devtools")
-devtools::install_github("edlinguerra/ecocbo")
+devtools::install_github("arturoSP/ecocbo")
 ```
 
 ## Example

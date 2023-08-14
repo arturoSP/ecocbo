@@ -10,7 +10,7 @@
 
 <!-- badges: end -->
 
-## A Tool for Calculating Optimum Sampling Effort in Community Ecology
+## Calculating Optimum Sampling Effort in Community Ecology
 
 **ecocbo** is an R package that helps scientists calculate the optimum
 sampling effort for community ecology projects. The package is based on
@@ -28,12 +28,13 @@ necessary to achieve their research goals.
 
 ## Installation
 
-You can install the development version of ecocbo from
-[GitHub](https://github.com/) with:
-
 ``` r
+# You can easilly obtain 'ecocbo' from CRAN:
+install.packages("ecocbo")
+
+# Alternatively, you can install the development version of ecocbo from [GitHub](https://github.com/):
 # install.packages("devtools")
-devtools::install_github("edlinguerra/ecocbo")
+devtools::install_github("arturoSP/ecocbo")
 ```
 
 ## Example
@@ -70,8 +71,8 @@ betaResult <- sim_beta(simH0 = simH0Dat, simHa = simHaDat,
 betaResult
 #> Power at different sampling efforts (m x n):
 #>       n = 2 n = 3 n = 4 n = 5 n = 6 n = 7 n = 8 n = 9 n = 10
-#> m = 2  0.17  0.58  0.57  0.73  0.93  0.93  0.92  0.95   0.98
-#> m = 3  0.47  0.67  0.93  0.98  0.97  0.98  1.00  1.00   1.00
+#> m = 2  0.20  0.55  0.72  0.82  0.93  0.97  1.00  0.98      1
+#> m = 3  0.43  0.50  0.98  0.92  1.00  1.00  0.98  1.00      1
 ```
 
 ### Plot the power progression as sampling increases.
@@ -80,16 +81,20 @@ betaResult
 plot_power(data = betaResult, n = NULL, m = 3, method = "power")
 ```
 
-![This plot will look different in every
-simulation](man/figures/plotm3n4.png)
+<figure>
+<img src="man/figures/plotm3n4.png"
+alt="This plot will look different in every simulation" />
+<figcaption aria-hidden="true">This plot will look different in every
+simulation</figcaption>
+</figure>
 
 ### Calculate components of variation.
 
 ``` r
 compVar <- scompvar(data = betaResult)
 compVar
-#>     compVarA  compVarR
-#> 1 0.06991422 0.3326456
+#>    compVarA  compVarR
+#> 1 0.0717776 0.3303087
 ```
 
 ### Determine optimal sampling effort
@@ -103,10 +108,10 @@ treatments (bOpt) and replicates (nOpt).
 cboCost <- sim_cbo(comp.var = compVar, ct = 20000, ck = 100, cj = 2500)
 cboPrecision <- sim_cbo(comp.var = compVar, multSE = 0.10, ck = 100, cj = 2500)
 cboCost
-#>   nOpt bOpt
+#>   nOpt mOpt
 #> 1   10    5
 cboPrecision
-#>   nOpt bOpt
+#>   nOpt mOpt
 #> 1   10   10
 ```
 
