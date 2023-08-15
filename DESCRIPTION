@@ -1,6 +1,6 @@
 Package: ecocbo
 Title: Calculating Optimum Sampling Effort in Community Ecology
-Version: 0.9.2
+Version: 0.10.0
 Authors@R: c(person(given = "Edlin", family = "Guerra-Castro", 
                     role = c("aut", "cph"), email = "edlinguerra@gmail.com",
                     comment = c(ORCID = "0000-0003-3529-4507")),
