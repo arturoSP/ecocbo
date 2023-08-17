@@ -8,15 +8,15 @@
 \method{print}{ecocbo_beta}(x, ...)
 }
 \arguments{
-\item{x}{Object from \code{ecocbo::sim_beta} function.}
+\item{x}{Object from \code{ecocbo::sim_beta()} function.}
 
 \item{...}{Additional arguments}
 }
 \value{
-Prints the result of \code{ecocbo::sim_beta} function, showing in an
+Prints the result of \code{ecocbo::sim_beta()} function, showing in an
 ordered matrix the estimated power for the different experimental designs
 that were considered.
 }
 \description{
-prints for \code{ecocbo::sim_beta} objects.
+prints for \code{ecocbo::sim_beta()} objects.
 }

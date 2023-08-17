@@ -1,16 +1,16 @@
 #' PERMANOVA one-way
 #'
 #' Calculates observed F and mean squares for the residuals and among sites. This
-#' function is a helper for \code{\link{sim_beta}}.
+#' function is a helper for [sim_beta()].
 #'
-#' @param x ecological community data
-#' @param factEnv label for the community data
-#' @param type which algorithm to use for the calculation? Options are "P" and
-#' "BF"
+#' @param x ecological community data.
+#' @param factEnv label for the community data.
+#' @param type which algorithm to use for the calculation? At the moment, the only
+#' option is "P".
 #' @param method appropriate distance/dissimilarity metric (e.g. Gower,
-#' Bray–Curtis, Jaccard, etc)
+#' Bray–Curtis, Jaccard, etc).
 #' @param transformation Mathematical function to reduce the weight of very
-#' dominant species
+#' dominant species.
 #'
 #' @return A data frame containing the resulting PERMANOVA table.
 #' @author Edlin Guerra-Castro (\email{edlinguerra@@gmail.com}), Arturo Sanchez-Porras
@@ -22,6 +22,8 @@
 #' variance (PERMANOVA). Wiley statsref: statistics reference online, 1-15.
 #'
 #' @importFrom vegan vegdist
+#'
+#' @seealso [vegan::vegdist()]
 #'
 #' @export
 #' @keywords internal
@@ -140,20 +142,21 @@ permanova_oneway <- function(x, factEnv, type = "P", method = "bray", transforma
 #'
 #' Develops the experimental design based on the provided conditions
 #'
-#' @param i pointer to the index in the list of experimental designs to try
-#' @param Y index to the data.frame the function will work with
-#' @param mm number of site the function is working with in each iteration
-#' @param nn number of samples to consider in each iteration
-#' @param YPU label for the sites in each iteration
-#' @param H0Sim simulated community from \code{SSP::simdata} in which H0 is
-#' true
-#' @param HaSim simulated community from \code{SSP::simdata} in which H0 is
-#' false
-#' @param resultsHa helper matrix that stores labels and later the results
+#' @param i pointer to the index in the list of experimental designs to try.
+#' @param Y index to the data.frame the function will work with.
+#' @param mm number of site the function is working with in each iteration.
+#' @param nn number of samples to consider in each iteration.
+#' @param YPU label for the sites in each iteration, as used by
+#' [sampling::balancedtwostage()]
+#' @param H0Sim simulated community from \code{SSP::simdata()} in which H0 is
+#' true.
+#' @param HaSim simulated community from \code{SSP::simdata()} in which H0 is
+#' false.
+#' @param resultsHa helper matrix that stores labels and later the results.
 #' @param method appropriate distance/dissimilarity metric (e.g. Gower,
-#' Bray–Curtis, Jaccard, etc)
+#' Bray–Curtis, Jaccard, etc).
 #' @param transformation Mathematical function to reduce the weight of very
-#' dominant species
+#' dominant species.
 #'
 #' @return a data frame with values for observed F (for H0 and Ha), and the Ha mean
 #' squares for residuals and variation among sites.
@@ -165,6 +168,8 @@ permanova_oneway <- function(x, factEnv, type = "P", method = "bray", transforma
 #' press.
 #'
 #' @importFrom sampling balancedtwostage
+#'
+#' @seealso [sampling::balancedtwostage()]
 #'
 #' @export
 #' @keywords internal

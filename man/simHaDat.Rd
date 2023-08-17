@@ -5,7 +5,7 @@
 Dataset for using in the example of `sim_beta`
 }
 \description{
-This dataset contains half of the necessary data to test \code{sim_beta}, the other half being \code{\link{simH0Dat}}. These datasets are the result of applying the preparation steps mentioned in the vignette "ecocbo-guide": (1) subset `epibionts`, (2) adjust the `site` labels, (3) apply \code{assempar}, and (4) apply \code{simdata}.
+This dataset contains half of the necessary data to test \code{sim_beta()}, the other half being \code{\link{simH0Dat}}. These datasets are the result of applying the preparation steps mentioned in the vignette "ecocbo-guide": (1) subset `epibionts`, (2) adjust the `site` labels, (3) apply \code{assempar()}, and (4) apply \code{simdata()}.
 }
 \usage{data("simHaDat")}
 \format{
@@ -18,9 +18,16 @@ Data available from the Dryad Digital Repository: <http://dx.doi.org/10.5061/dry
 Guerra-Castro, E. J. et al. 2016. Scales of spatial variation in tropical benthic assemblages and their ecological relevance: epibionts on Caribbean mangrove roots as a model system. – Mar. Ecol. Prog. Ser. 548: 97–110.
 }
 \examples{
-data(simHaDat)
-\dontrun{
-sim_beta(simHaDat, simHaDat, n = 10, m = 3, k = 20, alpha = 0.05)
+data("simH0Dat")
+data("simHaDat")
+\donttest{
+epiBetaR <- sim_beta(simH0Dat, simHaDat,
+                     n = 5, m = 4, k = 50,
+                     alpha = 0.05,
+                     transformation = "square root", method = "bray",
+                     dummy = FALSE,
+                     useParallel = FALSE)
 }
+epiBetaR
 }
 \keyword{datasets}

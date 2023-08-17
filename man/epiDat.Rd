@@ -14,7 +14,8 @@ Data available from the Dryad Digital Repository: <http://dx.doi.org/10.5061/dry
 Guerra-Castro, E. J. et al. 2016. Scales of spatial variation in tropical benthic assemblages and their ecological relevance: epibionts on Caribbean mangrove roots as a model system. – Mar. Ecol. Prog. Ser. 548: 97–110.
 }
 \examples{
-data(epiDat)
-## maybe str(epiDat) ; plot(epiDat) ...
+data("epiDat")
+
+str(epiDat)
 }
 \keyword{datasets}

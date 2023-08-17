@@ -6,11 +6,11 @@
 \docType{package}
 
 \title{
-ecocbo: Cost-benefit analysis in ecological sampling from simulated data
+ecocbo: Calculating Optimum Sampling Effort in Community Ecology
 }
 
 \description{
-\pkg{ecocbo} is an 'R' package that is designed to perform cost-benefit optimization for ecological sampling (Underwood & Chapman, 2003) based in the idea of analizing simulated ecological communities as a basis for this optimization (Guerra-Castro, et al., 2021).
+ A system for calculating the optimal sampling effort, based on the ideas of "Ecological cost-benefit optimization" as developed by A. Underwood (1997, ISBN 0 521 55696 1). Data is obtained from simulated ecological communities, and the optimization follows the following procedure of four functions (1) sim_beta() estimates statistical power and type 2 error by using Permutational Multivariate Analysis of Variance, (2) plot_power() represents the results of the previous function, (3) scompvar() calculates the variation components necessary for (4) sim_cbo() to calculate the optimal combination of number of sites and samples depending on either an economical budget or on a desired statistical accuracy.
 }
 
 \details{
@@ -36,9 +36,10 @@ The \pkg{ecocbo} development team is Edlin Guerra-Castro and Arturo Sanchez-Porr
 }
 
 \examples{
-\dontrun{
 library(SSP)
-# Load data and adjust it.
+
+\donttest{
+# Load and adjust data.
 data(epiDat)
 
 epiH0 <- epiDat
@@ -55,8 +56,12 @@ simH0Dat <- SSP::simdata(parH0, cases = 3, N = 1000, sites = 1)
 simHaDat <- SSP::simdata(parHa, cases = 3, N = 100, sites = 10)
 
 # Determination of power
-epiBetaR <- sim_beta(simH0 = simH0Dat, simHa = simHaDat,
-n = 10, m = 3, k = 20, alpha = 0.05, nCores = 2)
+epiBetaR <- sim_beta(simH0Dat, simHaDat,
+                     n = 5, m = 4, k = 30,
+                     alpha = 0.05,
+                     transformation = "square root", method = "bray",
+                     dummy = FALSE,
+                     useParallel = FALSE)
 }
 epiBetaR
 

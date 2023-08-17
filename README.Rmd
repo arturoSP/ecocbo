@@ -30,11 +30,15 @@ library(ecocbo)
 
 ## Installation
 
-``` r
-# You can easilly obtain 'ecocbo' from CRAN:
-install.packages("ecocbo")
+You can easilly obtain 'ecocbo' from CRAN:
 
-# Alternatively, you can install the development version of ecocbo from [GitHub](https://github.com/):
+```{r eval=FALSE}
+install.packages("ecocbo")
+```
+
+Alternatively, you can install the development version of ecocbo from [GitHub](https://github.com/):
+
+```{r eval=FALSE}
 # install.packages("devtools")
 devtools::install_github("arturoSP/ecocbo")
 ```
@@ -66,11 +70,20 @@ simHaDat <- SSP::simdata(parHa, cases = 3, N = 100, sites = 10)
 
 ### Calculate statistical power
 
-```{r}
-betaResult <- sim_beta(simH0 = simH0Dat, simHa = simHaDat, 
-                       n = 10, m = 3, k = 20, alpha = 0.05,
-                       useParallel = F)
+```{r echo=FALSE}
+betaResult <- epiBetaR
+```
+
+```{r eval=FALSE}
+betaResult <- sim_beta(simH0Dat, simHaDat, n = 5, m = 4, k = 50, alpha = 0.05,
+                       transformation = "square root", method = "bray", dummy = FALSE,
+                       useParallel = FALSE)
 betaResult
+#> Power at different sampling efforts (m x n):
+#>       n = 2 n = 3 n = 4 n = 5
+#> m = 2  0.27  0.71  0.72  0.75
+#> m = 3  0.23  0.73  0.88  0.95
+#> m = 4  0.50  0.84  0.99  1.00
 
 ```
 
@@ -81,7 +94,7 @@ plot_power(data = betaResult, n = NULL, m = 3, method = "power")
 
 ```
 
-![This plot will look different in every simulation](man/figures/plotm3n4.png)
+![This plot will look different in every simulation](man/figures/plotm3n3.png)
 
 ### Calculate components of variation.
 
@@ -97,8 +110,11 @@ The sampling effort can be evaluated depending on an economic budget (ct) or des
 
 ```{r}
 cboCost <- sim_cbo(comp.var = compVar, ct = 20000, ck = 100, cj = 2500)
-cboPrecision <- sim_cbo(comp.var = compVar, multSE = 0.10, ck = 100, cj = 2500)
 cboCost
+```
+
+```{r}
+cboPrecision <- sim_cbo(comp.var = compVar, multSE = 0.10, ck = 100, cj = 2500)
 cboPrecision
 
 ```
@@ -108,6 +124,6 @@ cboPrecision
 - Required: ggplot2, ggpubr, sampling, stats, vegan
 - Suggested: SSP, knitr, rmarkdown, testthat
     
-## Sponsored by
+## Participating institutions
 
 ![](man/figures/logoCONACYT.png){height=121}  ![](man/figures/logoENES.png){height=121} 

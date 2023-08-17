@@ -8,8 +8,7 @@
 scompvar(data, n = NULL, m = NULL)
 }
 \arguments{
-\item{data}{Object of class "ecocbo_beta" that results from \code{
-\link{sim_beta}}.}
+\item{data}{Object of class "ecocbo_beta" that results from \code{\link[=sim_beta]{sim_beta()}}.}
 
 \item{n}{Number of samples to be considered. Defaults to NULL.}
 
@@ -27,7 +26,7 @@ of sampling effort.
 \note{
 If \code{m} or \code{n} are left as NULL, the function will calculate
 the components of variation using the largest available values as set in
-the experimental design in \code{\link{sim_beta}}.
+the experimental design in \code{\link[=sim_beta]{sim_beta()}}.
 }
 \examples{
 scompvar(data = epiBetaR)
@@ -43,9 +42,9 @@ Type II error and sampling design in assessment of environmental impacts.
 Journal of Experimental Marine Biology and Ecology, 296(1), 49-70.
 }
 \seealso{
-\code{\link{sim_beta}}
-\code{\link{plot_power}}
-\code{\link{sim_cbo}}
+\code{\link[=sim_beta]{sim_beta()}}
+\code{\link[=plot_power]{plot_power()}}
+\code{\link[=sim_cbo]{sim_cbo()}}
 }
 \author{
 Edlin Guerra-Castro (\email{edlinguerra@gmail.com}), Arturo Sanchez-Porras

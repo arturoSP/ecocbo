@@ -1,10 +1,10 @@
 #' Simulated cost-benefit optimization
 #'
-#'\code{sim_cbo} can be used to apply a cost-benefit optimization model that
+#'\code{sim_cbo()} can be used to apply a cost-benefit optimization model that
 #' depends either on a desired level of precision or on a budgeted total cost,
 #' as proposed by Underwood (1997).
 #'
-#' @param comp.var Data frame as obtained from \code{\link{scompvar}}.
+#' @param comp.var Data frame as obtained from [scompvar()].
 #' @param multSE Optional. Required multivariate standard error for the
 #' sampling experiment.
 #' @param ct Optional. Total cost for the sampling experiment.
@@ -24,9 +24,9 @@
 #' Journal of Experimental Marine Biology and Ecology, 296(1), 49-70.
 #'
 #' @seealso
-#' \code{\link{sim_beta}}
-#' \code{\link{plot_power}}
-#' \code{\link{scompvar}}
+#' [sim_beta()]
+#' [plot_power()]
+#' [scompvar()]
 #'
 #' @aliases simcbo
 #'
@@ -36,6 +36,7 @@
 #' compVar <- scompvar(data = epiBetaR)
 #'
 #' sim_cbo(comp.var = compVar, multSE = NULL, ct = 20000, ck = 100, cj = 2500)
+#'
 #' sim_cbo(comp.var = compVar, multSE = 0.15, ct = NULL, ck = 100, cj = 2500)
 
 sim_cbo <- function(comp.var, multSE = NULL, ct = NULL, ck, cj){

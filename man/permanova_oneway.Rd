@@ -13,25 +13,25 @@ permanova_oneway(
 )
 }
 \arguments{
-\item{x}{ecological community data}
+\item{x}{ecological community data.}
 
-\item{factEnv}{label for the community data}
+\item{factEnv}{label for the community data.}
 
-\item{type}{which algorithm to use for the calculation? Options are "P" and
-"BF"}
+\item{type}{which algorithm to use for the calculation? At the moment, the only
+option is "P".}
 
 \item{method}{appropriate distance/dissimilarity metric (e.g. Gower,
-Bray–Curtis, Jaccard, etc)}
+Bray–Curtis, Jaccard, etc).}
 
 \item{transformation}{Mathematical function to reduce the weight of very
-dominant species}
+dominant species.}
 }
 \value{
 A data frame containing the resulting PERMANOVA table.
 }
 \description{
 Calculates observed F and mean squares for the residuals and among sites. This
-function is a helper for \code{\link{sim_beta}}.
+function is a helper for \code{\link[=sim_beta]{sim_beta()}}.
 }
 \references{
 Underwood, A. J. (1997). Experiments in ecology: their logical
@@ -40,6 +40,9 @@ press.
 
 Anderson, M. J. (2014). Permutational multivariate analysis of
 variance (PERMANOVA). Wiley statsref: statistics reference online, 1-15.
+}
+\seealso{
+\code{\link[vegan:vegdist]{vegan::vegdist()}}
 }
 \author{
 Edlin Guerra-Castro (\email{edlinguerra@gmail.com}), Arturo Sanchez-Porras

@@ -19,10 +19,10 @@ sim_beta(
 )
 }
 \arguments{
-\item{simH0}{Simulated community from \code{SSP::simdata} in which H0 is
+\item{simH0}{Simulated community from \code{SSP::simdata()} in which H0 is
 true.}
 
-\item{simHa}{Simulated community from \code{SSP::simdata} in which H0 is
+\item{simHa}{Simulated community from \code{SSP::simdata()} in which H0 is
 false.}
 
 \item{n}{Maximum number of samples to consider.}
@@ -37,8 +37,8 @@ false.}
 dominant species: 'square root', 'fourth root', 'Log (X+1)', 'P/A', 'none'}
 
 \item{method}{The appropriate distance/dissimilarity metric (e.g. Gower,
-Bray–Curtis, Jaccard, etc). The function \code{\link[vegan]{vegdist}} is
-called for that purpose.}
+Bray–Curtis, Jaccard, etc). The function \code{\link[vegan:vegdist]{vegan::vegdist()}} is called for
+that purpose.}
 
 \item{dummy}{Logical. It is recommended to use TRUE in cases where there are
 observations that are empty.}
@@ -46,22 +46,22 @@ observations that are empty.}
 \item{useParallel}{Logical. Perform the analysis in parallel? Defaults to FALSE.}
 }
 \value{
-\code{sim_data} returns an object of class "ecocbo_beta".
+\code{sim_data()} returns an object of class "ecocbo_beta".
 
-The function \code{print} is used to present a matrix that summarizes the
+The function \code{print()} is used to present a matrix that summarizes the
 results by showing the estimate power according to different sampling efforts.
 
 An object of class "ecocbo_beta" is a list containing the following components:
 \itemize{
-\item \code{Power} a data frame containing the estimation of power and beta for
+\item \code{$Power} a data frame containing the estimation of power and beta for
 several combination of sampling efforts (\code{m} sites and \code{n} samples).
-\item \code{Results} a data frame containing the estimates of pseudoF for \code{simH0}
+\item \code{$Results} a data frame containing the estimates of pseudoF for \code{simH0}
 and \code{simHa}.
-\item \code{alpha} level of significance for Type I error.
+\item \code{$alpha} level of significance for Type I error.
 }
 }
 \description{
-\code{sim_beta} can be used to assess the power of a study by comparing the
+\code{sim_beta()} can be used to assess the power of a study by comparing the
 variation when one can assume wether an ecological community does not have
 composition differences (H0 true) or it does (H0 false). For example, if the
 beta error is 0.25, then there is a 25\% chance of failing to detect a
@@ -70,9 +70,9 @@ difference even if the difference is real. The power of the study is
 }
 \examples{
 \donttest{
-sim_beta(simH0Dat, simHaDat, n = 10, m = 3, k = 20, alpha = 0.05,
-transformation = "square root", method = "bray", dummy = FALSE,
-useParallel = FALSE)
+sim_beta(simH0Dat, simHaDat, n = 5, m = 4, k = 30, alpha = 0.05,
+         transformation = "square root", method = "bray", dummy = FALSE,
+         useParallel = FALSE)
 }
 
 }
@@ -93,11 +93,11 @@ J., & Mascaró, M. (2021). SSP: an R package to estimate sampling effort in
 studies of ecological communities. Ecography, 44(4), 561-573.
 }
 \seealso{
-\code{\link[SSP]{assempar}}
-\code{\link[SSP]{simdata}}
-\code{\link{plot_power}}
-\code{\link{scompvar}}
-\code{\link{sim_cbo}}
+\code{\link[=plot_power]{plot_power()}}
+\code{\link[=scompvar]{scompvar()}}
+\code{\link[=sim_cbo]{sim_cbo()}}
+\code{\link[SSP:assempar]{SSP::assempar()}}
+\code{\link[SSP:simdata]{SSP::simdata()}}
 }
 \author{
 Edlin Guerra-Castro (\email{edlinguerra@gmail.com}), Arturo Sanchez-Porras

@@ -18,29 +18,30 @@ balanced_sampling(
 )
 }
 \arguments{
-\item{i}{pointer to the index in the list of experimental designs to try}
+\item{i}{pointer to the index in the list of experimental designs to try.}
 
-\item{Y}{index to the data.frame the function will work with}
+\item{Y}{index to the data.frame the function will work with.}
 
-\item{mm}{number of site the function is working with in each iteration}
+\item{mm}{number of site the function is working with in each iteration.}
 
-\item{nn}{number of samples to consider in each iteration}
+\item{nn}{number of samples to consider in each iteration.}
 
-\item{YPU}{label for the sites in each iteration}
+\item{YPU}{label for the sites in each iteration, as used by
+\code{\link[sampling:balancedtwostage]{sampling::balancedtwostage()}}}
 
-\item{H0Sim}{simulated community from \code{SSP::simdata} in which H0 is
-true}
+\item{H0Sim}{simulated community from \code{SSP::simdata()} in which H0 is
+true.}
 
-\item{HaSim}{simulated community from \code{SSP::simdata} in which H0 is
-false}
+\item{HaSim}{simulated community from \code{SSP::simdata()} in which H0 is
+false.}
 
-\item{resultsHa}{helper matrix that stores labels and later the results}
+\item{resultsHa}{helper matrix that stores labels and later the results.}
 
 \item{transformation}{Mathematical function to reduce the weight of very
-dominant species}
+dominant species.}
 
 \item{method}{appropriate distance/dissimilarity metric (e.g. Gower,
-Bray–Curtis, Jaccard, etc)}
+Bray–Curtis, Jaccard, etc).}
 }
 \value{
 a data frame with values for observed F (for H0 and Ha), and the Ha mean
@@ -53,6 +54,9 @@ Develops the experimental design based on the provided conditions
 Underwood, A. J. (1997). Experiments in ecology: their logical
 design and interpretation using analysis of variance. Cambridge university
 press.
+}
+\seealso{
+\code{\link[sampling:balancedtwostage]{sampling::balancedtwostage()}}
 }
 \author{
 Edlin Guerra-Castro (\email{edlinguerra@gmail.com}), Arturo Sanchez-Porras

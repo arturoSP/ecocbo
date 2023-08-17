@@ -8,7 +8,7 @@
 sim_cbo(comp.var, multSE = NULL, ct = NULL, ck, cj)
 }
 \arguments{
-\item{comp.var}{Data frame as obtained from \code{\link{scompvar}}.}
+\item{comp.var}{Data frame as obtained from \code{\link[=scompvar]{scompvar()}}.}
 
 \item{multSE}{Optional. Required multivariate standard error for the
 sampling experiment.}
@@ -24,7 +24,7 @@ A data frame containing the optimized values for \code{m} number of
 sites and \code{n} number of samples to consider.
 }
 \description{
-\code{sim_cbo} can be used to apply a cost-benefit optimization model that
+\code{sim_cbo()} can be used to apply a cost-benefit optimization model that
 depends either on a desired level of precision or on a budgeted total cost,
 as proposed by Underwood (1997).
 }
@@ -32,6 +32,7 @@ as proposed by Underwood (1997).
 compVar <- scompvar(data = epiBetaR)
 
 sim_cbo(comp.var = compVar, multSE = NULL, ct = 20000, ck = 100, cj = 2500)
+
 sim_cbo(comp.var = compVar, multSE = 0.15, ct = NULL, ck = 100, cj = 2500)
 }
 \references{
@@ -44,9 +45,9 @@ Type II error and sampling design in assessment of environmental impacts.
 Journal of Experimental Marine Biology and Ecology, 296(1), 49-70.
 }
 \seealso{
-\code{\link{sim_beta}}
-\code{\link{plot_power}}
-\code{\link{scompvar}}
+\code{\link[=sim_beta]{sim_beta()}}
+\code{\link[=plot_power]{plot_power()}}
+\code{\link[=scompvar]{scompvar()}}
 }
 \author{
 Edlin Guerra-Castro (\email{edlinguerra@gmail.com}), Arturo Sanchez-Porras

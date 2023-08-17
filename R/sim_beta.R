@@ -1,15 +1,15 @@
 #' Calculate beta and power out of simulated samples
 #'
-#' \code{sim_beta} can be used to assess the power of a study by comparing the
+#' \code{sim_beta()} can be used to assess the power of a study by comparing the
 #' variation when one can assume wether an ecological community does not have
 #' composition differences (H0 true) or it does (H0 false). For example, if the
 #' beta error is 0.25, then there is a 25% chance of failing to detect a
 #' difference even if the difference is real. The power of the study is
 #' \eqn{1 - \beta}, so in this example, the power of the study is 0.75.
 #'
-#' @param simH0 Simulated community from \code{SSP::simdata} in which H0 is
+#' @param simH0 Simulated community from \code{SSP::simdata()} in which H0 is
 #' true.
-#' @param simHa Simulated community from \code{SSP::simdata} in which H0 is
+#' @param simHa Simulated community from \code{SSP::simdata()} in which H0 is
 #' false.
 #' @param n Maximum number of samples to consider.
 #' @param m Maximum number of sites.
@@ -18,24 +18,24 @@
 #' @param transformation Mathematical function to reduce the weight of very
 #' dominant species: 'square root', 'fourth root', 'Log (X+1)', 'P/A', 'none'
 #' @param method The appropriate distance/dissimilarity metric (e.g. Gower,
-#' Bray–Curtis, Jaccard, etc). The function \code{\link[vegan]{vegdist}} is
-#' called for that purpose.
+#' Bray–Curtis, Jaccard, etc). The function [vegan::vegdist()] is called for
+#' that purpose.
 #' @param dummy Logical. It is recommended to use TRUE in cases where there are
 #' observations that are empty.
 #' @param useParallel Logical. Perform the analysis in parallel? Defaults to FALSE.
 #'
-#' @return \code{sim_data} returns an object of class "ecocbo_beta".
+#' @return \code{sim_data()} returns an object of class "ecocbo_beta".
 #'
-#' The function \code{print} is used to present a matrix that summarizes the
+#' The function \code{print()} is used to present a matrix that summarizes the
 #' results by showing the estimate power according to different sampling efforts.
 #'
 #' An object of class "ecocbo_beta" is a list containing the following components:
 #' \itemize{
-#'   \item \code{Power} a data frame containing the estimation of power and beta for
+#'   \item \code{$Power} a data frame containing the estimation of power and beta for
 #' several combination of sampling efforts (\code{m} sites and \code{n} samples).
-#'   \item \code{Results} a data frame containing the estimates of pseudoF for \code{simH0}
+#'   \item \code{$Results} a data frame containing the estimates of pseudoF for \code{simH0}
 #' and \code{simHa}.
-#'   \item \code{alpha} level of significance for Type I error.
+#'   \item \code{$alpha} level of significance for Type I error.
 #' }
 #'
 #' @author Edlin Guerra-Castro (\email{edlinguerra@@gmail.com}), Arturo Sanchez-Porras
@@ -53,11 +53,11 @@
 #'  studies of ecological communities. Ecography, 44(4), 561-573.
 #'
 #' @seealso
-#' \code{\link[SSP]{assempar}}
-#' \code{\link[SSP]{simdata}}
-#' \code{\link{plot_power}}
-#' \code{\link{scompvar}}
-#' \code{\link{sim_cbo}}
+#' [plot_power()]
+#' [scompvar()]
+#' [sim_cbo()]
+#' [SSP::assempar()]
+#' [SSP::simdata()]
 #'
 #' @aliases simbeta
 #'
@@ -71,16 +71,15 @@
 #'
 #' @examples
 #' \donttest{
-#' sim_beta(simH0Dat, simHaDat, n = 10, m = 3, k = 20, alpha = 0.05,
-#' transformation = "square root", method = "bray", dummy = FALSE,
-#' useParallel = TRUE)
+#' sim_beta(simH0Dat, simHaDat, n = 5, m = 4, k = 30, alpha = 0.05,
+#'          transformation = "square root", method = "bray", dummy = FALSE,
+#'          useParallel = FALSE)
 #' }
 #'
 
 sim_beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05,
                      transformation = "none", method = "bray", dummy = FALSE,
                      useParallel = FALSE){
-  #source("./R/utils.R")
   # Check the inputs ----
 
   if(useParallel){
@@ -232,13 +231,13 @@ sim_beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05,
 #' @usage
 #' \method{print}{ecocbo_beta}(x, ...)
 #'
-#' @description prints for \code{ecocbo::sim_beta} objects.
+#' @description prints for \code{ecocbo::sim_beta()} objects.
 #'
-#' @param x Object from \code{ecocbo::sim_beta} function.
+#' @param x Object from \code{ecocbo::sim_beta()} function.
 #'
 #' @param ... Additional arguments
 #'
-#' @return Prints the result of \code{ecocbo::sim_beta} function, showing in an
+#' @return Prints the result of \code{ecocbo::sim_beta()} function, showing in an
 #' ordered matrix the estimated power for the different experimental designs
 #' that were considered.
 #'

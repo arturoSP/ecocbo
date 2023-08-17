@@ -28,11 +28,16 @@ necessary to achieve their research goals.
 
 ## Installation
 
-``` r
-# You can easilly obtain 'ecocbo' from CRAN:
-install.packages("ecocbo")
+You can easilly obtain ‘ecocbo’ from CRAN:
 
-# Alternatively, you can install the development version of ecocbo from [GitHub](https://github.com/):
+``` r
+install.packages("ecocbo")
+```
+
+Alternatively, you can install the development version of ecocbo from
+[GitHub](https://github.com/):
+
+``` r
 # install.packages("devtools")
 devtools::install_github("arturoSP/ecocbo")
 ```
@@ -65,14 +70,18 @@ simHaDat <- SSP::simdata(parHa, cases = 3, N = 100, sites = 10)
 ### Calculate statistical power
 
 ``` r
-betaResult <- sim_beta(simH0 = simH0Dat, simHa = simHaDat, 
-                       n = 10, m = 3, k = 20, alpha = 0.05,
-                       useParallel = F)
+betaResult <- sim_beta(simH0Dat, simHaDat,
+                       n = 5, m = 4, k = 30,
+                       alpha = 0.05,
+                       transformation = "square root", method = "bray",
+                       dummy = FALSE,
+                       useParallel = TRUE)
 betaResult
 #> Power at different sampling efforts (m x n):
-#>       n = 2 n = 3 n = 4 n = 5 n = 6 n = 7 n = 8 n = 9 n = 10
-#> m = 2  0.20  0.55  0.72  0.82  0.93  0.97  1.00  0.98      1
-#> m = 3  0.43  0.50  0.98  0.92  1.00  1.00  0.98  1.00      1
+#>       n = 2 n = 3 n = 4 n = 5
+#> m = 2  0.50  0.75  0.84  0.97
+#> m = 3  0.44  0.96  0.97  1.00
+#> m = 4  0.80  1.00  1.00  1.00
 ```
 
 ### Plot the power progression as sampling increases.
@@ -82,7 +91,7 @@ plot_power(data = betaResult, n = NULL, m = 3, method = "power")
 ```
 
 <figure>
-<img src="man/figures/plotm3n4.png"
+<img src="man/figures/plotm3n3.png"
 alt="This plot will look different in every simulation" />
 <figcaption aria-hidden="true">This plot will look different in every
 simulation</figcaption>
@@ -93,8 +102,8 @@ simulation</figcaption>
 ``` r
 compVar <- scompvar(data = betaResult)
 compVar
-#>    compVarA  compVarR
-#> 1 0.0717776 0.3303087
+#>     compVarA  compVarR
+#> 1 0.09943608 0.2626768
 ```
 
 ### Determine optimal sampling effort
@@ -106,13 +115,16 @@ treatments (bOpt) and replicates (nOpt).
 
 ``` r
 cboCost <- sim_cbo(comp.var = compVar, ct = 20000, ck = 100, cj = 2500)
-cboPrecision <- sim_cbo(comp.var = compVar, multSE = 0.10, ck = 100, cj = 2500)
 cboCost
 #>   nOpt mOpt
-#> 1   10    5
+#> 1    8    6
+```
+
+``` r
+cboPrecision <- sim_cbo(comp.var = compVar, multSE = 0.10, ck = 100, cj = 2500)
 cboPrecision
 #>   nOpt mOpt
-#> 1   10   10
+#> 1    8   13
 ```
 
 ## R packages required for running ecocbo
@@ -120,7 +132,7 @@ cboPrecision
 - Required: ggplot2, ggpubr, sampling, stats, vegan
 - Suggested: SSP, knitr, rmarkdown, testthat
 
-## Sponsored by
+## Participating institutions
 
 <img src="man/figures/logoCONACYT.png" height="121" />
 <img src="man/figures/logoENES.png" height="121" />
