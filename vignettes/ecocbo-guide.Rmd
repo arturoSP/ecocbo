@@ -30,7 +30,7 @@ knitr::opts_chunk$set(
 
 ## ecocbo: Calculating Optimum Sampling Effort in Community Ecology
 
-**ecocbo** is an R package that helps scientists determine the optimal sampling effort for community ecology studies. It can be used to calculate the minimum number of samples needed to achieve a desired level of precision, or to fit within a set economic budget as proposed by Underwood (1997). **ecocbo** is based on the principles of ecological simulation as done in the [SSP](https://github.com/edlinguerra/SSP) package. A pilot study can be used to estimate the natural variability of the system, which in turn is used to calculate the optimal sampling effort. **ecocbo** is a valuable tool for scientists who need to design efficient sampling plans. It can save time and money by ensuring that scientists collect the minimum amount of data necessary to achieve their research goals.
+**ecocbo** is an R package that helps scientists determine the optimal sampling effort for community ecology studies. It can be used to calculate the minimum number of samples needed to achieve a desired level of precision, or to fit within a set economic budget as proposed by Underwood (1997, ISBN 0 521 55696 1). **ecocbo** is based on the principles of ecological simulation as done in the [SSP](https://github.com/edlinguerra/SSP) package. A pilot study can be used to estimate the natural variability of the system, which in turn is used to calculate the optimal sampling effort. **ecocbo** is a valuable tool for scientists who need to design efficient sampling plans. It can save time and money by ensuring that scientists collect the minimum amount of data necessary to achieve their research goals.
 
 **ecocbo** is composed of four main functions:
 
