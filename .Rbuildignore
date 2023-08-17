@@ -10,3 +10,4 @@
 ^tests/prueba_edlin\.R$
 ^slides$
 ^cran-comments\.md$
+^CRAN-SUBMISSION$

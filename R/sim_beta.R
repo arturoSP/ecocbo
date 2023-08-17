@@ -70,9 +70,11 @@
 #' @import foreach
 #'
 #' @examples
+#' \donttest{
 #' sim_beta(simH0Dat, simHaDat, n = 10, m = 3, k = 20, alpha = 0.05,
 #' transformation = "square root", method = "bray", dummy = FALSE,
-#' useParallel = FALSE)
+#' useParallel = TRUE)
+#' }
 #'
 
 sim_beta <- function(simH0, simHa, n, m, k= 50, alpha = 0.05,

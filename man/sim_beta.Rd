@@ -69,9 +69,11 @@ difference even if the difference is real. The power of the study is
 \eqn{1 - \beta}, so in this example, the power of the study is 0.75.
 }
 \examples{
+\donttest{
 sim_beta(simH0Dat, simHaDat, n = 10, m = 3, k = 20, alpha = 0.05,
 transformation = "square root", method = "bray", dummy = FALSE,
 useParallel = FALSE)
+}
 
 }
 \references{

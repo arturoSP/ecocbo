@@ -172,7 +172,7 @@ permanova_oneway <- function(x, factEnv, type = "P", method = "bray", transforma
 balanced_sampling <- function(i, Y, mm, nn, YPU, H0Sim, HaSim, resultsHa, transformation, method){
   # Get the samples index
   sel <- sampling::balancedtwostage(Y, selection = 1, m = mm[i],
-                                    n = nn[i], PU = YPU, FALSE)
+                                    n = nn[i], PU = YPU, comment = FALSE)
   ones <- which(sel[,1] %in% 1)
   y0 <- H0Sim[ones,,resultsHa[i,1]]
   ya <- HaSim[ones,,resultsHa[i,1]]
