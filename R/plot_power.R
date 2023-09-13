@@ -38,6 +38,7 @@
 #' [sim_beta()]
 #' [scompvar()]
 #' [sim_cbo()]
+#' [prep_data()]
 #'
 #' @aliases plotpower
 #'
@@ -58,7 +59,9 @@
 #' @importFrom stats density
 #'
 #' @examples
-#' plot_power(data = epiBetaR, n = 4, m = 2, method = "both")
+#' epiBetaR <- sim_beta(simResults, alpha = 0.05)
+#'
+#' plot_power(data = epiBetaR, n = 4, m = 3, method = "both")
 #' plot_power(data = epiBetaR, n = NULL, m = 3, method = "power")
 #' plot_power(data = epiBetaR, n = NULL, m = 3, method = "density")
 
@@ -177,7 +180,6 @@ density_plot <- function(results, powr, m, n, method, cVar){
   if(m <= 1){stop("m must be larger than 1")}
   if(m > max(powr$m)){stop("m is langer than the simulated m value")}
 
-  #if(is.null(n)){n <- max(powr[powr$m == m & powr$Power<1,][2])}
   if(is.null(n)){
     powm <- powr[powr$m == m,]
     n <- powm[which.min(abs(powm$Power - (1 - alpha))),2]
@@ -192,7 +194,9 @@ density_plot <- function(results, powr, m, n, method, cVar){
   }
 
   ## Plot according to the parameters ----
-  cVar <- round(scompvar(data, n, m),3)
+  dataRes <- list(Results = data$Results)
+  class(dataRes) <- "ecocbo_data"
+  cVar <- round(scompvar(dataRes, n, m),3)
 
   if(method == "both") {
     p1 <- power_curve(powr, m, n, cVar)

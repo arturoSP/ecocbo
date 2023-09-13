@@ -4,7 +4,7 @@
 #' among units and the average component of variation within samples in terms
 #' of sampling effort.
 #'
-#' @param data Object of class "ecocbo_beta" that results from [sim_beta()].
+#' @param data Object of class "ecocbo_data" that results from [prep_data()].
 #' @param m Site label to be used as basis for the computation. Defaults to NULL.
 #' @param n Number of samples to be considered. Defaults to NULL.
 #'
@@ -29,25 +29,25 @@
 #' [sim_beta()]
 #' [plot_power()]
 #' [sim_cbo()]
+#' [prep_data()]
 #'
 #' @aliases compvar
 #'
 #' @export
 #'
 #' @examples
-#' scompvar(data = epiBetaR)
-#' scompvar(data = epiBetaR, n = 5, m = 2)
+#' scompvar(data = simResults)
+#' scompvar(data = simResults, n = 5, m = 2)
 
 scompvar <- function(data, n = NULL, m = NULL){
   # Determine variation components  ----
   # as these values are necessary for the cost-benefit optimization model.
 
-  if(!inherits(data, "ecocbo_beta"))
-  #if(!is(data, "ecocbo_beta"))
-    stop("data is not the right class(\"ecocbo_beta\")")
+  if(!inherits(data, "ecocbo_data"))
+    stop("data is not the right class(\"ecocbo_data\")")
 
   # read the results matrix to use Ha mean squares
-  resultsBeta <- data$Results
+  resultsBeta <- as.data.frame(data$Results)
 
   ## Validating data ----
   if(is.null(n)){n <- max(resultsBeta$n)}

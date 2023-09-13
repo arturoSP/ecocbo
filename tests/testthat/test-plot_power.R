@@ -1,4 +1,5 @@
-data("epiBetaR")
+data("simResults")
+epiBetaR <- sim_beta(simResults, alpha = 0.05)
 
 test_that("plots are plotted", {
   testthat::expect_type(plot_power(epiBetaR, n = 4, m = 4, method = "power"), "list")

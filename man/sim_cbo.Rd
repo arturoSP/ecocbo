@@ -29,10 +29,9 @@ depends either on a desired level of precision or on a budgeted total cost,
 as proposed by Underwood (1997).
 }
 \examples{
-compVar <- scompvar(data = epiBetaR)
+compVar <- scompvar(data = simResults)
 
 sim_cbo(comp.var = compVar, multSE = NULL, ct = 20000, ck = 100, cj = 2500)
-
 sim_cbo(comp.var = compVar, multSE = 0.15, ct = NULL, ck = 100, cj = 2500)
 }
 \references{

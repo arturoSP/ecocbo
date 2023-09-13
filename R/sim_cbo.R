@@ -33,10 +33,9 @@
 #' @export
 #'
 #' @examples
-#' compVar <- scompvar(data = epiBetaR)
+#' compVar <- scompvar(data = simResults)
 #'
 #' sim_cbo(comp.var = compVar, multSE = NULL, ct = 20000, ck = 100, cj = 2500)
-#'
 #' sim_cbo(comp.var = compVar, multSE = 0.15, ct = NULL, ck = 100, cj = 2500)
 
 sim_cbo <- function(comp.var, multSE = NULL, ct = NULL, ck, cj){

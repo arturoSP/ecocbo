@@ -39,7 +39,9 @@ plot shows the overlapping areas where \eqn{\alpha} and \eqn{\beta} are
 significant.
 }
 \examples{
-plot_power(data = epiBetaR, n = 4, m = 2, method = "both")
+epiBetaR <- sim_beta(simResults, alpha = 0.05)
+
+plot_power(data = epiBetaR, n = 4, m = 3, method = "both")
 plot_power(data = epiBetaR, n = NULL, m = 3, method = "power")
 plot_power(data = epiBetaR, n = NULL, m = 3, method = "density")
 }
@@ -56,6 +58,7 @@ Journal of Experimental Marine Biology and Ecology, 296(1), 49-70.
 \code{\link[=sim_beta]{sim_beta()}}
 \code{\link[=scompvar]{scompvar()}}
 \code{\link[=sim_cbo]{sim_cbo()}}
+\code{\link[=prep_data]{prep_data()}}
 }
 \author{
 Edlin Guerra-Castro (\email{edlinguerra@gmail.com}), Arturo Sanchez-Porras

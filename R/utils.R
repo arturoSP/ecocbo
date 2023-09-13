@@ -39,7 +39,7 @@ permanova_oneway <- function(x, factEnv, type = "P", method = "bray", transforma
     return(ss)
   }
 
-  ## PERMANOVA functions ----
+  ## PERMANOVA ----
   pseudoF_P <- function(x, factEnv, method = "bray", transformation = "none"){
     if (transformation == "square root") {
       x.t <- sqrt(x)
