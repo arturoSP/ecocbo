@@ -184,9 +184,9 @@ balanced_sampling <- function(i, Y, mm, nn, YPU, H0Sim, HaSim, resultsHa, transf
   yHa <- dim(y0)[2] - 2
 
   # Apply PERMANOVA to get F and mean squares
-  result1 <- permanova_oneway(y0[, 1:yHa], y0[,yHa+2],
+  result1 <- permanova_oneway(x = y0[, 1:yHa], factEnv = y0[,yHa+2],
                               transformation = transformation, method = method)
-  result2 <- permanova_oneway(ya[, 1:yHa], y0[,(yHa+2)],
+  result2 <- permanova_oneway(x = ya[, 1:yHa], factEnv = y0[,(yHa+2)],
                               transformation = transformation, method = method)
   result0 <- matrix(nrow = 1, ncol = 4)
   colnames(result0) <- c("Fobs", "Fobs", "AMS", "RMS")

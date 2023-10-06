@@ -7,22 +7,24 @@
 #' significant.
 #'
 #' @param data Object of class "ecocbo_beta" that results from [sim_beta()].
-#' @param m Site label to be used as basis for the plot.
+#' @param m Defaults to NULL, and then the function computes the number of
+#' sites 'm' that result in a sampling effort that is close to (1 - alpha) in
+#' power. If provided, said number of site will be used.
 #' @param n Defaults to NULL, and then the function computes the number of
-#' samples (n) that results in a sampling effort close to 95% in power. If
-#' provided, said number of samples will be used.
+#' samples 'n', within the selected 'm', that result in a sampling effort close
+#' to (1 - alpha) in power. If provided, said number of samples will be used.
 #' @param method The desired plot. Options are "power", "density" or "both".
 #' "power" plots the power curve, "density" plots the density distribution of
 #' pseudoF, and "both" draws both plots one next to the other.
 #'
-#' @return  If the method is "power", then a power curve in which the selected,
-#' or computed, "n" is marked in red. If the method is "density", then a
+#' @return  If the method is "power", then the power curves for the different values
+#' of 'm'. The selected, or computed, 'n' is marked in red. If the method is "density", then a
 #' density plot for the observed pseudoF values and a line marking the value of
 #' pseudoF that marks the significance level indicated in [sim_beta()].
-#' If the method is "both", then a composite with a power curve and a
+#' If the method is "both", then a composite with power curves and a
 #' density plot side by side.
 #'
-#' The value of the selected "m", "n" and the corresponding component of variation
+#' The value of the selected 'm', 'n' and the corresponding component of variation
 #' are presented in all methods.
 #'
 #' @author Edlin Guerra-Castro (\email{edlinguerra@@gmail.com}), Arturo Sanchez-Porras
@@ -52,6 +54,14 @@
 #' @importFrom ggplot2 theme_bw
 #' @importFrom ggplot2 scale_x_continuous
 #' @importFrom ggplot2 scale_y_continuous
+#' @importFrom ggplot2 scale_color_manual
+#' @importFrom ggplot2 scale_linetype_manual
+#' @importFrom ggplot2 scale_size_manual
+#' @importFrom ggplot2 element_blank
+#' @importFrom ggplot2 element_rect
+#' @importFrom ggplot2 element_line
+#' @importFrom ggplot2 theme
+#' @importFrom ggplot2 guides
 #' @importFrom ggplot2 geom_col
 #' @importFrom ggplot2 geom_area
 #' @importFrom ggplot2 geom_vline
@@ -65,34 +75,45 @@
 #' plot_power(data = epiBetaR, n = NULL, m = 3, method = "power")
 #' plot_power(data = epiBetaR, n = NULL, m = 3, method = "density")
 
-plot_power <- function(data, n = NULL, m, method = "both"){
+plot_power <- function(data, n = NULL, m = NULL, method = "both"){
 # Función para graficar curvas de frecuencia de F para H0 y Ha ----
 
 # Helper functions ----
 ## Power curve ----
 power_curve <- function(powr, m, n, cVar){
+  mTot <- c(2:max(powr$m))
+  mm <- m
   nn <- n
-  dummy <- data.frame(m = m, n = 1, Power = 0, Beta = NA,
-                      fCrit = NA)
-  powrPl <- powr[powr$m == m,]
-  powrPl <- rbind(powrPl, dummy)
-  ggplot(data = powrPl,
-         aes(x = powrPl[, "n"], y = powrPl[, "Power"]))+
-    geom_line()+
-    geom_point(data = powrPl[powrPl$n != 1,],
-               aes(x = powrPl[powrPl$n != 1, "n"],
-                   y = powrPl[powrPl$n != 1, "Power"]),
-               shape = 1, size = 2)+
-    geom_point(data = powrPl[powrPl$n == nn,],
-               aes(x = powrPl[powrPl$n == nn, "n"],
-                   y = powrPl[powrPl$n == nn, "Power"]), color = "red")+
-    geom_label(aes(x = 1.25, y = 0.9, label = paste0("m = ", m,
-                                                      "\nn = ", nn,
-                                                      "\nCV = ", cVar[1])))+
+  dummy <- data.frame(m = mTot, n = 1, Power = 0)
+  powrPl <- rbind(dummy, powr[,c(1:3)])
+  powrPl$m <- factor(powrPl$m, ordered = T)
+  powrPl$Sel <- powrPl$m == mm
+
+  p <- ggplot(data = powrPl, aes(x = n, y = Power))
+
+  for(i in mTot){
+    tempPl <- powrPl[powrPl$m ==i,]
+      p <- p +
+        geom_line(data = tempPl, aes(color = m, linetype = Sel, size = Sel), alpha = 0.7)
+  }
+
+  p+
+    geom_point(data = powrPl[powrPl$m == mm,], aes(color = m), size = 2, show.legend = FALSE)+
+    geom_point(data = powrPl[powrPl$m == mm & powrPl$n == nn,],
+               shape = 21, size = 2.5, color = "black", fill = "red")+
+    geom_label(aes(x = 1.25, y = 0.9, label = paste0("m = ", mm,
+                                                    "\nn = ", nn,
+                                                    "\nCV = ", cVar[1])))+
+    scale_color_manual(breaks = levels(powrPl$m), values = mTot)+
+    scale_linetype_manual(values = c(2,1))+
+    scale_size_manual(values = c(0.5,1))+
+    scale_x_continuous(breaks = c(1:max(powr$n)))+
+    scale_y_continuous(name = "Power", limits = c(0, 1), breaks = seq(0, 1, 0.2))+
     theme_bw()+
-    scale_x_continuous(name = "Sample size",
-                       breaks = function(x)seq(0, max(powrPl$n, na.rm = T)))+
-    scale_y_continuous(name = "Power", limits = c(0, 1))
+    theme(panel.grid.minor = element_blank(),
+          panel.border = element_rect(linewidth = 0.4),
+          axis.ticks= element_line(linewidth = 0.2))+
+    guides(linetype = "none", size = "none")
 }
 
 ## Probability density curve ----
@@ -153,8 +174,12 @@ density_plot <- function(results, powr, m, n, method, cVar){
     theme_bw()+
     scale_x_continuous(name = "pseudoF",
                        breaks = function(x)seq(floor(bottom), ceiling(top)))+
-    scale_y_continuous(name = "Density")+
-    coord_cartesian(xlim = c(bottom,top))
+    scale_y_continuous(name = "Density", limits = c(0, 1), breaks = seq(0, 1, 0.2))+
+    coord_cartesian(xlim = c(bottom,top))+
+    ggplot2::theme(panel.grid.minor = element_blank(),
+                   panel.border = element_rect(linewidth = 0.4),
+                   axis.ticks= element_line(linewidth = 0.2))
+  p1
   if(method == "density"){
     p1 <- p1 +
       geom_label(aes(x = bottom, y = 0.9, label = paste0("m = ", m,
@@ -165,7 +190,7 @@ density_plot <- function(results, powr, m, n, method, cVar){
 }
 
 # Main function ----
-# plot_power <- function(data, n = NULL, m, method = "both")
+# plot_power <- function(data, n = NULL, m = NULL, method = "both")
   ## Reading data ----
   if(!inherits(data, "ecocbo_beta")){
     stop("data is not the right class(\"ecocbo_beta\")")
@@ -176,6 +201,10 @@ density_plot <- function(results, powr, m, n, method, cVar){
   alpha <- data[["alpha"]]
 
   ## Validating data  ----
+  if(is.null(m)){
+    m <- powr[which.min(abs(powr$Power - (1 - alpha))),1]
+  }
+
   if(ceiling(m) != floor(m)){stop("m must be integer")}
   if(m <= 1){stop("m must be larger than 1")}
   if(m > max(powr$m)){stop("m is langer than the simulated m value")}

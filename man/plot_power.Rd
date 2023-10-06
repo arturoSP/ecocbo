@@ -5,30 +5,32 @@
 \alias{plotpower}
 \title{Power curves for different sampling efforts}
 \usage{
-plot_power(data, n = NULL, m, method = "both")
+plot_power(data, n = NULL, m = NULL, method = "both")
 }
 \arguments{
 \item{data}{Object of class "ecocbo_beta" that results from \code{\link[=sim_beta]{sim_beta()}}.}
 
 \item{n}{Defaults to NULL, and then the function computes the number of
-samples (n) that results in a sampling effort close to 95\% in power. If
-provided, said number of samples will be used.}
+samples 'n', within the selected 'm', that result in a sampling effort close
+to (1 - alpha) in power. If provided, said number of samples will be used.}
 
-\item{m}{Site label to be used as basis for the plot.}
+\item{m}{Defaults to NULL, and then the function computes the number of
+sites 'm' that result in a sampling effort that is close to (1 - alpha) in
+power. If provided, said number of site will be used.}
 
 \item{method}{The desired plot. Options are "power", "density" or "both".
 "power" plots the power curve, "density" plots the density distribution of
 pseudoF, and "both" draws both plots one next to the other.}
 }
 \value{
-If the method is "power", then a power curve in which the selected,
-or computed, "n" is marked in red. If the method is "density", then a
+If the method is "power", then the power curves for the different values
+of 'm'. The selected, or computed, 'n' is marked in red. If the method is "density", then a
 density plot for the observed pseudoF values and a line marking the value of
 pseudoF that marks the significance level indicated in \code{\link[=sim_beta]{sim_beta()}}.
-If the method is "both", then a composite with a power curve and a
+If the method is "both", then a composite with power curves and a
 density plot side by side.
 
-The value of the selected "m", "n" and the corresponding component of variation
+The value of the selected 'm', 'n' and the corresponding component of variation
 are presented in all methods.
 }
 \description{

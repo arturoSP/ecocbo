@@ -33,8 +33,8 @@
 #'
 #' @return \code{prep_data()} returns an object of class "ecocbo_data".
 #'
-#' An object of class "ecocbo_data" is a list containing: \code{$Results} a data
-#' frame containing the estimates of pseudoF for \code{simH0} and \code{simHa}
+#' An object of class "ecocbo_data" is a list containing: \code{$Results}, a data
+#' frame that lists the estimates of pseudoF for \code{simH0} and \code{simHa}
 #' that can be used to compute the statistical power for different sampling
 #' efforts, as well as the square means necessary for calculating the variation
 #' components.

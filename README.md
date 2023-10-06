@@ -8,7 +8,8 @@
 [![R-CMD-check](https://github.com/arturoSP/ecocbo/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/arturoSP/ecocbo/actions/workflows/R-CMD-check.yaml)
 [![License](https://img.shields.io/badge/License-GPL3-blue.svg)](https://github.com/arturoSP/ecocbo/blob/master/LICENSE.md)
 [![CRAN/METACRAN](https://img.shields.io/cran/v/ecocbo)](https://cran.r-project.org/package=ecocbo)
-<!-- [![GitHub R package version (subdirectory of monorepo)](https://img.shields.io/github/r-package/v/arturoSP/ecocbo)](https://github.com/arturoSP/ecocbo/tree/master) -->
+[![GitHub R package version (subdirectory of
+monorepo)](https://img.shields.io/github/r-package/v/arturoSP/ecocbo)](https://github.com/arturoSP/ecocbo/tree/master)
 ![CRAN
 downloads](https://cranlogs.r-pkg.org/badges/grand-total/ecocbo?color=yellow)
 
@@ -65,6 +66,10 @@ simResults <- prep_data(data = epiDat, type = "counts", Sest.method = "average",
 ```
 
 ### Calculate components of variation.
+
+``` r
+data("simResults")
+```
 
 ``` r
 compVar <- scompvar(data = simResults)
