@@ -66,9 +66,9 @@ scompvar <- function(data, n = NULL, m = NULL){
   compVar <- data.frame(compVarA = NA, compVarR = NA)
 
   # Computes the mean for variation components (as per Table 9.3)
-  # σe = RMS
+  # σe = MSR
   compVar[,2] <- mean(resultsBeta[,8], na.rm = T)
-  # σB(A) = (AMS - σe) / n
+  # σB(A) = (MSA - σe) / n
   MSA <- mean(resultsBeta[,7], na.rm = T)
   compVar[,1] <- (MSA - compVar[,2]) / n
 

@@ -155,7 +155,7 @@ prep_data <- function(data, type = "counts", Sest.method = "average",
   resultsHa[, 4] <- rep(seq(2, n), times = 1, each = k * (m-1))
   colnames(resultsHa) <- c("dat.sim", "k", "m", "n",
                            "pseudoFH0", "pseudoFHa",
-                           "AMSHa", "RMSHa")
+                           "MSAHa", "MSRHa")
 
   # Loop to calculate pseudoF ----
   # Loop parameters
