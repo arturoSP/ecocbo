@@ -81,11 +81,6 @@ prep_data <- function(data, type = "counts", Sest.method = "average",
                       dummy = FALSE, useParallel = TRUE){
   # Check the inputs ----
 
-  if(useParallel){
-    cl <- parallel::makeCluster(parallel::detectCores() - 2)
-    doParallel::registerDoParallel(cl)
-  }
-
   #N <- max(simHa[[1]][,'N'])
   #sites <- max(as.numeric(simHa[[1]][,'sites']))
   if (n > N){stop("'n' must be equal or less than 'N' on simulated data")}
@@ -95,12 +90,6 @@ prep_data <- function(data, type = "counts", Sest.method = "average",
   if (m > sites){stop("'m' must be equal or less than 'sites' on simulated data")}
   if(ceiling(m) != floor(m)){stop("m must be integer")}
   if(m <= 1){stop("m must be larger than 1")}
-
-  # if(!is.list(simH0) | !is.list(simHa)){stop("simulation data must be lists")}
-
-  # if(length(simH0) != length(simHa) |
-  #    dim(simH0[[1]])[1] != dim(simHa[[1]])[1] |
-  #    dim(simH0[[1]])[2] != dim(simHa[[1]])[2]){stop("dimensions for simH0 and simHa do not match")}
 
   # read data and store it in two objects, one for H0 and one for Ha ----
   datH0 <- data
@@ -164,19 +153,27 @@ prep_data <- function(data, type = "counts", Sest.method = "average",
   mm <- resultsHa[,3]
   nn <- resultsHa[,3] * resultsHa[,4]
 
+  pb <- txtProgressBar(max = NN, style = 3)
+
   if(useParallel){
+    cl <- parallel::makeCluster(parallel::detectCores() - 2)
+    doSNOW::registerDoSNOW(cl)
+    # doParallel::registerDoParallel(cl)
+
+    progress <- function(n) setTxtProgressBar(pb, n)
+    opts <- list(progress=progress)
+
     parallel::clusterExport(cl, list("balanced_sampling", "permanova_oneway"))
-    result1 <- foreach::foreach(i=1:NN, .combine = rbind) %dopar% {
+    result1 <- foreach::foreach(i=1:NN, .combine = rbind,
+                                .options.snow = opts) %dopar% {
       balanced_sampling(i, Y, mm, nn, YPU,
                         H0Sim, HaSim, resultsHa,
                         transformation, method)
-    }
+      }
     resultsHa[,5] <- result1[,1]
     resultsHa[,6] <- result1[,2]
     resultsHa[,7] <- result1[,3]
     resultsHa[,8] <- result1[,4]
-
-    parallel::stopCluster(cl)
   } else {
     for (i in seq_len(NN)){
       result1 <- balanced_sampling(i, Y, mm, nn, YPU,
@@ -186,11 +183,16 @@ prep_data <- function(data, type = "counts", Sest.method = "average",
       resultsHa[i,6] <- result1[,2]
       resultsHa[i,7] <- result1[,3]
       resultsHa[i,8] <- result1[,4]
+
+      setTxtProgressBar(pb, i)
+
     }
   }
 
+  close(pb)
 
-  resultsHa <- resultsHa[!is.na(resultsHa[,5] | !is.na(resultsHa[,6])),]
+  # resultsHa <- resultsHa[!is.na(resultsHa[,5] | !is.na(resultsHa[,6])),]
+  resultsHa <- resultsHa[!is.na(resultsHa[,5]) & !is.na(resultsHa[,6]),]
 
   SimResults <- list(Results = resultsHa)
   class(SimResults) <- "ecocbo_data"

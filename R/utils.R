@@ -220,8 +220,8 @@ balanced_sampling <- function(i, Y, mm, nn, YPU, H0Sim, HaSim, resultsHa, transf
 #'
 #' @param x ecological community data.
 #' @param factEnv label for the community data.
-#' @param type which algorithm to use for the calculation? At the moment, the only
-#' option is "P".
+#' @param model which algorithm to use for the calculation? At the moment, the only
+#' option is "nested.symmetric".
 #' @param method appropriate distance/dissimilarity metric (e.g. Gower,
 #' Bray–Curtis, Jaccard, etc).
 #' @param transformation Mathematical function to reduce the weight of very
@@ -237,15 +237,16 @@ balanced_sampling <- function(i, Y, mm, nn, YPU, H0Sim, HaSim, resultsHa, transf
 #' variance (PERMANOVA). Wiley statsref: statistics reference online, 1-15.
 #'
 #' @importFrom vegan vegdist
+#' @importFrom vegan betadisper
 #'
 #' @seealso [vegan::vegdist()]
 #'
 #' @export
 #' @keywords internal
 
-permanova_twoway <- function(x, factEnv, method = "bray", transformation = "none", type = "P"){
-  # PERMANOVA two way nested ----
-  pseudoF_P2 <- function(x, factEnv, method = "bray", transformation = "none"){
+permanova_twoway <- function(x, factEnv, method = "bray", transformation = "none", model = "nested.symmetric"){
+  # PERMANOVA two way orthogonal and nested ----
+  pseudoF_2Orthogonal <- function(x, factEnv, method = "bray", transformation = "none"){
     # data transformation, if necessary, and calculate the distance matrix
     if (transformation == "square root") {
       x.t <- sqrt(x)
@@ -274,32 +275,19 @@ permanova_twoway <- function(x, factEnv, method = "bray", transformation = "none
     }
 
     # size for the labels we work with
-    a = nlevels(as.factor(factEnv$sector))
-    b = nlevels(as.factor(factEnv$sites))
-    # n = max(factEnv$N)
-    factEnv["secsit"] <- paste0(factEnv$sector, factEnv$site)
-    n = nlevels(as.factor(factEnv$secsit))
-    N = n * a * b
+    a = nlevels(as.factor(factEnv$sector)) # number of sectors (A)
+    b = nlevels(as.factor(factEnv$sites))  # number of sites (B)
+    factEnv["secsit"] <- paste0(factEnv$sector, factEnv$site)  # labels for the intersection (AB)
+    n = nlevels(as.factor(factEnv$secsit)) # number of intersections (AB)
 
     # sum of squares total, Huygen for all
-    SST <- SS(d)
-    SST <- SST[2]
-    #SST <- (SST[2] * SST[1]) / N
+    SST <- SS(d)[2]
 
-    # calculate SS for A
-    # A1 <- rownames(factEnv[factEnv$sector == "E",])
-    # A2 <- rownames(factEnv[factEnv$sector == "I",])
-    #listA <- lapply(list(A1 = vegdist(x.t[A1,]), A2 = vegdist(x.t[A2,])), SS)
-    # SSdA <- sum(listA[,2,]) / (b * n)
-    # SSdA <- sum(listA[,2,]) / b
-
-    rwNmA <- as.data.frame(matrix(nrow = (nrow(factEnv)/a), ncol = a))
-    colnames(rwNmA) <- levels(as.factor(factEnv$sector))
-
+    # calculates SS for A
     listA <- list()
     for(i in levels(as.factor(factEnv$sector))){
       RwNm <- rownames(factEnv[factEnv$sector == i,])
-      listA[[i]] <- SS(vegdist(x.t[RwNm,]))
+      listA[[i]] <- SS(vegdist(x.t[RwNm,], method = method))
     }
 
     listA <- array(unlist(listA), dim = c(1,2,a))
@@ -307,20 +295,10 @@ permanova_twoway <- function(x, factEnv, method = "bray", transformation = "none
     SSA <- SST - SSdA
 
     # calculate SS for B
-    # B1 <- rownames(factEnv[factEnv$sites == 1,])
-    # B2 <- rownames(factEnv[factEnv$sites == 2,])
-    # listB <- lapply(list(B1 = vegdist(x.t[B1,]), B2 = vegdist(x.t[B2,])), SS)
-    # listB <- array(unlist(listB), dim = c(1,2,2))
-    # SSdB <- sum(listB[,2,]) / (a * n)
-    # SSdB <- sum(listB[,2,]) / a
-
-    rwNmB <- as.data.frame(matrix(nrow = (nrow(factEnv)/b), ncol = b))
-    colnames(rwNmB) <- levels(as.factor(factEnv$sites))
-
     listB <- list()
     for(i in levels(as.factor(factEnv$sites))){
       RwNm <- rownames(factEnv[factEnv$sites == i,])
-      listB[[i]] <- SS(vegdist(x.t[RwNm,]))
+      listB[[i]] <- SS(vegdist(x.t[RwNm,], method = method))
     }
 
     listB <- array(unlist(listB), dim = c(1,2,b))
@@ -328,50 +306,38 @@ permanova_twoway <- function(x, factEnv, method = "bray", transformation = "none
     SSB <- SST - SSdB
 
     # calculate SS for residuals
-    # RE1 <- rownames(factEnv[factEnv$secsit == "E1",])
-    # RE2 <- rownames(factEnv[factEnv$secsit == "E2",])
-    # RI1 <- rownames(factEnv[factEnv$secsit == "I1",])
-    # RI2 <- rownames(factEnv[factEnv$secsit == "I2",])
-    # listR <- lapply(list(vegdist(x.t[RE1,], method = method), vegdist(x.t[RE2,], method = method),
-    #                      vegdist(x.t[RI1,], method = method), vegdist(x.t[RI2,], method = method)),
-    #                 SS)
-    # listR <- array(unlist(listR), dim = c(1,2,(a * b)))
-    # SSR <- sum(listR[,2,]) / n
-
-    r <- length(unique(factEnv$secsit))
-    rwNmR <- as.data.frame(matrix(nrow = (nrow(factEnv) / r), ncol = r))
-    colnames(rwNmR) <- levels(as.factor(factEnv$secsit))
-
     listR <- list()
     for(i in levels(as.factor(factEnv$secsit))){
       RwNm <- rownames(factEnv[factEnv$secsit == i,])
-      listR[[i]] <- SS(vegdist(x.t[RwNm,]))
+      listR[[i]] <- SS(vegdist(x.t[RwNm,], method = method))
     }
 
-    listR <- array(unlist(listR), dim = c(1,2,r))
+    listR <- array(unlist(listR), dim = c(1,2,n))
     SSR <- sum(listR[,2,])
 
     # calculate SS for interaction A-B
     SSAB <- SST - SSA - SSB - SSR
 
-    # SSA + SSB + SSAB + SSR
-
     # fill the permanova table
+    # degrees of freedom
     DoFA <- a - 1
     DoFB <- b - 1
     DoFAB <- DoFA * DoFB
     DoFR <- a * b * (n - 1)
     DoFT <- (a * b * n) - 1
 
+    # mean squares
     MSA <- SSA / DoFA
     MSB <- SSB / DoFB
     MSAB <- SSAB / DoFR
     MSR <- SSR / DoFT
 
-    FobsA <- MSAB / MSA
-    FobsB <- MSAB / MSB
-    # FobsA <- MSA / MSAB
-    # FobsB <- MSB / MSAB
+    # observed pseudoF
+    # these divisions depend on the type of factors we're dealing with.
+    # it's best explained in Table 10.8 from (Underwood, 1997)
+    FobsA <- MSA / MSAB
+    FobsB <- MSB / MSAB
+    FobsAB <- MSAB / MSR
 
     Fobs <- as.data.frame(matrix(nrow = 5, ncol = 4))
     colnames(Fobs) <- c("SS", "DoF", "MS", "F")
@@ -387,6 +353,7 @@ permanova_twoway <- function(x, factEnv, method = "bray", transformation = "none
     Fobs[3,1] <- SSAB
     Fobs[3,2] <- DoFAB
     Fobs[3,3] <- MSAB
+    Fobs[3,4] <- FobsAB
     Fobs[4,1] <- SSR
     Fobs[4,2] <- DoFR
     Fobs[4,3] <- MSR
@@ -396,16 +363,220 @@ permanova_twoway <- function(x, factEnv, method = "bray", transformation = "none
     return(Fobs)
   }
 
+  pseudoF_2NestedSymmetric <- function(x, factEnv, method, transformation){
+    # data transformation, if necessary, and calculate the distance matrix
+    if (transformation == "square root") {
+      x.t <- sqrt(x)
+      rm(x)
+      d <- vegan::vegdist(x.t, method = method)
+    }
+    if (transformation == "fourth root") {
+      x.t <- sqrt(sqrt(x))
+      rm(x)
+      d <- vegan::vegdist(x.t, method = method)
+    }
+    if (transformation == "Log (X+1)") {
+      x.t <- log(x + 1)
+      rm(x)
+      d <- vegan::vegdist(x.t, method = method)
+    }
+    if (transformation == "P/A") {
+      x.t <- 1 * (x > 0)
+      rm(x)
+      d <- vegan::vegdist(x.t, method = method, binary = TRUE)
+    }
+    if (transformation == "none") {
+      x.t <- x
+      rm(x)
+      d <- vegan::vegdist(x.t, method = method)
+    }
+
+    # size for the labels we work with
+    a = nlevels(as.factor(factEnv$sector))  # number of sectors (A)
+    b = nlevels(as.factor(factEnv$sites))   # number of sites (B)
+    factEnv["secsit"] <- paste0(factEnv$sector, factEnv$site) # intersections AB
+    nBA = nlevels(as.factor(factEnv$secsit))  # number of intersections AB
+    # n cómo conseguir este número?
+    nNm = unique(factEnv$sector)
+    nScSt = unique(factEnv$secsit)
+
+    # calculates SS for all
+    SST <- SS(d*100)[2]
+
+    # calculates SS within replicates
+    listR <- list()
+    for(i in nScSt){
+      RwNm <- rownames(factEnv[factEnv$secsit == i,])
+      listR[[i]] <- SS(vegdist(x.t[RwNm,], method = method)*100)
+    }
+
+    listR <- array(unlist(listR), dim = c(1,2,nBA))
+    SSR <- sum(listR[,2,])
+
+    # calculates SS_B(A)
+    listBA <- list()
+
+
+
+    centroidBA <- vegan::betadisper(d, group = factEnv$secsit)$centroids
+    # distBA <- vegan::vegdist(centroidBA, method = "euclidean", transformation = "square root") * 100
+    distBA <- vegan::vegdist(vegan::scores(vegan::betadisper(d, group = factEnv$secsit,
+                                                             type = "centroid"))$centroids,
+                             method = "euclidean") * 100
+    betdisBA <- vegan::betadisper(d, group = factEnv$secsit, type = "centroid")
+    negPCo <- which(betdisBA$eig < 0)
+
+    centroidBA <- betdisBA$centroids[,-negPCo]
+    distBA <- vegan::vegdist(centroidBA, transformation = "square root", method = "euclidean") * 100
+
+
+    for(i in nNm){
+      indexSector <- unique(factEnv[factEnv$sector == i,4])
+      listBA[[i]] <- SS(as.matrix(distBA)[indexSector, indexSector]) / 2
+    }
+
+    listBA <- array(unlist(listBA), dim = c(1,2,nlevels(as.factor(nNm))))
+    listBA[,1,] <- listBA[,1,]*2
+    SSBA <- sum(listBA[,2,])
+
+    # calculates SSA
+    SSA <- SST - SSBA - SSR
+
+    # fill the permanova table
+    # degrees of freedom
+    DoFA <- a - 1
+    DoFBA <- a * (b - 1)
+    DoFR <- a * b * (n - 1)
+    DoFT <- (a * b * n) - 1
+
+    # mean squares
+    MSA <- SSA / DoFA
+    MSBA <- SSBA / DoFBA
+    MSR <- SSR / DoFR
+
+    # observed pseudoF
+    FobsA <- MSA / MSBA
+    FobsBA <- MSBA / MSR
+
+    Fobs <- as.data.frame(matrix(nrow = 4, ncol = 4))
+    colnames(Fobs) <- c("SS", "DoF", "MS", "F")
+    rownames(Fobs) <- c("A", "B(A)", "R", "T")
+    Fobs[1,1] <- SSA
+    Fobs[1,2] <- DoFA
+    Fobs[1,3] <- MSA
+    Fobs[1,4] <- FobsA
+    Fobs[2,1] <- SSBA
+    Fobs[2,2] <- DoFBA
+    Fobs[2,3] <- MSBA
+    Fobs[2,4] <- FobsBA
+    Fobs[3,1] <- SSR
+    Fobs[3,2] <- DoFR
+    Fobs[3,3] <- MSR
+    Fobs[4,1] <- SST
+    Fobs[4,2] <- DoFT
+
+    return(Fobs)
+
+  }
+
   ## Main function which returns pseudoF and MS ----
   if(dim(x)[1] != dim(factEnv)[1])
     stop("x and factEnv dimensions do not match")
-  if(type != "P" & type != "BF")
-    stop("Possible values for type are P and BF")
+  if(model != "nested.symmetric" & model != "nested.asymmetric" & model != "orthogonal")
+    stop("Possible values for type are \"nested.symmetric\", \"nested.asymmetric\",
+         \"orthogonal\" and \"random.oneway\"")
 
-  Results <- pseudoF_P2(x, factEnv, method, transformation)
+  if(model == "nested.symmetric"){
+    Results <- pseudoF_2NestedSymmetric(x, factEnv, method, transformation)
+  } else if(model == "nested.asymmetric"){
+    Results <- pseudoF_2NestedSymmetric(x, factEnv, method, transformation)
+  } else {
+    Results <- pseudoF_2Orthogonal(x, factEnv, method, transformation)
+  }
+
   Fobs <- Results
   return(Fobs)
 }
 
+#' Balanced sampling 2
+#'
+#' Develops the experimental design based on the provided conditions
+#'
+#' @param i pointer to the index in the list of experimental designs to try.
+#' @param Y index to the data.frame the function will work with.
+#' @param mm number of site the function is working with in each iteration.
+#' @param nn number of samples to consider in each iteration.
+#' @param YPU label for the sites in each iteration, as used by
+#' [sampling::balancedtwostage()]
+#' @param H0Sim simulated community from \code{SSP::simdata()} in which H0 is
+#' true.
+#' @param HaSim simulated community from \code{SSP::simdata()} in which H0 is
+#' false.
+#' @param resultsHa helper matrix that stores labels and later the results.
+#' @param transformation Mathematical function to reduce the weight of very
+#' dominant species.
+#' @param method appropriate distance/dissimilarity metric (e.g. Gower,
+#' Bray–Curtis, Jaccard, etc).
+#' @param model which algorithm to use for the calculation? At the moment, the only
+#' option is "nested.symmetric".
+#' @param nSect Total number of sectors to be simulated in each data set.
+#' @param sites Total number of sites to be simulated in each data set.
+#' @param N Total number of samples to be simulated in each site.
+#'
+#' @return a data frame with values for observed F (for H0 and Ha), and the Ha mean
+#' squares for residuals and variation among sites.
+#'
+#' @author Edlin Guerra-Castro (\email{edlinguerra@@gmail.com}), Arturo Sanchez-Porras
+#'
+#' @references Underwood, A. J. (1997). Experiments in ecology: their logical
+#' design and interpretation using analysis of variance. Cambridge university
+#' press.
+#'
+#' @importFrom sampling balancedtwostage
+#'
+#' @seealso [sampling::balancedtwostage()]
+#'
+#' @export
+#' @keywords internal
+#'
+
+balanced_sampling2 <- function(i, Y, mm, nn, YPU, H0Sim, HaSim, resultsHa,
+                               transformation, method, model, nSect, sites, N){
+  # Get the samples index
+  sel <- sampling::balancedtwostage(Y, selection = 1, m = mm[i],
+                                    n = nn[i], PU = YPU, comment = FALSE)
+  ones <- which(sel[,1] %in% 1)
+  ones_n <- rep(ones, nSect)
+  ones_s <- rep(c(0:(nSect-1)) * sites * N, each = length(ones))
+  ones <- ones_n + ones_s
+
+  y0 <- H0Sim[ones,,resultsHa[i,1]]
+  ya <- HaSim[ones,,resultsHa[i,1]]
+  yHa <- dim(y0)[2] - 3
+
+  # Apply PERMANOVA to get F and mean squares
+  result1 <- permanova_twoway(x = type.convert(as.data.frame(y0[, 1:yHa]), as.is = FALSE),
+                              factEnv = as.data.frame(ya[,c((yHa+1):(yHa+3))]),
+                              transformation = transformation,
+                              method = method,
+                              model = model)
+  result2 <- permanova_twoway(x = type.convert(as.data.frame(ya[, 1:yHa]), as.is = FALSE),
+                              factEnv = as.data.frame(ya[,c((yHa+1):(yHa+3))]),
+                              transformation = transformation,
+                              method = method,
+                              model = model)
+  result0 <- matrix(nrow = 1, ncol = 4)
+  # Values of pseudoF for A are stored in the result, values for MSA and MSR come from the
+  # dataset with Ha
+  colnames(result0) <- c("FobsH0", "FobsHa", "MSA", "MSR")
+
+  # Gather the results and return
+  result0[,1] <- result1["A", "F"]   #result1[1,4]
+  result0[,2] <- result2["A", "F"]   #result2[1,4]
+  result0[,3] <- result2["A", "MS"]  #result2[1,3]
+  result0[,4] <- result2["R", "MS"]  #result2[4,3]
+  return(result0)
+
+}
 
 

@@ -48,7 +48,7 @@ cost_n <- function(n, ct, ck, cj){
 
   # Using equation 9.19 (Underwood, 1997)
   m[,2] <- floor(ct / (n * ck + cj))
-  m[,1] <- floor(m[,1])
+  m[,1] <- m[,1]
 
   return(m)
 }
@@ -60,7 +60,7 @@ cost_v <- function(n, comp.var, multSE){
   # Using equation 9.18 (Underwood, 1997)
   m[,2] <- floor((comp.var[,2] + m$nOpt * comp.var[,1]) /
                    (multSE * multSE * m$nOpt))
-  m[,1] <- floor(m[,1])
+  m[,1] <- m[,1]
 
   return(m)
 }
@@ -76,6 +76,7 @@ cost_v <- function(n, comp.var, multSE){
 
   ## Calculate optimal n ----
   nOpt <- sqrt((cj * comp.var[,2]) / (ck * comp.var[,1]))
+  nOpt <- floor(nOpt)
 
   ## Calculate optimal m ----
   if(is.null(multSE)) {

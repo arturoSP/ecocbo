@@ -4,7 +4,13 @@
 \alias{permanova_twoway}
 \title{PERMANOVA two-way}
 \usage{
-permanova_twoway(x, factEnv, method = "bray", transformation = "none")
+permanova_twoway(
+  x,
+  factEnv,
+  method = "bray",
+  transformation = "none",
+  model = "nested.symmetric"
+)
 }
 \arguments{
 \item{x}{ecological community data.}
@@ -17,8 +23,8 @@ Bray–Curtis, Jaccard, etc).}
 \item{transformation}{Mathematical function to reduce the weight of very
 dominant species.}
 
-\item{type}{which algorithm to use for the calculation? At the moment, the only
-option is "P".}
+\item{model}{which algorithm to use for the calculation? At the moment, the only
+option is "nested.symmetric".}
 }
 \value{
 A data frame containing the resulting PERMANOVA table.
