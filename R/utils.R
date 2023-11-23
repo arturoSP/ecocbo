@@ -396,48 +396,126 @@ permanova_twoway <- function(x, factEnv, method = "bray", transformation = "none
     b = nlevels(as.factor(factEnv$sites))   # number of sites (B)
     factEnv["secsit"] <- paste0(factEnv$sector, factEnv$site) # intersections AB
     nBA = nlevels(as.factor(factEnv$secsit))  # number of intersections AB
-    # n cómo conseguir este número?
+    nRep = dim(factEnv)[1] / nBA  # cómo conseguir este número?
     nNm = unique(factEnv$sector)
     nScSt = unique(factEnv$secsit)
 
     # calculates SS for all
     SST <- SS(d*100)[2]
+    #SST <- SS(d)[2]
 
     # calculates SS within replicates
     listR <- list()
     for(i in nScSt){
       RwNm <- rownames(factEnv[factEnv$secsit == i,])
-      listR[[i]] <- SS(vegdist(x.t[RwNm,], method = method)*100)
+      dR <- vegdist(x.t[RwNm,], method = method)
+      listR[[i]] <- SS(dR*100)
     }
 
     listR <- array(unlist(listR), dim = c(1,2,nBA))
     SSR <- sum(listR[,2,])
 
     # calculates SS_B(A)
+
+    # # se calcula distancia bray-curtis para cada sector, se calculan centroides para cada sector
+    # # se calcula SS de la matriz de distancia euclidiana de los centroides, se suman los SS para
+    # # obtener SSBA
+    # listBA <- list()
+    # for(i in nNm){
+    #   RwNm <- rownames(factEnv[factEnv$sector == i,])
+    #   tDist <- vegan::vegdist(x.t[RwNm,], method = method) * 100
+    #   tCentroid <- vegan::betadisper(tDist,
+    #                                  group = factEnv[factEnv[,3] == i,4],
+    #                                  type = "centroid",
+    #                                  bias.adjust = T)$centroids
+    #   listBA[[i]] <- SS(vegan::vegdist(tCentroid, method = "euclidean"))
+    # }
+    # listBA <- array(unlist(listBA), dim = c(1,2,a))
+    # SSBA <- sum(listBA[,2,]) * nRep
+    # SSBA
+    #
+    # # se calcula centroides de la matriz *d* original, se calcula distancia euclidiana para cada
+    # # sector, se calcula SS para cada matriz de distancia, se suman SS para obtener SSBA
+    # listBA <- list()
+    # tCentroid <- vegan::betadisper(d, group = factEnv$secsit, type = "centroid", bias.adjust = T)$centroids
+    # for(i in nNm){
+    #   RwNm <- unique(factEnv[factEnv[,3] == i, 4])
+    #   distEuc <- vegan::vegdist(tCentroid[RwNm,], method = "euclidean") * 100
+    #   listBA[[i]] <- SS(distEuc)
+    # }
+    # listBA <- array(unlist(listBA), dim = c(1,2,a))
+    # SSBA <- sum(listBA[,2,]) * nRep
+    # SSBA
+    #
+    # # se calculan centroides para los sectores de la matriz original *d*, se les calcula
+    # # distancia euclidiana, se calcula SS
+    # tDisp <- vegan::betadisper(d, group = factEnv$sector, type = "centroid", bias.adjust = T)
+    # distEuc <- vegan::vegdist(tDisp$centroids, method = "euclidean")*100
+    # SSBA <- SS(distEuc)[2] * nRep
+    # SSBA
+    #
+    # # se calcula distancia bray-curtis para cada sector, se calculan centroides para cada sector
+    # # se eliminan componentes principales negativos, se calcula SS de la matriz de distancia
+    # # euclidiana de los centroides, se suman los SS para obtener SSBA
+    # listBA <- list()
+    # for(i in nNm){
+    #   RwNm <- rownames(factEnv[factEnv$sector == i,])
+    #   tDist <- vegan::vegdist(x.t[RwNm,], method = method) * 100
+    #   tCentroid <- vegan::betadisper(tDist,
+    #                                  group = factEnv[factEnv[,3] == i,4],
+    #                                  type = "centroid",
+    #                                  bias.adjust = T)
+    #   negEig <- which(tCentroid$eig > 0)
+    #   distEuc <- vegan::vegdist(tCentroid$centroids[,negEig], method = "euclidean", upper = T)
+    #   listBA[[i]] <- SS(distEuc)
+    # }
+    # listBA <- array(unlist(listBA), dim = c(1,2,a))
+    # SSBA <- sum(listBA[,2,]) * nRep
+    # SSBA
+    #
+    # # se calcula centroides de la matriz *d* original, se eliminan componentes principales
+    # # negativos, se calcula distancia euclidiana para cada sector, se calcula SS para cada
+    # # matriz de distancia, se suman SS para obtener SSBA
+    # listBA <- list()
+    # tCentroid <- vegan::betadisper(d, group = factEnv$secsit, type = "centroid", bias.adjust = T)
+    # negEig <- which(tCentroid$eig > 0)
+    # for(i in nNm){
+    #   RwNm <- unique(factEnv[factEnv[,3] == i, 4])
+    #   distEuc <- vegan::vegdist(tCentroid$centroids[RwNm,negEig], method = "euclidean") * 100
+    #   listBA[[i]] <- SS(distEuc)
+    # }
+    # listBA <- array(unlist(listBA), dim = c(1,2,a))
+    # SSBA <- sum(listBA[,2,]) * nRep
+    # SSBA
+    #
+    # # se calculan centroides para los sectores de la matriz original *d*, se eliminan eigvalues
+    # # negativos, se les calcula distancia euclidiana, se calcula SS
+    # tDisp <- vegan::betadisper(d, group = factEnv$sector, type = "centroid", bias.adjust = T)
+    # negEig <- which(tDisp$eig > 0)
+    # distEuc <- vegan::vegdist(tDisp$centroids[,negEig], method = "euclidean")*100
+    # SSBA <- SS(distEuc)[2] * nRep
+    # SSBA
+
+    # se calcula distancia bray-curtis para cada sector, se calculan centroides para cada sector
+    # se eliminan componentes principales negativos, se calcula SS de la matriz de distancia
+    # euclidiana de los centroides, se suman los SS para obtener SSBA
     listBA <- list()
-
-
-
-    centroidBA <- vegan::betadisper(d, group = factEnv$secsit)$centroids
-    # distBA <- vegan::vegdist(centroidBA, method = "euclidean", transformation = "square root") * 100
-    distBA <- vegan::vegdist(vegan::scores(vegan::betadisper(d, group = factEnv$secsit,
-                                                             type = "centroid"))$centroids,
-                             method = "euclidean") * 100
-    betdisBA <- vegan::betadisper(d, group = factEnv$secsit, type = "centroid")
-    negPCo <- which(betdisBA$eig < 0)
-
-    centroidBA <- betdisBA$centroids[,-negPCo]
-    distBA <- vegan::vegdist(centroidBA, transformation = "square root", method = "euclidean") * 100
-
-
     for(i in nNm){
-      indexSector <- unique(factEnv[factEnv$sector == i,4])
-      listBA[[i]] <- SS(as.matrix(distBA)[indexSector, indexSector]) / 2
+      RwNm <- rownames(factEnv[factEnv$sector == i,])
+      dBA <- vegan::vegdist(x.t[RwNm,], method = method)
+      tCentroid <- vegan::betadisper(dBA * 100,
+                                     group = factEnv[factEnv[,3] == i,4],
+                                     type = "centroid",
+                                     bias.adjust = F)
+      negEig <- which(tCentroid$eig > 0)
+      listBA[[i]] <- vegan::vegdist(tCentroid$centroids[,negEig],
+                                    method = "euclidean")
     }
+    listBA <- lapply(listBA, SS)
+    listBA <- array(unlist(listBA), dim = c(1,2,a))
+    SSBA <- sum(listBA[,2,]) * nRep
+    SSBA
 
-    listBA <- array(unlist(listBA), dim = c(1,2,nlevels(as.factor(nNm))))
-    listBA[,1,] <- listBA[,1,]*2
-    SSBA <- sum(listBA[,2,])
 
     # calculates SSA
     SSA <- SST - SSBA - SSR
@@ -446,8 +524,8 @@ permanova_twoway <- function(x, factEnv, method = "bray", transformation = "none
     # degrees of freedom
     DoFA <- a - 1
     DoFBA <- a * (b - 1)
-    DoFR <- a * b * (n - 1)
-    DoFT <- (a * b * n) - 1
+    DoFR <- a * b * (nRep - 1)
+    DoFT <- (a * b * nRep) - 1
 
     # mean squares
     MSA <- SSA / DoFA
@@ -540,7 +618,7 @@ permanova_twoway <- function(x, factEnv, method = "bray", transformation = "none
 #' @keywords internal
 #'
 
-balanced_sampling2 <- function(i, Y, mm, nn, YPU, H0Sim, HaSim, resultsHa,
+balanced_sampling2 <- function(i, Y, mm, nn, YPU, H0Sim, HaSim, factEnv, resultsHa,
                                transformation, method, model, nSect, sites, N){
   # Get the samples index
   sel <- sampling::balancedtwostage(Y, selection = 1, m = mm[i],
@@ -551,30 +629,33 @@ balanced_sampling2 <- function(i, Y, mm, nn, YPU, H0Sim, HaSim, resultsHa,
   ones <- ones_n + ones_s
 
   y0 <- H0Sim[ones,,resultsHa[i,1]]
+  rownames(y0) <- ones
   ya <- HaSim[ones,,resultsHa[i,1]]
-  yHa <- dim(y0)[2] - 3
+  rownames(ya) <- ones
+  factEnv <- factEnv[ones,]
 
   # Apply PERMANOVA to get F and mean squares
-  result1 <- permanova_twoway(x = type.convert(as.data.frame(y0[, 1:yHa]), as.is = FALSE),
-                              factEnv = as.data.frame(ya[,c((yHa+1):(yHa+3))]),
+  result1 <- permanova_twoway(x = y0,
+                              factEnv = factEnv,
                               transformation = transformation,
                               method = method,
                               model = model)
-  result2 <- permanova_twoway(x = type.convert(as.data.frame(ya[, 1:yHa]), as.is = FALSE),
-                              factEnv = as.data.frame(ya[,c((yHa+1):(yHa+3))]),
+  result2 <- permanova_twoway(x = ya,
+                              factEnv = factEnv,
                               transformation = transformation,
                               method = method,
                               model = model)
-  result0 <- matrix(nrow = 1, ncol = 4)
+  result0 <- matrix(nrow = 1, ncol = 5)
   # Values of pseudoF for A are stored in the result, values for MSA and MSR come from the
   # dataset with Ha
-  colnames(result0) <- c("FobsH0", "FobsHa", "MSA", "MSR")
+  colnames(result0) <- c("FobsH0", "FobsHa", "MSA", "MSBA", "MSR")
 
   # Gather the results and return
-  result0[,1] <- result1["A", "F"]   #result1[1,4]
-  result0[,2] <- result2["A", "F"]   #result2[1,4]
-  result0[,3] <- result2["A", "MS"]  #result2[1,3]
-  result0[,4] <- result2["R", "MS"]  #result2[4,3]
+  result0[,1] <- result1["A", "F"]
+  result0[,2] <- result2["A", "F"]
+  result0[,3] <- result2["A", "MS"]
+  result0[,4] <- result2["B(A)", "MS"]
+  result0[,5] <- result2["R", "MS"]
   return(result0)
 
 }

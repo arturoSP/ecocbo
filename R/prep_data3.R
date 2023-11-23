@@ -79,7 +79,7 @@
 #' simResults
 #'
 
-prep_data2 <- function(data, type = "counts", Sest.method = "average",
+prep_data3 <- function(data, type = "counts", Sest.method = "average",
                        cases = 5, N = 100, sites = 10,
                        n, m, k = 50,
                        transformation = "none", method = "bray",
@@ -94,81 +94,64 @@ prep_data2 <- function(data, type = "counts", Sest.method = "average",
   if(ceiling(m) != floor(m)){stop("m must be integer")}
   if(m <= 1){stop("m must be larger than 1")}
 
-  # split data by sectors ----
+  # get values for size limits
   data[,1] <- as.factor(data[,1])
-  data[,2] <- as.factor(data[,2])
   factSect <- data[,1]
-  dataSpl <- split(data, factSect)
-  dataSpl <- lapply(dataSpl, dplyr::select, -1)
+  nSect <- nlevels(factSect)         # number of sectors
+  nC <- ncol(data)                   # number of species +2
+  nR <- max(summary(factSect))       # number of rows per sector
 
-  nSect <- nlevels(factSect)
-  nR <- ncol(data)
-  nC <- max(summary(factSect))
+  # adapt data set so it only has 1 label column
+  datSim <- data
+  datSim[,2] <- as.factor(paste0(data[,1], "___", data[,2]))
+  datSim <- datSim[,-1]
 
-  # simulate H0 and Ha ----
-  dat2H0 <- lapply(dataSpl, function(df){
-    df[,1] <- "T0"
-    df[,1] <- as.factor(df[,1])
-    return(df)
-  })
 
-  dat2Ha <- lapply(dataSpl, function(df){
-    df[,1] <- as.factor(df[,1])
-    return(df)
-  })
+  # generate data for H0 and Ha
+  datH0 <- datSim
+  datH0[,1] <- "T___0"
 
-  # calculate simulation parameters, then simulate communities H0 and Ha ----
-  parH0 <- lapply(dat2H0, assempar, type = type, Sest.method = Sest.method)
-  parHa <- lapply(dat2Ha, assempar, type = type, Sest.method = Sest.method)
+  datHa <- datSim
 
+  # calculate simulation parameters
+  parH0 <- assempar(datH0, type = type, Sest.method = Sest.method)
+  parHa <- list()
   for(i in levels(factSect)){
-    parH0[[i]]$par$Species <- stringr::str_replace_all(parH0[[i]]$par$Species,
-                                                       "unseen.species ",
-                                                       paste0("unseen.species.",i,"."))
+    parHa[[i]] <-  assempar(datHa[stringr::str_detect(datHa[,1], paste0(i, "(?=___)")),],
+                             type = type, Sest.method = Sest.method)
     parHa[[i]]$par$Species <- stringr::str_replace_all(parHa[[i]]$par$Species,
                                                        "unseen.species ",
                                                        paste0("unseen.species.",i,"."))
   }
+  # parHa <- assempar(datHa, type = type, Sest.method = Sest.method)
 
-  simH0 <- lapply(parH0, simdata, cases = cases, N = (N*sites), sites = 1)
+  # calculate simulated communities
+  simH0 <- simdata(parH0, cases = cases, N = (N*sites*nSect), sites = 1)
   simHa <- lapply(parHa, simdata, cases = cases, N = N, sites = sites)
+  # simHa <- simdata(parHa, cases = cases, N = N, sites = sites)
 
-  # create blank matrixes to store registries ----
-  emptyH0 <- data.frame(matrix(nrow = 0, ncol = ncol(data)-2))
-  colnames(emptyH0) <- colnames(data[,-c(1,2)])
-  emptyHa <- emptyH0
+  # loop to get list for Ha ----
+  # play this loop to get all the data from the different sectors back together
+  # into a list only defined by the number of cases
 
-  listH0 <- list()
+  # create blank matrixes as a step to store registries for Ha
+  emptyHa <- data.frame(matrix(nrow = 0, ncol = ncol(data)-2))
+  colnames(emptyHa) <- colnames(data[,-c(1,2)])
+
+  # run the loop
   listHa <- list()
-
   for(i in seq_len(cases)){
     for(j in seq_len(nSect)){
-      simH0[[j]][[i]][["sector"]] <- levels(factSect)[j]
       simHa[[j]][[i]][["sector"]] <- levels(factSect)[j]
-
-      emptyH0 <- plyr::rbind.fill(emptyH0, simH0[[j]][[i]])
       emptyHa <- plyr::rbind.fill(emptyHa, simHa[[j]][[i]])
     }
-    listH0[[i]] <- emptyH0
     listHa[[i]] <- emptyHa
-    emptyH0 <- data.frame(matrix(nrow = 0, ncol = ncol(data)-2))
-    colnames(emptyH0) <- colnames(data[,-c(1,2)])
-    emptyHa <- emptyH0
+    emptyHa <- data.frame(matrix(nrow = 0, ncol = ncol(data)-2))
+    colnames(emptyHa) <- colnames(data[,-c(1,2)])
   }
 
-  # separate the lists to set data and labels apart ----
-  listH0label <- lapply(listH0, dplyr::select, c("N", "sites", "sector"))[[1]]
-  listHalabel <- lapply(listHa, dplyr::select, c("N", "sites", "sector"))[[1]]
-
-  listH0data <- lapply(listH0, dplyr::select, -c("N", "sites", "sector"))
-  listHadata <- lapply(listHa, dplyr::select, -c("N", "sites", "sector"))
-
-  # change NA to 0 and remove columns that do not have data ----
-  listH0data <- lapply(listH0data, function(x){
-    x[is.na(x)] <- 0
-    return(x)
-  })
-  listHadata <- lapply(listHadata, function(x){
+  # change NA to 0
+  listHa <- lapply(listHa, function(x){
     x[is.na(x)] <- 0
     return(x)
   })
@@ -184,28 +167,38 @@ prep_data2 <- function(data, type = "counts", Sest.method = "average",
                            "pseudoFH0", "pseudoFHa",
                            "MSA", "MSB(A)", "MSR")
 
-  # Loop to calculate pseudoF ----
-  listH0 <- lapply(listH0data, cbind, listH0label)
+  # design the arrays to store the lists ----
+  # H0 comes from simdata as-is, it does not include a column for sectors given that
+  # its data was simulated by merging sectors and sites together
+  H0Sim <- array(unlist(simH0), dim = c((N * sites * nSect), length(simH0[[1]]), cases))
+  colnames(H0Sim) <- colnames(simH0[[1]])
+  H0Sim <- H0Sim[,1:(dim(H0Sim)[2]-2),]
+
+  # Ha comes from the loop of simulating individual sectors and then putting them together
+  # the last three columns will be used as Factors matrix in the permanova design
+  listHalabel <- lapply(listHa, dplyr::select, c("N", "sites", "sector"))[[1]]
+  listHadata <- lapply(listHa, dplyr::select, -c("N", "sites", "sector"))
   listHa <- lapply(listHadata, cbind, listHalabel)
-
-  H0Sim <- array(unlist(listH0), dim = c((N * sites * nSect), length(listH0[[1]]), cases))
   HaSim <- array(unlist(listHa), dim = c((N * sites * nSect), length(listHa[[1]]), cases))
+  colnames(HaSim) <- colnames(listHa[[1]])
 
-  H0names <- colnames(listH0[[1]])
-  colnames(H0Sim) <- H0names
-  colnames(HaSim) <- H0names
+  # Factors matrix and data matrix for Ha
+  dimHa <- dim(HaSim)[2]
+  factEnv <- as.data.frame(HaSim[,(dimHa-2):dimHa,1])
+  HaSim <- type.convert(HaSim[,1:(dimHa-3),], as.is = TRUE)
 
-  # lista de 1 a mil
+  # Set of parameters for using balancedtwostage ----
+  # index marking the size of each resampled site
   Y <- cbind(1:(N * sites))
-  # lista de 10 sitios repetidos 100 veces
+  # index for the sites repeated N times
   YPU <- as.numeric(gl(sites, N))
-  # etiquetas de los sitios ((m-1) sitios repetidos k veces)
+  # labels for sites (i.e. (m-1) sites, repeated k times)
   mm <- resultsHa[,3]
-  # números de muestras a tomar (columna m * columna n)
+  # number of samples to consider (i.e. m * n)
   nn <- resultsHa[,3] * resultsHa[,4]
 
   # progress bar
-  pb <- txtProgressBar(max = NN, style = 3)
+  pb <- txtProgressBar(min = (NN * 0.05), max = NN, style = 3, initial = (NN * 0.05))
 
   if(useParallel){
     cl <- parallel::makeCluster(parallel::detectCores() - 2)
@@ -218,7 +211,7 @@ prep_data2 <- function(data, type = "counts", Sest.method = "average",
     result1 <- foreach::foreach(i=1:NN, .combine = rbind,
                                 .options.snow = opts) %dopar% {
       balanced_sampling2(i, Y, mm, nn, YPU,
-                        H0Sim, HaSim, resultsHa,
+                        H0Sim, HaSim, factEnv, resultsHa,
                         transformation, method, model,
                         nSect, sites, N)
     }
@@ -230,7 +223,7 @@ prep_data2 <- function(data, type = "counts", Sest.method = "average",
   } else {
     for (i in seq_len(NN)){
       result1 <- balanced_sampling2(i, Y, mm, nn, YPU,
-                                   H0Sim, HaSim, resultsHa,
+                                   H0Sim, HaSim, factEnv, resultsHa,
                                    transformation, method, model,
                                    nSect, sites, N)
       resultsHa[i,5] <- result1[,1]

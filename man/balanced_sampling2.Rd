@@ -12,6 +12,7 @@ balanced_sampling2(
   YPU,
   H0Sim,
   HaSim,
+  factEnv,
   resultsHa,
   transformation,
   method,
