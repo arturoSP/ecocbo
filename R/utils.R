@@ -52,8 +52,8 @@ SS <- function (d) {
 #' @export
 #' @keywords internal
 
+## PERMANOVA ----
 permanova_oneway <- function(x, factEnv, type = "P", method = "bray", transformation = "none"){
-  ## PERMANOVA ----
   pseudoF_P <- function(x, factEnv, method = "bray", transformation = "none"){
     if (transformation == "square root") {
       x.t <- sqrt(x)
@@ -94,14 +94,14 @@ permanova_oneway <- function(x, factEnv, type = "P", method = "bray", transforma
     SSi <- array(unlist(SSi), dim = c(1,2,nlev))
 
     # Calculate denominators
-    denA <- nlev - 1
     denR <- dimxt[1] - nlev
+    denA <- nlev - 1
 
     # Results
     SSR <- sum(SSi[,2,])
     SSA <- abs(SST - SSR)
-    MSA <- (SSA/denA)
     MSR <- (SSR/denR)
+    MSA <- (SSA/denA)
     Fobs <- MSA/MSR
     Fobs <- data.frame(SSA, SSR, SST, denA, denR, MSA, MSR, Fobs)
     return(Fobs)
@@ -244,8 +244,9 @@ balanced_sampling <- function(i, Y, mm, nn, YPU, H0Sim, HaSim, resultsHa, transf
 #' @export
 #' @keywords internal
 
+## PERMANOVA Two factors ----
 permanova_twoway <- function(x, factEnv, method = "bray", transformation = "none", model = "nested.symmetric"){
-  # PERMANOVA two way orthogonal and nested ----
+
   pseudoF_2Orthogonal <- function(x, factEnv, method = "bray", transformation = "none"){
     # data transformation, if necessary, and calculate the distance matrix
     if (transformation == "square root") {
@@ -396,105 +397,27 @@ permanova_twoway <- function(x, factEnv, method = "bray", transformation = "none
     b = nlevels(as.factor(factEnv$sites))   # number of sites (B)
     factEnv["secsit"] <- paste0(factEnv$sector, factEnv$site) # intersections AB
     nBA = nlevels(as.factor(factEnv$secsit))  # number of intersections AB
-    nRep = dim(factEnv)[1] / nBA  # cómo conseguir este número?
+    nRep = dim(factEnv)[1] / nBA  # number of times we're repeating each intersection
     nNm = unique(factEnv$sector)
     nScSt = unique(factEnv$secsit)
 
     # calculates SS for all
-    SST <- SS(d*100)[2]
-    #SST <- SS(d)[2]
+    # SST <- SS(d*100)[2]
+    SST <- SS(d)[2]
 
     # calculates SS within replicates
     listR <- list()
     for(i in nScSt){
       RwNm <- rownames(factEnv[factEnv$secsit == i,])
       dR <- vegdist(x.t[RwNm,], method = method)
-      listR[[i]] <- SS(dR*100)
+      # listR[[i]] <- SS(dR*100)
+      listR[[i]] <- SS(dR)
     }
 
     listR <- array(unlist(listR), dim = c(1,2,nBA))
     SSR <- sum(listR[,2,])
 
     # calculates SS_B(A)
-
-    # # se calcula distancia bray-curtis para cada sector, se calculan centroides para cada sector
-    # # se calcula SS de la matriz de distancia euclidiana de los centroides, se suman los SS para
-    # # obtener SSBA
-    # listBA <- list()
-    # for(i in nNm){
-    #   RwNm <- rownames(factEnv[factEnv$sector == i,])
-    #   tDist <- vegan::vegdist(x.t[RwNm,], method = method) * 100
-    #   tCentroid <- vegan::betadisper(tDist,
-    #                                  group = factEnv[factEnv[,3] == i,4],
-    #                                  type = "centroid",
-    #                                  bias.adjust = T)$centroids
-    #   listBA[[i]] <- SS(vegan::vegdist(tCentroid, method = "euclidean"))
-    # }
-    # listBA <- array(unlist(listBA), dim = c(1,2,a))
-    # SSBA <- sum(listBA[,2,]) * nRep
-    # SSBA
-    #
-    # # se calcula centroides de la matriz *d* original, se calcula distancia euclidiana para cada
-    # # sector, se calcula SS para cada matriz de distancia, se suman SS para obtener SSBA
-    # listBA <- list()
-    # tCentroid <- vegan::betadisper(d, group = factEnv$secsit, type = "centroid", bias.adjust = T)$centroids
-    # for(i in nNm){
-    #   RwNm <- unique(factEnv[factEnv[,3] == i, 4])
-    #   distEuc <- vegan::vegdist(tCentroid[RwNm,], method = "euclidean") * 100
-    #   listBA[[i]] <- SS(distEuc)
-    # }
-    # listBA <- array(unlist(listBA), dim = c(1,2,a))
-    # SSBA <- sum(listBA[,2,]) * nRep
-    # SSBA
-    #
-    # # se calculan centroides para los sectores de la matriz original *d*, se les calcula
-    # # distancia euclidiana, se calcula SS
-    # tDisp <- vegan::betadisper(d, group = factEnv$sector, type = "centroid", bias.adjust = T)
-    # distEuc <- vegan::vegdist(tDisp$centroids, method = "euclidean")*100
-    # SSBA <- SS(distEuc)[2] * nRep
-    # SSBA
-    #
-    # # se calcula distancia bray-curtis para cada sector, se calculan centroides para cada sector
-    # # se eliminan componentes principales negativos, se calcula SS de la matriz de distancia
-    # # euclidiana de los centroides, se suman los SS para obtener SSBA
-    # listBA <- list()
-    # for(i in nNm){
-    #   RwNm <- rownames(factEnv[factEnv$sector == i,])
-    #   tDist <- vegan::vegdist(x.t[RwNm,], method = method) * 100
-    #   tCentroid <- vegan::betadisper(tDist,
-    #                                  group = factEnv[factEnv[,3] == i,4],
-    #                                  type = "centroid",
-    #                                  bias.adjust = T)
-    #   negEig <- which(tCentroid$eig > 0)
-    #   distEuc <- vegan::vegdist(tCentroid$centroids[,negEig], method = "euclidean", upper = T)
-    #   listBA[[i]] <- SS(distEuc)
-    # }
-    # listBA <- array(unlist(listBA), dim = c(1,2,a))
-    # SSBA <- sum(listBA[,2,]) * nRep
-    # SSBA
-    #
-    # # se calcula centroides de la matriz *d* original, se eliminan componentes principales
-    # # negativos, se calcula distancia euclidiana para cada sector, se calcula SS para cada
-    # # matriz de distancia, se suman SS para obtener SSBA
-    # listBA <- list()
-    # tCentroid <- vegan::betadisper(d, group = factEnv$secsit, type = "centroid", bias.adjust = T)
-    # negEig <- which(tCentroid$eig > 0)
-    # for(i in nNm){
-    #   RwNm <- unique(factEnv[factEnv[,3] == i, 4])
-    #   distEuc <- vegan::vegdist(tCentroid$centroids[RwNm,negEig], method = "euclidean") * 100
-    #   listBA[[i]] <- SS(distEuc)
-    # }
-    # listBA <- array(unlist(listBA), dim = c(1,2,a))
-    # SSBA <- sum(listBA[,2,]) * nRep
-    # SSBA
-    #
-    # # se calculan centroides para los sectores de la matriz original *d*, se eliminan eigvalues
-    # # negativos, se les calcula distancia euclidiana, se calcula SS
-    # tDisp <- vegan::betadisper(d, group = factEnv$sector, type = "centroid", bias.adjust = T)
-    # negEig <- which(tDisp$eig > 0)
-    # distEuc <- vegan::vegdist(tDisp$centroids[,negEig], method = "euclidean")*100
-    # SSBA <- SS(distEuc)[2] * nRep
-    # SSBA
 
     # se calcula distancia bray-curtis para cada sector, se calculan centroides para cada sector
     # se eliminan componentes principales negativos, se calcula SS de la matriz de distancia
@@ -503,19 +426,17 @@ permanova_twoway <- function(x, factEnv, method = "bray", transformation = "none
     for(i in nNm){
       RwNm <- rownames(factEnv[factEnv$sector == i,])
       dBA <- vegan::vegdist(x.t[RwNm,], method = method)
-      tCentroid <- vegan::betadisper(dBA * 100,
+      tCentroid <- vegan::betadisper(dBA, # * 100,
                                      group = factEnv[factEnv[,3] == i,4],
                                      type = "centroid",
                                      bias.adjust = F)
-      negEig <- which(tCentroid$eig > 0)
-      listBA[[i]] <- vegan::vegdist(tCentroid$centroids[,negEig],
+      Eig <- which(tCentroid$eig > 0)
+      listBA[[i]] <- vegan::vegdist(tCentroid$centroids[,Eig],
                                     method = "euclidean")
     }
     listBA <- lapply(listBA, SS)
     listBA <- array(unlist(listBA), dim = c(1,2,a))
-    SSBA <- sum(listBA[,2,]) * nRep
-    SSBA
-
+    SSBA <- sum(listBA[,2,]) * nRep # this *nRep product was added to match the results in PRIMER
 
     # calculates SSA
     SSA <- SST - SSBA - SSR
@@ -646,8 +567,8 @@ balanced_sampling2 <- function(i, Y, mm, nn, YPU, H0Sim, HaSim, factEnv, results
                               method = method,
                               model = model)
   result0 <- matrix(nrow = 1, ncol = 5)
-  # Values of pseudoF for A are stored in the result, values for MSA and MSR come from the
-  # dataset with Ha
+
+  # Values of pseudoF for A are stored in the result, values for MSA and MSR come from the dataset with Ha
   colnames(result0) <- c("FobsH0", "FobsHa", "MSA", "MSBA", "MSR")
 
   # Gather the results and return
@@ -659,5 +580,90 @@ balanced_sampling2 <- function(i, Y, mm, nn, YPU, H0Sim, HaSim, factEnv, results
   return(result0)
 
 }
+
+#' Balanced sampling 3
+#'
+#' Develops the experimental design based on the provided conditions
+#'
+#' @param i pointer to the index in the list of experimental designs to try.
+#' @param Y index to the data.frame the function will work with.
+#' @param mm number of site the function is working with in each iteration.
+#' @param nn number of samples to consider in each iteration.
+#' @param YPU label for the sites in each iteration, as used by
+#' [sampling::balancedtwostage()]
+#' @param H0Sim simulated community from \code{SSP::simdata()} in which H0 is
+#' true.
+#' @param HaSim simulated community from \code{SSP::simdata()} in which H0 is
+#' false.
+#' @param resultsHa helper matrix that stores labels and later the results.
+#' @param transformation Mathematical function to reduce the weight of very
+#' dominant species.
+#' @param method appropriate distance/dissimilarity metric (e.g. Gower,
+#' Bray–Curtis, Jaccard, etc).
+#' @param model which algorithm to use for the calculation? At the moment, the only
+#' option is "nested.symmetric".
+#' @param nSect Total number of sectors to be simulated in each data set.
+#' @param sites Total number of sites to be simulated in each data set.
+#' @param N Total number of samples to be simulated in each site.
+#'
+#' @return a data frame with values for observed F (for H0 and Ha), and the Ha mean
+#' squares for residuals and variation among sites.
+#'
+#' @author Edlin Guerra-Castro (\email{edlinguerra@@gmail.com}), Arturo Sanchez-Porras
+#'
+#' @references Underwood, A. J. (1997). Experiments in ecology: their logical
+#' design and interpretation using analysis of variance. Cambridge university
+#' press.
+#'
+#' @importFrom sampling balancedtwostage
+#'
+#' @seealso [sampling::balancedtwostage()]
+#'
+#' @export
+#' @keywords internal
+#'
+
+# balanced_sampling3 <- function(i, Y, mm, nn, YPU, H0Sim, HaSim, factEnv, resultsHa,
+#                                transformation, method, model, nSect, sites, N){
+#   # Get the samples index
+#   sel <- sampling::balancedtwostage(Y, selection = 1, m = mm[i],
+#                                     n = nn[i], PU = YPU, comment = FALSE)
+#   ones <- which(sel[,1] %in% 1)
+#   ones_n <- rep(ones, nSect)
+#   ones_s <- rep(c(0:(nSect-1)) * sites * N, each = length(ones))
+#   ones <- ones_n + ones_s
+#
+#   y0 <- H0Sim[[resultsHa[i,1]]][ones,]
+#   rownames(y0) <- ones
+#   ya <- HaSim[[resultsHa[i,1]]][ones,]
+#   rownames(ya) <- ones
+#   factEnv <- factEnv[ones,]
+#
+#   # Apply PERMANOVA to get F and mean squares
+#   result1 <- permanova_twoway(x = y0,
+#                               factEnv = factEnv,
+#                               transformation = transformation,
+#                               method = method,
+#                               model = model)
+#   result2 <- permanova_twoway(x = ya,
+#                               factEnv = factEnv,
+#                               transformation = transformation,
+#                               method = method,
+#                               model = model)
+#   result0 <- matrix(nrow = 1, ncol = 5)
+#   # Values of pseudoF for A are stored in the result, values for MSA and MSR come from the
+#   # dataset with Ha
+#   colnames(result0) <- c("FobsH0", "FobsHa", "MSA", "MSBA", "MSR")
+#
+#   # Gather the results and return
+#   result0[,1] <- result1["A", "F"]
+#   result0[,2] <- result2["A", "F"]
+#   result0[,3] <- result2["A", "MS"]
+#   result0[,4] <- result2["B(A)", "MS"]
+#   result0[,5] <- result2["R", "MS"]
+#   return(result0)
+#
+# }
+
 
 

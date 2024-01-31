@@ -103,7 +103,7 @@ power_curve <- function(powr, m, n, cVar){
                shape = 21, size = 2.5, color = "black", fill = "red")+
     geom_label(aes(x = 1.25, y = 0.9, label = paste0("m = ", mm,
                                                     "\nn = ", nn,
-                                                    "\nCV = ", cVar[1])))+
+                                                    "\nCV = ", as.numeric(cVar[1]))))+
     scale_color_manual(breaks = levels(powrPl$m), values = mTot)+
     scale_linetype_manual(values = c(2,1))+
     scale_size_manual(values = c(0.5,1))+
@@ -184,7 +184,7 @@ density_plot <- function(results, powr, m, n, method, cVar){
     p1 <- p1 +
       geom_label(aes(x = bottom, y = 0.9, label = paste0("m = ", m,
                                                           "\nn = ", n,
-                                                          "\nCV = ", cVar[1])))
+                                                          "\nCV = ", as.numeric(cVar[1]))))
   }
   return(p1)
 }
@@ -225,7 +225,7 @@ density_plot <- function(results, powr, m, n, method, cVar){
   ## Plot according to the parameters ----
   dataRes <- list(Results = data$Results)
   class(dataRes) <- "ecocbo_data"
-  cVar <- round(scompvar(dataRes, n, m),3)
+  cVar <- round(scompvar(dataRes, n, m)[,2],2)
 
   if(method == "both") {
     p1 <- power_curve(powr, m, n, cVar)

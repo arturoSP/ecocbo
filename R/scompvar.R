@@ -44,7 +44,7 @@ scompvar <- function(data, n = NULL, m = NULL){
   # as these values are necessary for the cost-benefit optimization model.
 
   if(!inherits(data, "ecocbo_data"))
-    stop("data is not the right class(\"ecocbo_data\")")
+    stop("Data is not the right class(\"ecocbo_data\")")
 
   # read the results matrix to use Ha mean squares
   resultsBeta <- as.data.frame(data$Results)
@@ -62,18 +62,29 @@ scompvar <- function(data, n = NULL, m = NULL){
 
   resultsBeta <- resultsBeta[resultsBeta$m == m & resultsBeta$n == n,]
 
-  # Creates an empty matrix to store the results
-  compVar <- data.frame(compVarA = NA, compVarR = NA)
+  if(data$model == "single.factor"){
+    # Creates an empty matrix to store the results
+    compVar <- data.frame(Source = c("A", "Residual"),
+                          Est.var.comp = NA)
 
-  # Computes the mean for variation components (as per Table 7.6) ----
-  # σe = MSR
-  compVar[,2] <- mean(resultsBeta[,8], na.rm = T)
-  # σB(A) = (MSA - σe) / n (esto viene de tabla 9.3)
-  # σA = σe + MSA (esto viene de tabla 7.6)
-  # MSA <- mean(resultsBeta[,7], na.rm = T)
-  # compVar[,1] <- (MSA - compVar[,2]) / n  (esto sería de acuerdo a tabla 9.3)
-  # compVar[,1] <- compVar[,2] + MSA
-  compVar[,1] <- mean(resultsBeta[,7], na.rm = T)
+    # Computes the mean for variation components as per Table 8.5 (Quinn & Keough, 2002) ----
+    # σe = MSR
+    compVar[2,2] <- mean(resultsBeta[,8], na.rm = T)
+    # σA = (MSA - MSR) / n
+    compVar[1,2] <- (mean(resultsBeta[,7], na.rm = T) - compVar[2,2]) / n
+  } else {
+    # Creates an empty matrix to store the results
+    compVar <- data.frame(Source = c("A", "B(A)", "Residual"),
+                          Est.var.comp = NA)
+
+    # Computes the mean for variation components as per Table 9.5 (Quinn & Keough, 2002) ----
+    # σe = MSR
+    compVar[3,2] <- mean(resultsBeta[,9], na.rm = T)
+    # σB(A) = (MSBA - MSR) / n
+    compVar[2,2] <- (mean(resultsBeta[,8], na.rm = T) - compVar[3,2]) / n
+    # σA = (MSA - MSBA) / (n * m)
+    compVar[1,2] <- (mean(resultsBeta[,7], na.rm = T) - compVar[2,2]) / (n * m)
+  }
 
   return(compVar)
 }

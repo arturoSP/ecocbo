@@ -38,7 +38,7 @@
 #' sim_cbo(comp.var = compVar, multSE = NULL, ct = 20000, ck = 100, cj = 2500)
 #' sim_cbo(comp.var = compVar, multSE = 0.15, ct = NULL, ck = 100, cj = 2500)
 
-sim_cbo <- function(comp.var, multSE = NULL, ct = NULL, ck, cj){
+sim_cbo <- function(comp.var, multSE = NULL, ct = NULL, ck, cj = NULL){
 # Optimal cost-benefit model
 
 # Helper functions ----
@@ -48,41 +48,53 @@ cost_n <- function(n, ct, ck, cj){
 
   # Using equation 9.19 (Underwood, 1997)
   m[,2] <- floor(ct / (n * ck + cj))
-  m[,1] <- m[,1]
 
   return(m)
-}
+  }
 
 # Function to determine optimal m by setting desired variability.
 cost_v <- function(n, comp.var, multSE){
   m <- data.frame(nOpt = n, mOpt = NA)
 
   # Using equation 9.18 (Underwood, 1997)
-  m[,2] <- floor((comp.var[,2] + m$nOpt * comp.var[,1]) /
-                   (multSE * multSE * m$nOpt))
-  m[,1] <- m[,1]
+  m[,2] <- floor((comp.var[3,2] + n * comp.var[2,2]) /
+                   (multSE * multSE * n))
 
   return(m)
-}
+  }
 
 # Main function ----
   ## Validating data ----
   if(is.null(multSE) & is.null(ct)){
     stop("It is necessary to provide either multSE or ct")
   }
-  if(dim(comp.var)[1] != 1 | dim(comp.var)[2] != 2){
-    stop("Variation components must be in a 1x2 matrix")
+
+  # if(dim(comp.var)[1] != 3 | dim(comp.var)[2] != 2){
+  #   stop("Variation components must be in a 3x2 matrix")
+  # }
+
+  if(dim(comp.var)[1] == 3 & is.null(cj)){
+    stop("Cost per unit is required for a multivariate model")
   }
 
   ## Calculate optimal n ----
-  nOpt <- sqrt((cj * comp.var[,2]) / (ck * comp.var[,1]))
-  nOpt <- floor(nOpt)
+  if(dim(comp.var)[1] == 2){
+    if(is.null(multSE)){
+      n <- ct / ck
+    } else {
+      n <- floor(comp.var[2,2] / (multSE * multSE))
+    }
+    m <- data.frame(nOpt = n)
+  } else if(dim(comp.var)[1] == 3){
+    nOpt <- sqrt((cj * comp.var[3,2]) / (ck * comp.var[2,2]))
+    nOpt <- floor(nOpt)
 
-  ## Calculate optimal m ----
-  if(is.null(multSE)) {
-    m <- cost_n(nOpt, ct, ck, cj)
-  } else {
-    m <- cost_v(nOpt, comp.var, multSE)
+    ## Calculate optimal m ----
+    if(is.null(multSE)) {
+      m <- cost_n(nOpt, ct, ck, cj)
+    } else {
+      m <- cost_v(nOpt, comp.var, multSE)
+    }
   }
   return(m)
 }

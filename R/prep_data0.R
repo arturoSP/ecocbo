@@ -74,7 +74,7 @@
 #' simResults
 #'
 
-prep_data <- function(data, type = "counts", Sest.method = "average",
+prep_data0 <- function(data, type = "counts", Sest.method = "average",
                       cases = 5, N = 100, sites = 10,
                       n, m, k = 50,
                       transformation = "none", method = "bray",
@@ -92,112 +92,13 @@ prep_data <- function(data, type = "counts", Sest.method = "average",
   if(ceiling(m) != floor(m)){stop("m must be integer")}
   if(m <= 1){stop("m must be larger than 1")}
 
-  # read data and store it in two objects, one for H0 and one for Ha ----
-  datH0 <- data
-  datH0[,1] <- as.factor("T0")
-  datHa <- data
-  datHa[,1] <- as.factor(data[,1])
-
-  # calculate simulation parameters, then simulate communities ----
-  parH0 <- SSP::assempar(data = datH0,
-                         type = type, Sest.method = Sest.method)
-  parHa <- SSP::assempar(data = datHa,
-                         type = type, Sest.method = Sest.method)
-
-  simH0 <- SSP::simdata(parH0, cases = cases,
-                        N = (N * sites), sites = 1)
-  simHa <- SSP::simdata(parHa, cases = cases,
-                        N = N, sites = sites)
-
-  # Simulation parameters ---
-  xH0 <- dim(simHa[[1]])[1]
-  yH0 <- dim(simHa[[1]])[2]
-  casesHa <- length(simHa)
-
-  H0Sim <- simH0
-  HaSim <- simHa
-
-  if(dummy == TRUE){
-    yH0 <- yH0 + 1
-    for(i in seq_len(casesHa)){
-      H0Sim[[i]] <- cbind(simH0[[i]], dummy = 1)
-      H0Sim[[i]] <- H0Sim[[i]][,c(1:(yH0-3), (yH0), (yH0-2):(yH0-1))]
-      HaSim[[i]] <- cbind(simHa[[i]], dummy = 1)
-      HaSim[[i]] <- HaSim[[i]][,c(1:(yH0-3), (yH0), (yH0-2):(yH0-1))]
-    }
+  # The function to work with depends on the selected model
+  Results <- if(model == "single.factor"){
+    prep_data(data, type, Sest.method, cases, N, sites, n, m, k, transformation, method, dummy, useParallel, model)
+  } else if(model == "nested.symmetric"){
+    prep_data4(data, type, Sest.method, cases, N, sites, n, m, k, transformation, method, dummy, useParallel, model)
   }
 
-  H0Sim <- array(unlist(H0Sim), dim = c(xH0, yH0, casesHa))
-  HaSim <- array(unlist(HaSim), dim = c(xH0, yH0, casesHa))
-
-  labHa <- HaSim[,c((yH0-1):(yH0)),1]
-  colnames(labHa) <- c("N", "sites")
-
-  # Stamp Ha labels to H0 (for sites and N)
-  H0Sim[,c((yH0-1):yH0),] <- labHa
-
-  ## Helper matrix to store labels ----
-  NN <- casesHa * k * (m-1) * (n-1)
-  resultsHa <- matrix(nrow = NN, ncol = 8)
-  resultsHa[, 1] <- rep(seq(casesHa), times = 1, each = (k * (m-1) * (n-1)))
-  resultsHa[, 2] <- rep(1:k, times = (n-1) * (m-1) * casesHa)
-  resultsHa[, 3] <- rep(seq(2, m), times = (n-1), each = k)
-  resultsHa[, 4] <- rep(seq(2, n), times = 1, each = k * (m-1))
-  colnames(resultsHa) <- c("dat.sim", "k", "m", "n",
-                           "pseudoFH0", "pseudoFHa",
-                           "MSA", "MSR")
-
-  # Loop to calculate pseudoF ----
-  # Loop parameters
-  Y <- cbind(1:(N * sites))
-  YPU <- as.numeric(gl(sites, N))
-  mm <- resultsHa[,3]
-  nn <- resultsHa[,3] * resultsHa[,4]
-
-  pb <- txtProgressBar(max = NN, style = 3)
-
-  if(useParallel){
-    cl <- parallel::makeCluster(parallel::detectCores() - 2)
-    doSNOW::registerDoSNOW(cl)
-    # doParallel::registerDoParallel(cl)
-
-    progress <- function(n) setTxtProgressBar(pb, n)
-    opts <- list(progress=progress)
-
-    parallel::clusterExport(cl, list("balanced_sampling", "permanova_oneway"))
-    result1 <- foreach::foreach(i=1:NN, .combine = rbind,
-                                .options.snow = opts) %dopar% {
-      balanced_sampling(i, Y, mm, nn, YPU,
-                        H0Sim, HaSim, resultsHa,
-                        transformation, method)
-      }
-    resultsHa[,5] <- result1[,1]
-    resultsHa[,6] <- result1[,2]
-    resultsHa[,7] <- result1[,3]
-    resultsHa[,8] <- result1[,4]
-  } else {
-    for (i in seq_len(NN)){
-      result1 <- balanced_sampling(i, Y, mm, nn, YPU,
-                                   H0Sim, HaSim, resultsHa,
-                                   transformation, method)
-      resultsHa[i,5] <- result1[,1]
-      resultsHa[i,6] <- result1[,2]
-      resultsHa[i,7] <- result1[,3]
-      resultsHa[i,8] <- result1[,4]
-
-      setTxtProgressBar(pb, i)
-
-    }
-  }
-
-  close(pb)
-
-  # resultsHa <- resultsHa[!is.na(resultsHa[,5] | !is.na(resultsHa[,6])),]
-  resultsHa <- resultsHa[!is.na(resultsHa[,5]) & !is.na(resultsHa[,6]),]
-
-  SimResults <- list(Results = resultsHa, model = model)
-  class(SimResults) <- "ecocbo_data"
-
-  return(SimResults)
+  return(Results)
 }
 
