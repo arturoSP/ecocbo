@@ -5,45 +5,13 @@
 \alias{simbeta}
 \title{Calculate beta and power out of simulated samples}
 \usage{
-sim_beta(
-  simH0,
-  simHa,
-  n,
-  m,
-  k = 50,
-  alpha = 0.05,
-  transformation = "none",
-  method = "bray",
-  dummy = FALSE,
-  useParallel = FALSE
-)
+sim_beta(data, alpha = 0.05)
 }
 \arguments{
-\item{simH0}{Simulated community from \code{SSP::simdata()} in which H0 is
-true.}
-
-\item{simHa}{Simulated community from \code{SSP::simdata()} in which H0 is
-false.}
-
-\item{n}{Maximum number of samples to consider.}
-
-\item{m}{Maximum number of sites.}
-
-\item{k}{Number of resamples the process will take. Defaults to 50.}
+\item{data}{An object of class "ecocbo_data" that results from applying
+\code{\link[=prep_data]{prep_data()}} to a community data frame.}
 
 \item{alpha}{Level of significance for Type I error. Defaults to 0.05.}
-
-\item{transformation}{Mathematical function to reduce the weight of very
-dominant species: 'square root', 'fourth root', 'Log (X+1)', 'P/A', 'none'}
-
-\item{method}{The appropriate distance/dissimilarity metric (e.g. Gower,
-Bray–Curtis, Jaccard, etc). The function \code{\link[vegan:vegdist]{vegan::vegdist()}} is called for
-that purpose.}
-
-\item{dummy}{Logical. It is recommended to use TRUE in cases where there are
-observations that are empty.}
-
-\item{useParallel}{Logical. Perform the analysis in parallel? Defaults to FALSE.}
 }
 \value{
 \code{sim_data()} returns an object of class "ecocbo_beta".
@@ -62,18 +30,14 @@ and \code{simHa}.
 }
 \description{
 \code{sim_beta()} can be used to assess the power of a study by comparing the
-variation when one can assume wether an ecological community does not have
+variation when one can assume whether an ecological community does not have
 composition differences (H0 true) or it does (H0 false). For example, if the
 beta error is 0.25, then there is a 25\% chance of failing to detect a
 difference even if the difference is real. The power of the study is
 \eqn{1 - \beta}, so in this example, the power of the study is 0.75.
 }
 \examples{
-\donttest{
-sim_beta(simH0Dat, simHaDat, n = 5, m = 4, k = 30, alpha = 0.05,
-         transformation = "square root", method = "bray", dummy = FALSE,
-         useParallel = FALSE)
-}
+sim_beta(data = simResults, alpha = 0.05)
 
 }
 \references{
@@ -96,6 +60,7 @@ studies of ecological communities. Ecography, 44(4), 561-573.
 \code{\link[=plot_power]{plot_power()}}
 \code{\link[=scompvar]{scompvar()}}
 \code{\link[=sim_cbo]{sim_cbo()}}
+\code{\link[=prep_data]{prep_data()}}
 \code{\link[SSP:assempar]{SSP::assempar()}}
 \code{\link[SSP:simdata]{SSP::simdata()}}
 }

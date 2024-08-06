@@ -4,7 +4,7 @@
 #' among units and the average component of variation within samples in terms
 #' of sampling effort.
 #'
-#' @param data Object of class "ecocbo_beta" that results from [sim_beta()].
+#' @param data Object of class "ecocbo_data" that results from [prep_data()].
 #' @param m Site label to be used as basis for the computation. Defaults to NULL.
 #' @param n Number of samples to be considered. Defaults to NULL.
 #'
@@ -29,25 +29,25 @@
 #' [sim_beta()]
 #' [plot_power()]
 #' [sim_cbo()]
+#' [prep_data()]
 #'
 #' @aliases compvar
 #'
 #' @export
 #'
 #' @examples
-#' scompvar(data = epiBetaR)
-#' scompvar(data = epiBetaR, n = 5, m = 2)
+#' scompvar(data = simResults)
+#' scompvar(data = simResults, n = 5, m = 2)
 
 scompvar <- function(data, n = NULL, m = NULL){
   # Determine variation components  ----
   # as these values are necessary for the cost-benefit optimization model.
 
-  if(!inherits(data, "ecocbo_beta"))
-  #if(!is(data, "ecocbo_beta"))
-    stop("data is not the right class(\"ecocbo_beta\")")
+  if(!inherits(data, "ecocbo_data"))
+    stop("Data is not the right class(\"ecocbo_data\")")
 
   # read the results matrix to use Ha mean squares
-  resultsBeta <- data$Results
+  resultsBeta <- as.data.frame(data$Results)
 
   ## Validating data ----
   if(is.null(n)){n <- max(resultsBeta$n)}
@@ -62,15 +62,29 @@ scompvar <- function(data, n = NULL, m = NULL){
 
   resultsBeta <- resultsBeta[resultsBeta$m == m & resultsBeta$n == n,]
 
-  # Creates an empty matrix to store the results
-  compVar <- data.frame(compVarA = NA, compVarR = NA)
+  if(data$model == "single.factor"){
+    # Creates an empty matrix to store the results
+    compVar <- data.frame(Source = c("A", "Residual"),
+                          Est.var.comp = NA)
 
-  # Computes the mean for variation components (as per Table 9.3)
-  # σe = RMS
-  compVar[,2] <- mean(resultsBeta[,8], na.rm = T)
-  # σB(A) = (AMS - σe) / n
-  MSA <- mean(resultsBeta[,7], na.rm = T)
-  compVar[,1] <- (MSA - compVar[,2]) / n
+    # Computes the mean for variation components as per Table 8.5 (Quinn & Keough, 2002) ----
+    # σe = MSR
+    compVar[2,2] <- mean(resultsBeta[,8], na.rm = T)
+    # σA = (MSA - MSR) / n
+    compVar[1,2] <- (mean(resultsBeta[,7], na.rm = T) - compVar[2,2]) / n
+  } else {
+    # Creates an empty matrix to store the results
+    compVar <- data.frame(Source = c("A", "B(A)", "Residual"),
+                          Est.var.comp = NA)
+
+    # Computes the mean for variation components as per Table 9.5 (Quinn & Keough, 2002) ----
+    # σe = MSR
+    compVar[3,2] <- mean(resultsBeta[,9], na.rm = T)
+    # σB(A) = (MSBA - MSR) / n
+    compVar[2,2] <- (mean(resultsBeta[,8], na.rm = T) - compVar[3,2]) / n
+    # σA = (MSA - MSBA) / (n * m)
+    compVar[1,2] <- (mean(resultsBeta[,7], na.rm = T) - compVar[2,2]) / (n * m)
+  }
 
   return(compVar)
 }

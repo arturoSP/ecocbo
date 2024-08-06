@@ -8,7 +8,7 @@
 scompvar(data, n = NULL, m = NULL)
 }
 \arguments{
-\item{data}{Object of class "ecocbo_beta" that results from \code{\link[=sim_beta]{sim_beta()}}.}
+\item{data}{Object of class "ecocbo_data" that results from \code{\link[=prep_data]{prep_data()}}.}
 
 \item{n}{Number of samples to be considered. Defaults to NULL.}
 
@@ -29,8 +29,8 @@ the components of variation using the largest available values as set in
 the experimental design in \code{\link[=sim_beta]{sim_beta()}}.
 }
 \examples{
-scompvar(data = epiBetaR)
-scompvar(data = epiBetaR, n = 5, m = 2)
+scompvar(data = simResults)
+scompvar(data = simResults, n = 5, m = 2)
 }
 \references{
 Underwood, A. J. (1997). Experiments in ecology: their logical
@@ -45,6 +45,7 @@ Journal of Experimental Marine Biology and Ecology, 296(1), 49-70.
 \code{\link[=sim_beta]{sim_beta()}}
 \code{\link[=plot_power]{plot_power()}}
 \code{\link[=sim_cbo]{sim_cbo()}}
+\code{\link[=prep_data]{prep_data()}}
 }
 \author{
 Edlin Guerra-Castro (\email{edlinguerra@gmail.com}), Arturo Sanchez-Porras
