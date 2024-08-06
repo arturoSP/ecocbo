@@ -80,11 +80,14 @@ cost_v <- function(n, comp.var, multSE){
   ## Calculate optimal n ----
   if(dim(comp.var)[1] == 2){
     if(is.null(multSE)){
-      n <- ct / ck
+      # when working for total cost, the optimal n will be what can be
+      # done with the available economic resources
+      nOpt <- floor(ct / ck)
     } else {
-      n <- floor(comp.var[2,2] / (multSE * multSE))
+      # when working with SE, the optimal n comes from solving Var=MSR/n for n
+      nOpt <- floor(comp.var[2,2] / (multSE * multSE))
     }
-    m <- data.frame(nOpt = n)
+    m <- data.frame(nOpt)
   } else if(dim(comp.var)[1] == 3){
     nOpt <- sqrt((cj * comp.var[3,2]) / (ck * comp.var[2,2]))
     nOpt <- floor(nOpt)

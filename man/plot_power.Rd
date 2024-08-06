@@ -5,7 +5,7 @@
 \alias{plotpower}
 \title{Power curves for different sampling efforts}
 \usage{
-plot_power(data, n = NULL, m = NULL, method = "both")
+plot_power(data, n = NULL, m = NULL, method = "power")
 }
 \arguments{
 \item{data}{Object of class "ecocbo_beta" that results from \code{\link[=sim_beta]{sim_beta()}}.}
@@ -43,9 +43,9 @@ significant.
 \examples{
 epiBetaR <- sim_beta(simResults, alpha = 0.05)
 
-plot_power(data = epiBetaR, n = 4, m = 3, method = "both")
 plot_power(data = epiBetaR, n = NULL, m = 3, method = "power")
 plot_power(data = epiBetaR, n = NULL, m = 3, method = "density")
+plot_power(data = epiBetaR, n = 4, m = 3, method = "both")
 }
 \references{
 Underwood, A. J. (1997). Experiments in ecology: their logical

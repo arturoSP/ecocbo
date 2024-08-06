@@ -9,3 +9,7 @@ test_that("sim_beta returns an object with certain characteristics",{
                          (max(simResults$Results[,3])-1) * (max(simResults$Results[,4])-1))
   testthat::expect_error(sim_beta(simResults, alpha = 2), "smaller")
 })
+
+test_that("no error in documentation", {
+  expect_silent(help("sim_beta"))
+})

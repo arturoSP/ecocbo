@@ -5,7 +5,7 @@
 \alias{simcbo}
 \title{Simulated cost-benefit optimization}
 \usage{
-sim_cbo(comp.var, multSE = NULL, ct = NULL, ck, cj)
+sim_cbo(comp.var, multSE = NULL, ct = NULL, ck, cj = NULL)
 }
 \arguments{
 \item{comp.var}{Data frame as obtained from \code{\link[=scompvar]{scompvar()}}.}

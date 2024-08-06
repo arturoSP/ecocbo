@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# ecocbo <a href="https://cran.r-project.org/package=ecocbo"><img src="man/figures/logoecocbo.png" aligh="right" height="138" /></a>
+# ecocbo <a href="https://cran.r-project.org/package=ecocbo"><img src="man/figures/logoecocbo.png" align="right" height="138" /></a>
 
 <!-- badges: start -->
 
@@ -43,7 +43,7 @@ Alternatively, you can install the development version of ecocbo from
 [GitHub](https://github.com/):
 
 ``` r
-# install.packages("devtools")
+install.packages("devtools")
 devtools::install_github("arturoSP/ecocbo")
 ```
 
@@ -55,27 +55,26 @@ functions in the package:
 ### Prepare the data
 
 ``` r
-# Load data and adjust it.
+# Load data and pre-process it.
 data(epiDat)
 
-simResults <- prep_data(data = epiDat, type = "counts", Sest.method = "average",
-                         cases = 5, N = 100, sites = 10,
-                         n = 5, m = 5, k = 30,
-                         transformation = "none", method = "bray",
-                         dummy = FALSE, useParallel = FALSE)
+simResults <- prep_data(data = epiDat, 
+                        type = "counts", Sest.method = "average",
+                        cases = 5, N = 100, sites = 10,
+                        n = 5, m = 5, k = 30,
+                        transformation = "none", method = "bray",
+                        dummy = FALSE, useParallel = FALSE,
+                        model = "single.factor")
 ```
 
 ### Calculate components of variation.
 
 ``` r
-data("simResults")
-```
-
-``` r
 compVar <- scompvar(data = simResults)
 compVar
-#>     compVarA compVarR
-#> 1 0.07505912 0.328971
+#>     Source Est.var.comp
+#> 1        A   0.07320045
+#> 2 Residual   0.32940570
 ```
 
 ### Determine optimal sampling effort
@@ -88,15 +87,15 @@ treatments (bOpt) and replicates (nOpt).
 ``` r
 cboCost <- sim_cbo(comp.var = compVar, ct = 20000, ck = 100, cj = 2500)
 cboCost
-#>   nOpt mOpt
-#> 1   10    5
+#>   nOpt
+#> 1  200
 ```
 
 ``` r
 cboPrecision <- sim_cbo(comp.var = compVar, multSE = 0.10, ck = 100, cj = 2500)
 cboPrecision
-#>   nOpt mOpt
-#> 1   10   10
+#>   nOpt
+#> 1   32
 ```
 
 ## Additionally…
@@ -108,28 +107,26 @@ betaResult <- sim_beta(simResults, alpha = 0.05)
 betaResult
 #> Power at different sampling efforts (m x n):
 #>       n = 2 n = 3 n = 4 n = 5
-#> m = 2  0.30  0.51  0.74  0.76
-#> m = 3  0.37  0.70  0.88  0.97
-#> m = 4  0.58  0.79  0.97  0.99
-#> m = 5  0.59  0.97  0.98  1.00
+#> m = 2  0.25  0.41  0.76  0.89
+#> m = 3  0.53  0.72  0.95  0.94
+#> m = 4  0.39  0.85  0.95  0.99
+#> m = 5  0.61  0.93  1.00  1.00
 ```
 
 ### Plot the power progression as sampling increases.
 
 ``` r
+# This plot will look different in every simulation
 plot_power(data = betaResult, n = NULL, m = 3, method = "power")
 ```
 
-<figure>
-<img src="man/figures/plotm3n3.png"
-alt="This plot will look different in every simulation" />
-<figcaption aria-hidden="true">This plot will look different in every
-simulation</figcaption>
-</figure>
+<img src="man/figures/README-unnamed-chunk-3-1.png" width="100%" />
 
 ## R packages required for running ecocbo
 
-- Required: SSP, ggplot2, ggpubr, sampling, stats, vegan
+- Required: SSP, ggplot2, ggpubr, sampling, stats, rlang, foreach,
+  parallel, doParallel, doSNOW, vegan
+
 - Suggested: knitr, rmarkdown, testthat
 
 ## Participating institutions

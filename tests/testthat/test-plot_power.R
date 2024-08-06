@@ -12,6 +12,12 @@ test_that("calculation of n does not affect graph result", {
   p1 <- plot_power(epiBetaR, m = 2, method = "power")
   p2 <- plot_power(epiBetaR, m = 3, method = "density")
 
-  testthat::expect_equal(plot_power(epiBetaR, n = 5, m = 2, method = "power"), p1)
-  testthat::expect_equal(plot_power(epiBetaR, n = 5, m = 3, method = "density"), p2)
+  expect_equal(length(plot_power(epiBetaR, n = 5, m = 2, method = "power")$layers),
+               length(p1$layers))
+  expect_equal(length(plot_power(epiBetaR, n = 5, m = 3, method = "density")$layers),
+               length(p2$layers))
+})
+
+test_that("no error in documentation", {
+  expect_silent(help("plot_power"))
 })

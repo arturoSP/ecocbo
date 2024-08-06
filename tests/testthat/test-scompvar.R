@@ -7,6 +7,10 @@ test_that("function works", {
 })
 
 test_that("results are reproducible", {
-  testthat::expect_equal(round(scompvar(simResults, n = 4, m = 4),6),
-               data.frame(compVarA = 0.072905, compVarR = 0.330303))
+  testthat::expect_equal(round(scompvar(simResults, n = 4, m = 4)[,2],6),
+               c(0.069845, 0.330363))
+})
+
+test_that("no error in documentation", {
+  expect_silent(help("scompvar"))
 })

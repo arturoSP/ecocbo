@@ -50,9 +50,7 @@
 #' @aliases simbeta
 #'
 #' @export
-#' @importFrom stats reshape
-#' @importFrom stats aggregate
-#' @importFrom stats quantile
+#' @importFrom stats reshape aggregate quantile
 #'
 #' @examples
 #' sim_beta(data = simResults, alpha = 0.05)
@@ -90,7 +88,7 @@ sim_beta <- function(data, alpha = 0.05){
   rowidx <- order(powr[,1], powr[,2])
   powr <- as.data.frame(powr[rowidx, c(1:5)])
 
-  BetaResult <- list(Power = powr, Results = resultsHa, alpha = alpha)
+  BetaResult <- list(Power = powr, Results = resultsHa, alpha = alpha, model = data$model)
   class(BetaResult) <- "ecocbo_beta"
 
   return(BetaResult)

@@ -31,7 +31,7 @@ A data frame containing the resulting PERMANOVA table.
 }
 \description{
 Calculates observed F and mean squares for the residuals and among sites. This
-function is a helper for \code{\link[=prep_data2]{prep_data2()}}.
+function is a helper for \code{\link[=prep_data_nestedsymmetric]{prep_data_nestedsymmetric()}}.
 }
 \references{
 Underwood, A. J. (1997). Experiments in ecology: their logical

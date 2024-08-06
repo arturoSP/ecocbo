@@ -10,7 +10,7 @@ ecocbo: Calculating Optimum Sampling Effort in Community Ecology
 }
 
 \description{
- A system for calculating the optimal sampling effort, based on the ideas of "Ecological cost-benefit optimization" as developed by A. Underwood (1997, ISBN 0 521 55696 1). Data is obtained from simulated ecological communities, and the optimization follows the following procedure of two functions (1)  scompvar() calculates the variation components necessary for (4) sim_cbo() to calculate the optimal combination of number of sites and samples depending on either an economical budget or on a desired statistical accuracy. Additionally, (3) sim_beta() estimates statistical power and type 2 error by using Permutational Multivariate Analysis of Variance, and (4) plot_power() represents the results of the previous function.
+ A system for calculating the optimal sampling effort, based on the ideas of "Ecological cost-benefit optimization" as developed by A. Underwood (1997, ISBN 0 521 55696 1). Data is obtained from simulated ecological communities, and the optimization follows the following procedure of two functions (1)  scompvar() calculates the variation components necessary for (2) sim_cbo() to calculate the optimal combination of number of sites and samples depending on either an economical budget or on a desired statistical accuracy. Additionally, (3) sim_beta() estimates statistical power and type 2 error by using Permutational Multivariate Analysis of Variance, and (4) plot_power() represents the results of the previous function.
 }
 
 \details{
@@ -44,7 +44,8 @@ simResults <- prep_data(data = epiDat, type = "counts", Sest.method = "average",
                         cases = 5, N = 100, sites = 10,
                         n = 5, m = 5, k = 30,
                         transformation = "none", method = "bray",
-                        dummy = FALSE, useParallel = FALSE)
+                        dummy = FALSE, useParallel = FALSE,
+                        model = "single.factor")
 }
 simResults
 

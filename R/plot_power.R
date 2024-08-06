@@ -46,36 +46,22 @@
 #'
 #' @export
 #' @importFrom graphics hist
-#' @importFrom ggplot2 ggplot
-#' @importFrom ggplot2 aes
-#' @importFrom ggplot2 geom_line
-#' @importFrom ggplot2 geom_point
-#' @importFrom ggplot2 geom_label
-#' @importFrom ggplot2 theme_bw
-#' @importFrom ggplot2 scale_x_continuous
-#' @importFrom ggplot2 scale_y_continuous
-#' @importFrom ggplot2 scale_color_manual
-#' @importFrom ggplot2 scale_linetype_manual
-#' @importFrom ggplot2 scale_size_manual
-#' @importFrom ggplot2 element_blank
-#' @importFrom ggplot2 element_rect
-#' @importFrom ggplot2 element_line
-#' @importFrom ggplot2 theme
-#' @importFrom ggplot2 guides
-#' @importFrom ggplot2 geom_col
-#' @importFrom ggplot2 geom_area
-#' @importFrom ggplot2 geom_vline
-#' @importFrom ggplot2 coord_cartesian
+#' @importFrom ggplot2 ggplot aes geom_line geom_point geom_label theme_bw
+#' @importFrom ggplot2 scale_x_continuous scale_y_continuous scale_color_manual
+#' @importFrom ggplot2 scale_linetype_manual element_blank element_rect element_line
+#' @importFrom ggplot2 theme guides geom_col geom_area geom_vline coord_cartesian
+#' @importFrom ggplot2 annotate
 #' @importFrom stats density
+#' @importFrom rlang .data
 #'
 #' @examples
 #' epiBetaR <- sim_beta(simResults, alpha = 0.05)
 #'
-#' plot_power(data = epiBetaR, n = 4, m = 3, method = "both")
 #' plot_power(data = epiBetaR, n = NULL, m = 3, method = "power")
 #' plot_power(data = epiBetaR, n = NULL, m = 3, method = "density")
+#' plot_power(data = epiBetaR, n = 4, m = 3, method = "both")
 
-plot_power <- function(data, n = NULL, m = NULL, method = "both"){
+plot_power <- function(data, n = NULL, m = NULL, method = "power"){
 # Función para graficar curvas de frecuencia de F para H0 y Ha ----
 
 # Helper functions ----
@@ -84,36 +70,32 @@ power_curve <- function(powr, m, n, cVar){
   mTot <- c(2:max(powr$m))
   mm <- m
   nn <- n
-  dummy <- data.frame(m = mTot, n = 1, Power = 0)
-  powrPl <- rbind(dummy, powr[,c(1:3)])
-  powrPl$m <- factor(powrPl$m, ordered = T)
+  dummy <- data.frame(m = mTot, n = 1, Power = 0, Sel = FALSE)
+  powrPl <- data.frame(powr[,c(1:3)], Sel = FALSE)
+  powrPl <- rbind(dummy, powrPl)
+  powrPl$m <- factor(powrPl$m, ordered = TRUE)
   powrPl$Sel <- powrPl$m == mm
+  powrPl$Sel <- ifelse(powrPl$Sel == TRUE, 1, 0.95)
 
-  p <- ggplot(data = powrPl, aes(x = n, y = Power))
-
-  for(i in mTot){
-    tempPl <- powrPl[powrPl$m ==i,]
-      p <- p +
-        geom_line(data = tempPl, aes(color = m, linetype = Sel, size = Sel), alpha = 0.7)
-  }
-
-  p+
-    geom_point(data = powrPl[powrPl$m == mm,], aes(color = m), size = 2, show.legend = FALSE)+
+  ggplot(data = powrPl, aes(x = n, y = .data$Power,
+                            color = m, alpha = .data$Sel))+
+    geom_line() +
+    geom_point(data = powrPl[powrPl$m == mm,], size = 2, show.legend = FALSE)+
     geom_point(data = powrPl[powrPl$m == mm & powrPl$n == nn,],
                shape = 21, size = 2.5, color = "black", fill = "red")+
-    geom_label(aes(x = 1.25, y = 0.9, label = paste0("m = ", mm,
-                                                    "\nn = ", nn,
-                                                    "\nCV = ", as.numeric(cVar[1]))))+
+    annotate("label", x = 1.25, y = 0.9,
+                      label = paste0("m = ", mm,
+                                     "\nn = ", nn,
+                                     "\nCV = ", as.numeric(cVar[1])))+
     scale_color_manual(breaks = levels(powrPl$m), values = mTot)+
     scale_linetype_manual(values = c(2,1))+
-    scale_size_manual(values = c(0.5,1))+
     scale_x_continuous(breaks = c(1:max(powr$n)))+
     scale_y_continuous(name = "Power", limits = c(0, 1), breaks = seq(0, 1, 0.2))+
     theme_bw()+
     theme(panel.grid.minor = element_blank(),
           panel.border = element_rect(linewidth = 0.4),
           axis.ticks= element_line(linewidth = 0.2))+
-    guides(linetype = "none", size = "none")
+    guides(alpha = "none", size = "none")
 }
 
 ## Probability density curve ----
@@ -223,7 +205,7 @@ density_plot <- function(results, powr, m, n, method, cVar){
   }
 
   ## Plot according to the parameters ----
-  dataRes <- list(Results = data$Results)
+  dataRes <- list(Results = data$Results, model = data$model)
   class(dataRes) <- "ecocbo_data"
   cVar <- round(scompvar(dataRes, n, m)[,2],2)
 

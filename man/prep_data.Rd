@@ -18,7 +18,8 @@ prep_data(
   transformation = "none",
   method = "bray",
   dummy = FALSE,
-  useParallel = TRUE
+  useParallel = TRUE,
+  model = "single.factor"
 )
 }
 \arguments{
@@ -56,7 +57,10 @@ that purpose.}
 \item{dummy}{Logical. It is recommended to use TRUE in cases where there are
 observations that are empty.}
 
-\item{useParallel}{Logical. Perform the analysis in parallel? Defaults to FALSE.}
+\item{useParallel}{Logical. Perform the analysis in parallel? Defaults to TRUE.}
+
+\item{model}{Select the model to use. Options, so far, are 'single.factor' and
+'nested.symmetric'.}
 }
 \value{
 \code{prep_data()} returns an object of class "ecocbo_data".
@@ -81,7 +85,8 @@ simResults <- prep_data(data = epiDat, type = "counts", Sest.method = "average",
                         cases = 5, N = 100, sites = 10,
                         n = 5, m = 5, k = 30,
                         transformation = "none", method = "bray",
-                        dummy = FALSE, useParallel = FALSE)
+                        dummy = FALSE, useParallel = FALSE,
+                        model = "single.factor")
 }
 simResults
 

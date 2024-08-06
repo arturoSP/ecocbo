@@ -1,6 +1,6 @@
 Package: ecocbo
 Title: Calculating Optimum Sampling Effort in Community Ecology
-Version: 0.11.0
+Version: 0.12.0
 Authors@R: c(person(given = "Edlin", family = "Guerra-Castro", 
                     role = c("aut", "cph"), email = "edlinguerra@gmail.com",
                     comment = c(ORCID = "0000-0003-3529-4507")),
@@ -21,11 +21,11 @@ Description: A system for calculating the optimal sampling effort, based on the 
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.1
 Imports: 
-    ggplot2, ggpubr, sampling, stats,
-    foreach, parallel, doParallel, vegan,
-    SSP
+    ggplot2, ggpubr, sampling, stats, rlang,
+    foreach, parallel, doParallel, doSNOW,
+    vegan, SSP
 Depends: 
     R (>= 2.10)
 LazyData: true
