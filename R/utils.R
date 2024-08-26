@@ -398,8 +398,8 @@ permanova_twoway <- function(x, factEnv, method = "bray", transformation = "none
     factEnv["secsit"] <- paste0(factEnv$sector, factEnv$site) # intersections AB
     nBA = nlevels(as.factor(factEnv$secsit))  # number of intersections AB
     nRep = dim(factEnv)[1] / nBA  # number of times we're repeating each intersection
-    nNm = unique(factEnv$sector)
-    nScSt = unique(factEnv$secsit)
+    nNm = unique(factEnv$sector) # unique values for the sectors
+    nScSt = unique(factEnv$secsit)  # unique values for the intersections site-sector
 
     # calculates SS for all
     # SST <- SS(d*100)[2]
@@ -410,7 +410,6 @@ permanova_twoway <- function(x, factEnv, method = "bray", transformation = "none
     for(i in nScSt){
       RwNm <- rownames(factEnv[factEnv$secsit == i,])
       dR <- vegdist(x.t[RwNm,], method = method)
-      # listR[[i]] <- SS(dR*100)
       listR[[i]] <- SS(dR)
     }
 
@@ -483,7 +482,7 @@ permanova_twoway <- function(x, factEnv, method = "bray", transformation = "none
     stop("x and factEnv dimensions do not match")
   if(model != "nested.symmetric" & model != "nested.asymmetric" & model != "orthogonal")
     stop("Possible values for type are \"nested.symmetric\", \"nested.asymmetric\",
-         \"orthogonal\" and \"random.oneway\"")
+         \"orthogonal\" and \"single.factor\"")
 
   if(model == "nested.symmetric"){
     Results <- pseudoF_2NestedSymmetric(x, factEnv, method, transformation)

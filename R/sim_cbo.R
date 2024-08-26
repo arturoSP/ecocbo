@@ -89,8 +89,7 @@ cost_v <- function(n, comp.var, multSE){
     }
     m <- data.frame(nOpt)
   } else if(dim(comp.var)[1] == 3){
-    nOpt <- sqrt((cj * comp.var[3,2]) / (ck * comp.var[2,2]))
-    nOpt <- floor(nOpt)
+    nOpt <- floor(sqrt((cj * comp.var[3,2]) / (ck * comp.var[2,2])))
 
     ## Calculate optimal m ----
     if(is.null(multSE)) {

@@ -73,7 +73,7 @@ prep_data_single <- function(data, type = "counts", Sest.method = "average",
 
   # read data and store it in two objects, one for H0 and one for Ha ----
   datH0 <- data
-  datH0[,1] <- as.factor("T0")
+  datH0[,1] <- as.factor("T___0")
   datHa <- data
   datHa[,1] <- as.factor(data[,1])
 
@@ -105,6 +105,8 @@ prep_data_single <- function(data, type = "counts", Sest.method = "average",
       HaSim[[i]] <- HaSim[[i]][,c(1:(yH0-3), (yH0), (yH0-2):(yH0-1))]
     }
   }
+
+  rm(simH0, simHa)
 
   H0Sim <- array(unlist(H0Sim), dim = c(xH0, yH0, casesHa))
   HaSim <- array(unlist(HaSim), dim = c(xH0, yH0, casesHa))
@@ -307,6 +309,8 @@ prep_data_nestedsymmetric <- function(data, type = "counts",
   factEnv <- as.data.frame(simHa[[1]][,(dim(simHa[[1]])[2]-1):dim(simHa[[1]])[2]])
   factEnv$sites <- as.factor(rep(seq_len(sites), each = N, times = nSect))
   factEnv$sector <- as.factor(rep(levels(factSect), each = N*sites))
+
+  rm(simH0, simHa)
 
   # Set of parameters for using balancedtwostage ----
   # index marking the size of each resampled site
