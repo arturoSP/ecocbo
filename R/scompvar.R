@@ -34,6 +34,7 @@
 #' @aliases compvar
 #'
 #' @export
+#' @importFrom dplyr group_by summarise
 #'
 #' @examples
 #' scompvar(data = simResults)
@@ -64,26 +65,48 @@ scompvar <- function(data, n = NULL, m = NULL){
 
   if(data$model == "single.factor"){
     # Creates an empty matrix to store the results
-    compVar <- data.frame(Source = c("A", "Residual"),
+    compVar <- data.frame(Source = c("Residual"),
                           Est.var.comp = NA)
 
     # Computes the mean for variation components as per Table 8.5 (Quinn & Keough, 2002) ----
     # σe = MSR
-    compVar[2,2] <- mean(resultsBeta[,8], na.rm = T)
+    # This overall average is being ditched for a sectorized average
+    # compVar[1,2] <- mean(resultsBeta[,7], na.rm = T)
+    compVar[1,2] <- resultsBeta |>
+      dplyr::group_by(dat.sim) |>
+      dplyr::summarise(MSR = mean(MSR)) |>
+      dplyr::summarise(max(MSR))
+
+    # We skip this calculation given that it isn't relevant for subsequent steps
     # σA = (MSA - MSR) / n
-    compVar[1,2] <- (mean(resultsBeta[,7], na.rm = T) - compVar[2,2]) / n
+    # compVar[1,2] <- (mean(resultsBeta[,7], na.rm = T) - compVar[2,2]) / n
   } else {
     # Creates an empty matrix to store the results
-    compVar <- data.frame(Source = c("A", "B(A)", "Residual"),
+    compVar <- data.frame(Source = c("B(A)", "Residual"),
                           Est.var.comp = NA)
 
     # Computes the mean for variation components as per Table 9.5 (Quinn & Keough, 2002) ----
     # σe = MSR
-    compVar[3,2] <- mean(resultsBeta[,9], na.rm = T)
+    # This overall average is being ditched for a sectorized average
+    # compVar[2,2] <- mean(resultsBeta[,8], na.rm = T)
+    compVar[2,2] <- resultsBeta |>
+      dplyr::group_by(dat.sim) |>
+      dplyr::summarise(MSR = mean(MSR)) |>
+      dplyr::summarise(max(MSR))
+
     # σB(A) = (MSBA - MSR) / n
-    compVar[2,2] <- (mean(resultsBeta[,8], na.rm = T) - compVar[3,2]) / n
+    # This overall average is being ditched for a sectorized average
+    # compVar[1,2] <- (mean(resultsBeta[,7], na.rm = T) - compVar[2,2]) / n
+    compVar[1,2] <- resultsBeta |>
+      dplyr::group_by(dat.sim) |>
+      dplyr::summarise(MSBA = mean(`MSB(A)`)) |>
+      dplyr::summarise(max(MSBA))
+
+    compVar[1,2] <- (compVar[1,2] - compVar[2,2]) / n
+
+    # We skip this calculation given that it isn't relevant for subsequent steps
     # σA = (MSA - MSBA) / (n * m)
-    compVar[1,2] <- (mean(resultsBeta[,7], na.rm = T) - compVar[2,2]) / (n * m)
+    # compVar[1,2] <- (mean(resultsBeta[,7], na.rm = T) - compVar[2,2]) / (n * m)
   }
 
   return(compVar)

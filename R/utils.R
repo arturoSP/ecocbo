@@ -319,7 +319,7 @@ permanova_twoway <- function(x, factEnv, method = "bray", transformation = "none
     # calculate SS for interaction A-B
     SSAB <- SST - SSA - SSB - SSR
 
-    # fill the permanova table
+    # fill the PERMANOVA table
     # degrees of freedom
     DoFA <- a - 1
     DoFB <- b - 1
@@ -435,7 +435,8 @@ permanova_twoway <- function(x, factEnv, method = "bray", transformation = "none
     }
     listBA <- lapply(listBA, SS)
     listBA <- array(unlist(listBA), dim = c(1,2,a))
-    SSBA <- sum(listBA[,2,]) * nRep # this *nRep product was added to match the results in PRIMER
+    # SSBA <- sum(listBA[,2,]) * nRep      # this *nRep product was added to match the results in PRIMER
+    SSBA <- sum(listBA[,2,])
 
     # calculates SSA
     SSA <- SST - SSBA - SSR

@@ -7,9 +7,10 @@
 #' @param comp.var Data frame as obtained from [scompvar()].
 #' @param multSE Optional. Required multivariate standard error for the
 #' sampling experiment.
-#' @param ct Optional. Total cost for the sampling experiment.
-#' @param ck Cost per replicate.
-#' @param cj Cost per unit.
+#' @param budget Optional. Total cost for the sampling experiment.
+#' @param ca Cost per treatment.
+#' @param cm Cost per replicate.
+#' @param cn Cost per unit.
 #'
 #' @return A data frame containing the optimized values for \code{m} number of
 #' sites and \code{n} number of samples to consider.
@@ -38,16 +39,18 @@
 #' sim_cbo(comp.var = compVar, multSE = NULL, ct = 20000, ck = 100, cj = 2500)
 #' sim_cbo(comp.var = compVar, multSE = 0.15, ct = NULL, ck = 100, cj = 2500)
 
-sim_cbo <- function(comp.var, multSE = NULL, ct = NULL, ck, cj = NULL){
+sim_cbo <- function(comp.var, multSE = NULL, budget = NULL, a = NULL,
+                    ca = NULL, cm = NULL, cn){
+
 # Optimal cost-benefit model
 
 # Helper functions ----
 # Function to determine optimal m by setting costs.
-cost_n <- function(n, ct, ck, cj){
+cost_n <- function(n, budget, cm, cn){
   m <- data.frame(nOpt = n, mOpt = NA)
 
   # Using equation 9.19 (Underwood, 1997)
-  m[,2] <- floor(ct / (n * ck + cj))
+  m[,2] <- floor(budget / (n * cn + cm))
 
   return(m)
   }
@@ -57,7 +60,7 @@ cost_v <- function(n, comp.var, multSE){
   m <- data.frame(nOpt = n, mOpt = NA)
 
   # Using equation 9.18 (Underwood, 1997)
-  m[,2] <- floor((comp.var[3,2] + n * comp.var[2,2]) /
+  m[,2] <- floor((comp.var[2,2] + n * comp.var[1,2]) /
                    (multSE * multSE * n))
 
   return(m)
@@ -65,35 +68,37 @@ cost_v <- function(n, comp.var, multSE){
 
 # Main function ----
   ## Validating data ----
-  if(is.null(multSE) & is.null(ct)){
+  if(is.null(multSE) & is.null(budget)){
     stop("It is necessary to provide either multSE or ct")
   }
 
-  # if(dim(comp.var)[1] != 3 | dim(comp.var)[2] != 2){
-  #   stop("Variation components must be in a 3x2 matrix")
-  # }
+  if(dim(comp.var)[1] == 1 & is.null(ca) & is.null(multSE) |
+     dim(comp.var)[1] == 1 & is.null(a) & is.null(multSE)) {
+    stop("For single factor experiments, it is necessary to provide the
+         number of treatments and its cost")
+  }
 
-  if(dim(comp.var)[1] == 3 & is.null(cj)){
+  if(dim(comp.var)[1] == 2 & is.null(cm)){
     stop("Cost per unit is required for a multivariate model")
   }
 
   ## Calculate optimal n ----
-  if(dim(comp.var)[1] == 2){
+  if(dim(comp.var)[1] == 1){
     if(is.null(multSE)){
       # when working for total cost, the optimal n will be what can be
       # done with the available economic resources
-      nOpt <- floor(ct / ck)
+      nOpt <- floor((budget - (ca * a)) / cn)
     } else {
       # when working with SE, the optimal n comes from solving Var=MSR/n for n
-      nOpt <- floor(comp.var[2,2] / (multSE * multSE))
+      nOpt <- floor(comp.var[1,2] / (multSE * multSE))
     }
     m <- data.frame(nOpt)
-  } else if(dim(comp.var)[1] == 3){
-    nOpt <- floor(sqrt((cj * comp.var[3,2]) / (ck * comp.var[2,2])))
+  } else if(dim(comp.var)[1] == 2){
+    nOpt <- floor(sqrt((cm * comp.var[2,2]) / (cn * comp.var[1,2])))
 
     ## Calculate optimal m ----
     if(is.null(multSE)) {
-      m <- cost_n(nOpt, ct, ck, cj)
+      m <- cost_n(nOpt, budget, cm, cn)
     } else {
       m <- cost_v(nOpt, comp.var, multSE)
     }

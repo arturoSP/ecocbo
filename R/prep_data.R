@@ -18,7 +18,7 @@
 #' Bootstrap "boot". By default, the "average" of the four estimates is used.
 #' @param cases Number of data sets to be simulated.
 #' @param N Total number of samples to be simulated in each site.
-#' @param M Total number of sites to be simulated in each data set.
+#' @param sites Total number of sites to be simulated in each data set.
 #' @param n Maximum number of samples to consider.
 #' @param m Maximum number of sites.
 #' @param k Number of resamples the process will take. Defaults to 50.
@@ -77,7 +77,7 @@
 #'
 
 prep_data <- function(data, type = "counts", Sest.method = "average",
-                      cases = 5, N = 100, M = 3,
+                      cases = 5, N = 100, sites = 3,
                       n, m, k = 50,
                       transformation = "none", method = "bray",
                       dummy = FALSE, useParallel = TRUE,
@@ -89,7 +89,7 @@ prep_data <- function(data, type = "counts", Sest.method = "average",
   if(n <= 1){stop("n must be larger than 1")}
 
   if(model != "single.factor"){
-    if (m > M){stop("'m' must be equal or less than 'M' on simulated data")}
+    if (m > sites){stop("'m' must be equal or less than 'sites' on simulated data")}
     if(ceiling(m) != floor(m)){stop("m must be integer")}
     if(m <= 1){stop("m must be larger than 1")}
   }
