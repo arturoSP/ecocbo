@@ -301,14 +301,15 @@ prep_data_nestedsymmetric <- function(data, type = "counts",
 
   # design and fill the results matrix ----
   NN <- cases * k * (m-1) * (n-1)
-  resultsHa <- matrix(nrow = NN, ncol = 9)
+  resultsHa <- matrix(nrow = NN, ncol = 8)
+  colnames(resultsHa) <- c("dat.sim", "k", "m", "n",
+                           "pseudoFH0", "pseudoFHa",
+                           "MSB(A)", "MSR")
+
   resultsHa[, 1] <- rep(seq(cases), times = 1, each = (k * (m-1) * (n-1)))
   resultsHa[, 2] <- rep(1:k, times = (n-1) * (m-1) * cases)
   resultsHa[, 3] <- rep(seq(2, m), times = (n-1), each = k)
   resultsHa[, 4] <- rep(seq(2, n), times = 1, each = k * (m-1))
-  colnames(resultsHa) <- c("dat.sim", "k", "m", "n",
-                           "pseudoFH0", "pseudoFHa",
-                           "MSA", "MSB(A)", "MSR")
 
   # design the arrays to store the lists ----
   # H0 comes from simdata as-is, it does not include a column for sectors given that
@@ -358,9 +359,9 @@ prep_data_nestedsymmetric <- function(data, type = "counts",
                                 }
     resultsHa[,5] <- result1[,1]
     resultsHa[,6] <- result1[,2]
-    resultsHa[,7] <- result1[,3]
-    resultsHa[,8] <- result1[,4]
-    resultsHa[,9] <- result1[,5]
+    resultsHa[,7] <- result1[,4]
+    resultsHa[,8] <- result1[,5]
+
   } else {
     for (i in seq_len(NN)){
       result1 <- balanced_sampling2(i, Y, mm, nn, YPU,
@@ -369,9 +370,8 @@ prep_data_nestedsymmetric <- function(data, type = "counts",
                                     nSect, sites, N)
       resultsHa[i,5] <- result1[,1]
       resultsHa[i,6] <- result1[,2]
-      resultsHa[i,7] <- result1[,3]
-      resultsHa[i,8] <- result1[,4]
-      resultsHa[i,9] <- result1[,5]
+      resultsHa[i,7] <- result1[,4]
+      resultsHa[i,8] <- result1[,5]
 
       setTxtProgressBar(pb, i)
     }
