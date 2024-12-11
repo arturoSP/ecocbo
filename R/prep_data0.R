@@ -66,8 +66,8 @@
 #' @keywords internal
 
 prep_data_single <- function(data, type = "counts", Sest.method = "average",
-                      cases = 5, N = 100, sites = 10,
-                      n, m, k = 50,
+                      cases = 5, N = 100, sites = 3,
+                      n, m = NULL, k = 50,
                       transformation = "none", method = "bray",
                       dummy = FALSE, useParallel = TRUE){
 
@@ -112,21 +112,36 @@ prep_data_single <- function(data, type = "counts", Sest.method = "average",
   HaSim <- array(unlist(HaSim), dim = c(xH0, yH0, casesHa))
 
   labHa <- HaSim[,c((yH0-1):(yH0)),1]
-  colnames(labHa) <- c("N", "sites")
+  colnames(labHa) <- c("N", "M")
 
-  # Stamp Ha labels to H0 (for sites and N)
+  # Stamp Ha labels to H0 (for M and N)
   H0Sim[,c((yH0-1):yH0),] <- labHa
 
   ## Helper matrix to store labels ----
-  NN <- casesHa * k * (m-1) * (n-1)
-  resultsHa <- matrix(nrow = NN, ncol = 8)
-  resultsHa[, 1] <- rep(seq(casesHa), times = 1, each = (k * (m-1) * (n-1)))
-  resultsHa[, 2] <- rep(1:k, times = (n-1) * (m-1) * casesHa)
-  resultsHa[, 3] <- rep(seq(2, m), times = (n-1), each = k)
-  resultsHa[, 4] <- rep(seq(2, n), times = 1, each = k * (m-1))
+  # NN <- casesHa * k * (m-1) * (n-1)
+  # resultsHa <- matrix(nrow = NN, ncol = 8)
+  # resultsHa[, 1] <- rep(seq(casesHa), times = 1, each = (k * (m-1) * (n-1)))
+  # resultsHa[, 2] <- rep(1:k, times = (n-1) * (m-1) * casesHa)
+  # resultsHa[, 3] <- rep(seq(2, m), times = (n-1), each = k)
+  # resultsHa[, 4] <- rep(seq(2, n), times = 1, each = k * (m-1))
+  # colnames(resultsHa) <- c("dat.sim", "k", "m", "n",
+  #                          "pseudoFH0", "pseudoFHa",
+  #                          "MSA", "MSR")
+
+  # Changing the routine so that the results matrix will only include one case of m
+  # that corresponds to the one we have in the original experiment.
+  # We are taking out MSA as it is not relevant for the package.
+  NN <- casesHa * k * (n-1)
+  resultsHa <- matrix(nrow = NN, ncol = 7)
   colnames(resultsHa) <- c("dat.sim", "k", "m", "n",
                            "pseudoFH0", "pseudoFHa",
-                           "MSA", "MSR")
+                           "MSR")
+
+  resultsHa[, 1] <- rep(seq(casesHa), times = 1, each = (k * (n-1)))
+  resultsHa[, 2] <- rep(1:k, times = (n-1) * casesHa)
+  resultsHa[, 3] <- sites
+  resultsHa[, 4] <- rep(seq(2, n), times = 1, each = k)
+
 
   # Loop to calculate pseudoF ----
   # Loop parameters
@@ -154,8 +169,8 @@ prep_data_single <- function(data, type = "counts", Sest.method = "average",
                                 }
     resultsHa[,5] <- result1[,1]
     resultsHa[,6] <- result1[,2]
-    resultsHa[,7] <- result1[,3]
-    resultsHa[,8] <- result1[,4]
+    # resultsHa[,7] <- result1[,3]
+    resultsHa[,7] <- result1[,4]
   } else {
     for (i in seq_len(NN)){
       result1 <- balanced_sampling(i, Y, mm, nn, YPU,
@@ -163,14 +178,15 @@ prep_data_single <- function(data, type = "counts", Sest.method = "average",
                                    transformation, method)
       resultsHa[i,5] <- result1[,1]
       resultsHa[i,6] <- result1[,2]
-      resultsHa[i,7] <- result1[,3]
-      resultsHa[i,8] <- result1[,4]
+      # resultsHa[i,7] <- result1[,3]
+      resultsHa[i,7] <- result1[,4]
 
       setTxtProgressBar(pb, i)
 
     }
   }
 
+  stopCluster(cl)
   close(pb)
 
   resultsHa <- resultsHa[!is.na(resultsHa[,5]) & !is.na(resultsHa[,6]),]
@@ -252,7 +268,7 @@ prep_data_single <- function(data, type = "counts", Sest.method = "average",
 
 prep_data_nestedsymmetric <- function(data, type = "counts",
                                       Sest.method = "average",
-                                      cases = 5, N = 100, sites = 10,
+                                      cases = 5, N = 100, sites = 3,
                                       n, m, k = 50,
                                       transformation = "none", method = "bray",
                                       dummy = FALSE, useParallel = TRUE){
@@ -273,7 +289,7 @@ prep_data_nestedsymmetric <- function(data, type = "counts",
 
   datHa <- datSim
 
-  model = "nested.symmetric"
+  model <- "nested.symmetric"
 
   # calculate simulation parameters
   parH0 <- assempar(datH0, type = type, Sest.method = Sest.method)
