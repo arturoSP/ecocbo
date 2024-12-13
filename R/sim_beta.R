@@ -64,31 +64,56 @@ sim_beta <- function(data, alpha = 0.05){
     stop("alpha must be smaller than 1")
 
   # Calculate power and beta ----
-  resultsHa <- as.data.frame(data$Results)
-  fCrit <- stats::aggregate(resultsHa[,5],
-                     by = list(resultsHa[,3], resultsHa[,4]),
-                     stats::quantile, probs = (1 - alpha), type = 8, na.rm = T)
-  totDim <- stats::aggregate(resultsHa[,5],
-                      by = list(resultsHa[,3], resultsHa[,4]),
-                      length)
-  powr <- matrix(nrow = dim(fCrit)[1], ncol = 6)
-  colnames(powr) <- c("m", "n", "Power", "Beta",
-                      "fCrit", "index")
-  powr[,1] <- totDim[,1]
-  powr[,2] <- totDim[,2]
-  powr[,5] <- fCrit[,3]
-  powr[,6] <- seq(1, nrow(powr))
-
-  for(i in powr[,6]){
-    partialRes <- resultsHa[resultsHa$m == powr[i,1] & resultsHa$n == powr[i,2],]
-    powr[i,3] <- dim(partialRes[partialRes[,6] >= powr[i,5],])[1] / totDim[i,3]
+  m_n <- if(data$model == "single.factor"){
+    data1$Results[,"n"]
+  } else {
+    paste(data$Results[,"m"], data2$Results[,"n"], sep="_")
   }
 
-  powr[,4] <- 1 - powr[,3]
-  rowidx <- order(powr[,1], powr[,2])
-  powr <- as.data.frame(powr[rowidx, c(1:5)])
+  resultsHH <- as.data.frame(cbind(m_n,
+                                   pseudoFH0 = data$Results[,"pseudoFH0"],
+                                   pseudoFHa = data$Results[,"pseudoFHa"]))
+  resultsHH[,"pseudoFH0"] <- as.numeric(resultsHH[,"pseudoFH0"])
+  resultsHH[,"pseudoFHa"] <- as.numeric(resultsHH[,"pseudoFHa"])
 
-  BetaResult <- list(Power = powr, Results = resultsHa, alpha = alpha, model = data$model)
+  fCrit <- stats::aggregate(resultsHH[,2],
+                            by = list(resultsHH[,1]),
+                            stats::quantile, probs = (1 - alpha), type= 8, na.rm = T)
+  totDim <- stats::aggregate(resultsHH[,2],
+                             by = list(resultsHH[,1]),
+                             length)
+
+  powr <- data.frame(m_n = totDim[,1],
+                     Power = totDim[,2],
+                     Beta = NA,
+                     fCrit = fCrit[,2],
+                     index = seq(1, dim(fCrit)[1]))
+
+  for(i in powr[,5]){
+    partialRes <- resultsHH[resultsHH$m_n == powr[i,1],]
+    powr[i,2] <- dim(partialRes[partialRes[,3] >= powr[i,2],])[1] / totDim[i,2]
+  }
+
+  powr[,3] <- 1 - powr[,2]
+
+  if(data$model == "single.factor"){
+    rowidx <- order(powr[,1])
+
+    powr <- rename(powr, "n" = "m_n")
+    powr <- powr[rowidx, -5]
+  } else {
+    powr <- powr |>
+      separate(m_n, into = c("m", "n"), sep = "_", convert = TRUE)
+
+    rowidx <- order(powr[,1], powr[,2])
+
+    powr <- powr[rowidx, -6]
+  }
+
+  BetaResult <- list(Power = powr,
+                     Results = as.data.frame(data$Results),
+                     alpha = alpha,
+                     model = data$model)
   class(BetaResult) <- "ecocbo_beta"
 
   return(BetaResult)
@@ -119,15 +144,15 @@ sim_beta <- function(data, alpha = 0.05){
 #' that were considered.
 #'
 # Print ecocbo_beta
-#' @export
-print.ecocbo_beta <- function(x, ...){
-  x$Power[,3] <- round(x$Power[,3], 2)
-  x1 <- stats::reshape(x$Power[,c(1:3)],
-                direction = "wide",
-                idvar = "m", timevar = "n",
-                new.row.names = paste0("m = ",c(2:max(x$Power$m))))
-  x1 <- x1[,-1]
-  colnames(x1) <- paste0("n = ", c(2:max(x$Power$n)))
-  cat("Power at different sampling efforts (m x n):\n")
-  print(x1)
-}
+#' @internal
+# print.ecocbo_beta <- function(x, ...){
+#   x$Power[,3] <- round(x$Power[,3], 2)
+#   x1 <- stats::reshape(x$Power[,c(1:3)],
+#                 direction = "wide",
+#                 idvar = "m", timevar = "n",
+#                 new.row.names = paste0("m = ",c(2:max(x$Power$m))))
+#   x1 <- x1[,-1]
+#   colnames(x1) <- paste0("n = ", c(2:max(x$Power$n)))
+#   cat("Power at different sampling efforts (m x n):\n")
+#   print(x1)
+# }

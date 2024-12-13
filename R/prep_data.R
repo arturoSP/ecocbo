@@ -20,7 +20,6 @@
 #' @param N Total number of samples to be simulated in each site.
 #' @param sites Total number of sites to be simulated in each data set.
 #' @param n Maximum number of samples to consider.
-#' @param m Maximum number of sites.
 #' @param k Number of resamples the process will take. Defaults to 50.
 #' @param transformation Mathematical function to reduce the weight of very
 #' dominant species: 'square root', 'fourth root', 'Log (X+1)', 'P/A', 'none'
@@ -67,8 +66,8 @@
 #' @examples
 #' \donttest{
 #' simResults <- prep_data(data = epiDat, type = "counts", Sest.method = "average",
-#'                         cases = 5, N = 100, M = 3,
-#'                         n = 5, m = 5, k = 30,
+#'                         cases = 5, N = 100, sites = 3,
+#'                         n = 5, k = 30,
 #'                         transformation = "none", method = "bray",
 #'                         dummy = FALSE, useParallel = FALSE,
 #'                         model = "single.factor")
@@ -78,7 +77,7 @@
 
 prep_data <- function(data, type = "counts", Sest.method = "average",
                       cases = 5, N = 100, sites = 3,
-                      n, m, k = 50,
+                      n, k = 50,
                       transformation = "none", method = "bray",
                       dummy = FALSE, useParallel = TRUE,
                       model = "single.factor"){
@@ -88,12 +87,9 @@ prep_data <- function(data, type = "counts", Sest.method = "average",
   if(ceiling(n) != floor(n)){stop("n must be integer")}
   if(n <= 1){stop("n must be larger than 1")}
 
-  if(model != "single.factor"){
-    if (m > sites){stop("'m' must be equal or less than 'sites' on simulated data")}
-    if(ceiling(m) != floor(m)){stop("m must be integer")}
-    if(m <= 1){stop("m must be larger than 1")}
-  }
-
+  # m is a fixed factor, so it is set to be equal to the maximum number of sites
+  # that are simulated with SSP::simdata()
+  if(model != "single.factor"){m <- sites}
 
   # The function to work with depends on the selected model
   Results <- if(model == "single.factor"){
