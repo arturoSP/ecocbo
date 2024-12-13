@@ -56,14 +56,17 @@ scompvar <- function(data, n = NULL, m = NULL){
   if(n <= 1){stop("n must be larger than 1")}
   if(n > max(resultsBeta$n)){stop("n is larger than the simulated n value")}
 
-  if(is.null(m)){m <- max(resultsBeta$m)}
-  if(ceiling(m) != floor(m)){stop("m must be integer")}
-  if(m <= 1){stop("m must be larger than 1")}
-  if(m > max(resultsBeta$m)){stop("m is larger than the simulated m value")}
-
-  resultsBeta <- resultsBeta[resultsBeta$m == m & resultsBeta$n == n,]
+  if(data$model != "single.factor"){
+    if(is.null(m)){m <- max(resultsBeta$m)}
+    if(ceiling(m) != floor(m)){stop("m must be integer")}
+    if(m <= 1){stop("m must be larger than 1")}
+    if(m > max(resultsBeta$m)){stop("m is larger than the simulated m value")}
+  }
 
   if(data$model == "single.factor"){
+
+    resultsBeta <- resultsBeta[resultsBeta$n == n,]
+
     # Creates an empty matrix to store the results
     compVar <- data.frame(Source = c("Residual"),
                           Est.var.comp = NA)
@@ -81,6 +84,9 @@ scompvar <- function(data, n = NULL, m = NULL){
     # σA = (MSA - MSR) / n
     # compVar[1,2] <- (mean(resultsBeta[,7], na.rm = T) - compVar[2,2]) / n
   } else {
+
+    resultsBeta <- resultsBeta[resultsBeta$m == m & resultsBeta$n == n,]
+
     # Creates an empty matrix to store the results
     compVar <- data.frame(Source = c("B(A)", "Residual"),
                           Est.var.comp = NA)

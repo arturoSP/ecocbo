@@ -169,7 +169,6 @@ prep_data_single <- function(data, type = "counts", Sest.method = "average",
                                 }
     resultsHa[,5] <- result1[,1]
     resultsHa[,6] <- result1[,2]
-    # resultsHa[,7] <- result1[,3]
     resultsHa[,7] <- result1[,4]
   } else {
     for (i in seq_len(NN)){
@@ -178,7 +177,6 @@ prep_data_single <- function(data, type = "counts", Sest.method = "average",
                                    transformation, method)
       resultsHa[i,5] <- result1[,1]
       resultsHa[i,6] <- result1[,2]
-      # resultsHa[i,7] <- result1[,3]
       resultsHa[i,7] <- result1[,4]
 
       setTxtProgressBar(pb, i)
@@ -190,6 +188,7 @@ prep_data_single <- function(data, type = "counts", Sest.method = "average",
   close(pb)
 
   resultsHa <- resultsHa[!is.na(resultsHa[,5]) & !is.na(resultsHa[,6]),]
+  resultsHa <- resultsHa[,-3]
 
   SimResults <- list(Results = resultsHa, model = "single.factor")
   class(SimResults) <- "ecocbo_data"
