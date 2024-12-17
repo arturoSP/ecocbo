@@ -51,6 +51,8 @@
 #'
 #' @export
 #' @importFrom stats reshape aggregate quantile
+#' @importFrom tidyr separate
+#' @importFrom dplyr rename
 #'
 #' @examples
 #' sim_beta(data = simResults, alpha = 0.05)
@@ -65,9 +67,9 @@ sim_beta <- function(data, alpha = 0.05){
 
   # Calculate power and beta ----
   m_n <- if(data$model == "single.factor"){
-    data1$Results[,"n"]
+    data$Results[,"n"]
   } else {
-    paste(data$Results[,"m"], data2$Results[,"n"], sep="_")
+    paste(data$Results[,"m"], data$Results[,"n"], sep="_")
   }
 
   resultsHH <- as.data.frame(cbind(m_n,
@@ -99,11 +101,11 @@ sim_beta <- function(data, alpha = 0.05){
   if(data$model == "single.factor"){
     rowidx <- order(powr[,1])
 
-    powr <- rename(powr, "n" = "m_n")
+    powr <- dplyr::rename(powr, "n" = "m_n")
     powr <- powr[rowidx, -5]
   } else {
     powr <- powr |>
-      separate(m_n, into = c("m", "n"), sep = "_", convert = TRUE)
+      tidyr::separate(m_n, into = c("m", "n"), sep = "_", convert = TRUE)
 
     rowidx <- order(powr[,1], powr[,2])
 
