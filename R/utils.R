@@ -55,54 +55,66 @@ SS <- function (d) {
 ## PERMANOVA ----
 permanova_oneway <- function(x, factEnv, type = "P", method = "bray", transformation = "none"){
   pseudoF_P <- function(x, factEnv, method = "bray", transformation = "none"){
-    if (transformation == "square root") {
-      x.t <- sqrt(x)
-      rm(x)
-      d <- vegan::vegdist(x.t, method = method)
-    }
-    if (transformation == "fourth root") {
-      x.t <- sqrt(sqrt(x))
-      rm(x)
-      d <- vegan::vegdist(x.t, method = method)
-    }
-    if (transformation == "Log (X+1)") {
-      x.t <- log(x + 1)
-      rm(x)
-      d <- vegan::vegdist(x.t, method = method)
-    }
-    if (transformation == "P/A") {
-      x.t <- 1 * (x > 0)
-      rm(x)
-      d <- vegan::vegdist(x.t, method = method, binary = TRUE)
-    }
-    if (transformation == "none") {
-      x.t <- x
-      rm(x)
-      d <- vegan::vegdist(x.t, method = method)
+    # Validate transformation method
+    valid_transformations <- c("none", "square root", "fourth root", "Log (X+1)", "P/A")
+    if (!transformation %in% valid_transformations) {
+      stop("Invalid transformation method. Choose from: none, square root, fourth root, Log (X+1), P/A.")
     }
 
+    # Validate distance method
+    valid_methods <- c("euclidean", "bray", "jaccard", "gower")
+    if (!method %in% valid_methods) {
+      stop("Invalid distance method. Choose from: euclidean, bray, jaccard, gower.")
+    }
+
+    # Ensure dimensions match
+    if (dim(x)[1] != length(factEnv)) {
+      stop("The dimensions of the data matrix and the factor labels do not match.")
+    }
+
+    # Apply transformation and calculate distance matrix
+    if (transformation == "square root") {
+      x.t <- sqrt(x)
+    } else if (transformation == "fourth root") {
+      x.t <- sqrt(sqrt(x))
+    } else if (transformation == "Log (X+1)") {
+      x.t <- log(x + 1)
+    } else if (transformation == "P/A") {
+      x.t <- 1 * (x > 0)
+    } else {
+      x.t <- x
+    }
+    d <- vegan::vegdist(x.t, method = method)
+
+    # Calculate sum of squares total
     SST <- SS(d)[2]
 
     # Size for labels
     nlev <- nlevels(as.factor(factEnv))
 
-    # Calculate the SS for residuals
+    # Split data by factors and calculate residuals
     lista <- split(as.data.frame(x.t), factEnv)
     dimxt <- dim(x.t)
     vdist <- lapply(lista, vegan::vegdist, method = method)
     SSi <- lapply(vdist, SS)
     SSi <- array(unlist(SSi), dim = c(1,2,nlev))
 
-    # Calculate denominators
+    # Calculate mean squares and pseudoF
     denR <- dimxt[1] - nlev
     denA <- nlev - 1
 
-    # Results
     SSR <- sum(SSi[,2,])
     SSA <- abs(SST - SSR)
     MSR <- (SSR/denR)
     MSA <- (SSA/denA)
+
+    # Validate MS values
+    if (MSR <= 0 || MSA <= 0) {
+      stop("Mean squares (MSA or MSR) contain invalid values (e.g., non-positive).")
+    }
+
     Fobs <- MSA/MSR
+
     Fobs <- data.frame(SSA, SSR, SST, denA, denR, MSA, MSR, Fobs)
     return(Fobs)
   }
@@ -195,21 +207,29 @@ balanced_sampling <- function(i, Y, mm, nn, YPU, H0Sim, HaSim, resultsHa, transf
   ones <- which(sel[,1] %in% 1)
   y0 <- H0Sim[ones,,resultsHa[i,1]]
   ya <- HaSim[ones,,resultsHa[i,1]]
+
+  # Validate dimensions of H0 and Ha matrices
+  if (!all(dim(y0) == dim(ya))) {
+    stop("The dimensions of H0 and Ha data matrices do not match.")
+  }
+
   yHa <- dim(y0)[2] - 2
 
-  # Apply PERMANOVA to get F and mean squares
+  # Apply PERMANOVA to get pseudoF and mean squares
   result1 <- permanova_oneway(x = y0[, 1:yHa], factEnv = y0[,yHa+2],
                               transformation = transformation, method = method)
   result2 <- permanova_oneway(x = ya[, 1:yHa], factEnv = y0[,(yHa+2)],
                               transformation = transformation, method = method)
+
+  # Create result matrix
   result0 <- matrix(nrow = 1, ncol = 4)
-  colnames(result0) <- c("Fobs", "Fobs", "MSA", "MSR")
+  colnames(result0) <- c("FobsH0", "FobsHa", "MSA", "MSR")
 
   # Gather the results and return
-  result0[,1] <- result1[,3]
-  result0[,2] <- result2[,3]
-  result0[,3] <- result2[,1]
-  result0[,4] <- result2[,2]
+  result0[,1] <- result1$Fobs
+  result0[,2] <- result2$Fobs
+  result0[,3] <- result2$MSA
+  result0[,4] <- result2$MSR
   return(result0)
 }
 
@@ -365,32 +385,36 @@ permanova_twoway <- function(x, factEnv, method = "bray", transformation = "none
   }
 
   pseudoF_2NestedSymmetric <- function(x, factEnv, method, transformation){
-    # data transformation, if necessary, and calculate the distance matrix
+    # Validate transformation method
+    valid_transformations <- c("none", "square root", "fourth root", "Log (X+1)", "P/A")
+    if (!transformation %in% valid_transformations) {
+      stop("Invalid transformation method. Choose from: none, square root, fourth root, Log (X+1), P/A.")
+    }
+
+    # Validate distance method
+    valid_methods <- c("euclidean", "bray", "jaccard", "gower")
+    if (!method %in% valid_methods) {
+      stop("Invalid distance method. Choose from: euclidean, bray, jaccard, gower.")
+    }
+
+    # Ensure dimensions match
+    if (dim(x)[1] != dim(factEnv)[1]) {
+      stop("The dimensions of the data matrix and the factor labels do not match.")
+    }
+
+    # Apply transformation and calculate distance matrix
     if (transformation == "square root") {
       x.t <- sqrt(x)
-      rm(x)
-      d <- vegan::vegdist(x.t, method = method)
-    }
-    if (transformation == "fourth root") {
+    } else if (transformation == "fourth root") {
       x.t <- sqrt(sqrt(x))
-      rm(x)
-      d <- vegan::vegdist(x.t, method = method)
-    }
-    if (transformation == "Log (X+1)") {
+    } else if (transformation == "Log (X+1)") {
       x.t <- log(x + 1)
-      rm(x)
-      d <- vegan::vegdist(x.t, method = method)
-    }
-    if (transformation == "P/A") {
+    } else if (transformation == "P/A") {
       x.t <- 1 * (x > 0)
-      rm(x)
-      d <- vegan::vegdist(x.t, method = method, binary = TRUE)
-    }
-    if (transformation == "none") {
+    } else {
       x.t <- x
-      rm(x)
-      d <- vegan::vegdist(x.t, method = method)
     }
+    d <- vegan::vegdist(x.t, method = method)
 
     # size for the labels we work with
     a = nlevels(as.factor(factEnv$sector))  # number of sectors (A)
@@ -402,8 +426,8 @@ permanova_twoway <- function(x, factEnv, method = "bray", transformation = "none
     nScSt = unique(factEnv$secsit)  # unique values for the intersections site-sector
 
     # calculates SS for all
-    # SST <- SS(d*100)[2]
-    SST <- SS(d)[2]
+    SST <- SS(d*100)[2]  # this *100 is added to get results that are comparable to those in PRIMER
+    # SST <- SS(d)[2]
 
     # calculates SS within replicates
     listR <- list()

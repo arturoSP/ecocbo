@@ -16,7 +16,7 @@
 #' 'single.factor' and 'nested.symmetric'.
 #'
 #' @return  Power curves for the different values of 'm'. The selected, or computed,
-#' 'n' is marked in black with a red outline.
+#' 'n' is marked in white with a bold outline.
 #'
 #' The value of the selected 'm', 'n' and the corresponding component of variation
 #' are presented in all methods.
@@ -62,7 +62,7 @@ power_curve <- function(powr, m = NULL, n, cVar, model){
       geom_line()+
       geom_point()+
       geom_point(data = powrPl[powrPl$n == nn,],
-                 shape = 21, size = 2.5, color = "red", fill = "black")+
+                 shape = 21, size = 3, stroke = 1.5, fill = "white")+
       annotate("label", x = 1.25, y = 0.9,
                label = paste0("n = ", nn,
                               "\nCV = ", as.numeric(cVar[1])))
@@ -75,14 +75,15 @@ power_curve <- function(powr, m = NULL, n, cVar, model){
     powrPl <- rbind(dummy, powrPl)
     powrPl$m <- factor(powrPl$m, ordered = TRUE)
     powrPl$Sel <- powrPl$m == mm
-    powrPl$Sel <- ifelse(powrPl$Sel == TRUE, 1, 0.95)
+    powrPl$Sel <- as.numeric(ifelse(powrPl$Sel == TRUE, 1, 0.9))
 
     p1 <- ggplot(data = powrPl, aes(x = n, y = .data$Power,
-                              color = m, alpha = .data$Sel))+
+                              # color = m, alpha = .data$Sel))+
+                              color = m))+
       geom_line() +
       geom_point(data = powrPl[powrPl$m == mm,], size = 2, show.legend = FALSE)+
       geom_point(data = powrPl[powrPl$m == mm & powrPl$n == nn,],
-                 shape = 21, size = 2.5, color = "red", fill = "black")+
+                 shape = 21, size = 3, stroke = 1.5, fill = "white")+
       annotate("label", x = 1.25, y = 0.9,
                label = paste0("m = ", mm,
                               "\nn = ", nn,
