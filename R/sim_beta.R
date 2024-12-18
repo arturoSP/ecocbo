@@ -60,24 +60,27 @@
 
 sim_beta <- function(data, alpha = 0.05){
 
+  # Data validation ----
   if(!inherits(data, "ecocbo_data"))
     stop("data is not the right class(\"ecocbo_data\")")
   if(alpha >= 1)
     stop("alpha must be smaller than 1")
 
-  # Calculate power and beta ----
+  # Preparing an index column combinating m & n, or using n ----
   m_n <- if(data$model == "single.factor"){
     data$Results[,"n"]
   } else {
-    paste(data$Results[,"m"], data$Results[,"n"], sep="_")
+    as.character(paste(data$Results[,"m"], data$Results[,"n"], sep="_"))
   }
 
+  # Combining results in an intermediate variable ----
   resultsHH <- as.data.frame(cbind(m_n,
                                    pseudoFH0 = data$Results[,"pseudoFH0"],
                                    pseudoFHa = data$Results[,"pseudoFHa"]))
   resultsHH[,"pseudoFH0"] <- as.numeric(resultsHH[,"pseudoFH0"])
   resultsHH[,"pseudoFHa"] <- as.numeric(resultsHH[,"pseudoFHa"])
 
+  # Calculating fCrit and total dimensions ----
   fCrit <- stats::aggregate(resultsHH[,2],
                             by = list(resultsHH[,1]),
                             stats::quantile, probs = (1 - alpha), type= 8, na.rm = T)
@@ -85,19 +88,23 @@ sim_beta <- function(data, alpha = 0.05){
                              by = list(resultsHH[,1]),
                              length)
 
+  # Creating power table ----
   powr <- data.frame(m_n = totDim[,1],
                      Power = totDim[,2],
                      Beta = NA,
                      fCrit = fCrit[,2],
                      index = seq(1, dim(fCrit)[1]))
 
+  # Calculating power for each iteration ----
   for(i in powr[,5]){
     partialRes <- resultsHH[resultsHH$m_n == powr[i,1],]
-    powr[i,2] <- dim(partialRes[partialRes[,3] >= powr[i,2],])[1] / totDim[i,2]
+    powr[i,2] <- dim(partialRes[partialRes[,3] >= powr[i,4],])[1] / totDim[i,2]
   }
 
+  # Calculating beta ----
   powr[,3] <- 1 - powr[,2]
 
+  # Adjust the results according to the model ----
   if(data$model == "single.factor"){
     rowidx <- order(powr[,1])
 
@@ -107,11 +114,15 @@ sim_beta <- function(data, alpha = 0.05){
     powr <- powr |>
       tidyr::separate(m_n, into = c("m", "n"), sep = "_", convert = TRUE)
 
+    powr$m <- as.numeric(powr$m)
+    powr$n <- as.numeric(powr$n)
+
     rowidx <- order(powr[,1], powr[,2])
 
     powr <- powr[rowidx, -6]
   }
 
+  # Creating the resulting object ----
   BetaResult <- list(Power = powr,
                      Results = as.data.frame(data$Results),
                      alpha = alpha,
@@ -146,15 +157,39 @@ sim_beta <- function(data, alpha = 0.05){
 #' that were considered.
 #'
 # Print ecocbo_beta
-#' @internal
-# print.ecocbo_beta <- function(x, ...){
-#   x$Power[,3] <- round(x$Power[,3], 2)
-#   x1 <- stats::reshape(x$Power[,c(1:3)],
-#                 direction = "wide",
-#                 idvar = "m", timevar = "n",
-#                 new.row.names = paste0("m = ",c(2:max(x$Power$m))))
-#   x1 <- x1[,-1]
-#   colnames(x1) <- paste0("n = ", c(2:max(x$Power$n)))
-#   cat("Power at different sampling efforts (m x n):\n")
-#   print(x1)
-# }
+#' @keywords internal
+
+print.ecocbo_beta <- function(x, ...){
+  x$Power[, "Power"] <- round(x$Power[, "Power"], 2)
+
+  if (x$model == "single.factor") {
+    # Caso: Experimento de un solo factor
+    x1 <- x$Power[,c(1:2)]
+
+    x1 <- as.data.frame(x1[,-1])
+    rownames(x1) <- paste0("n = ", x$Power$n)
+    colnames(x1) <- "Power"
+
+    cat("Power at different sampling efforts (n):\n")
+    print(x1)
+
+  } else if (x$model == "nested.symmetric" || x$model == "nested.asymmetric") {
+    # Caso: Experimento de dos factores anidados
+    x1 <- stats::reshape(
+      x$Power[, c("m", "n", "Power")],
+      direction = "wide",
+      idvar = "m",
+      timevar = "n",
+      new.row.names = paste0("m = ", c(2:max(x$Power$m)))
+    )
+
+    x1 <- x1[, -1]  # Eliminar la columna de 'm'
+    colnames(x1) <- paste0("n = ", c(2:max(x$Power$n)))
+
+    cat("Power at different sampling efforts (m x n):\n")
+    print(x1)
+
+  } else {
+    stop("Unknown model type. Accepted types are 'single.factor', 'nested.symmetric', or 'nested.asymmetric'.")
+  }
+}
