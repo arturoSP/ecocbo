@@ -10,7 +10,7 @@ prep_data_nestedsymmetric(
   Sest.method = "average",
   cases = 5,
   N = 100,
-  sites = 10,
+  sites = 3,
   n,
   m,
   k = 50,
