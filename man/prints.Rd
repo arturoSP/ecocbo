@@ -20,3 +20,4 @@ that were considered.
 \description{
 prints for \code{ecocbo::sim_beta()} objects.
 }
+\keyword{internal}

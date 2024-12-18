@@ -11,9 +11,8 @@ prep_data(
   Sest.method = "average",
   cases = 5,
   N = 100,
-  sites = 10,
+  sites = 3,
   n,
-  m,
   k = 50,
   transformation = "none",
   method = "bray",
@@ -42,8 +41,6 @@ Bootstrap "boot". By default, the "average" of the four estimates is used.}
 \item{sites}{Total number of sites to be simulated in each data set.}
 
 \item{n}{Maximum number of samples to consider.}
-
-\item{m}{Maximum number of sites.}
 
 \item{k}{Number of resamples the process will take. Defaults to 50.}
 
@@ -82,8 +79,8 @@ data frame with the permutations, pseudo-F statistic, and mean squares.
 \examples{
 \donttest{
 simResults <- prep_data(data = epiDat, type = "counts", Sest.method = "average",
-                        cases = 5, N = 100, sites = 10,
-                        n = 5, m = 5, k = 30,
+                        cases = 5, N = 100, sites = 3,
+                        n = 5, k = 30,
                         transformation = "none", method = "bray",
                         dummy = FALSE, useParallel = FALSE,
                         model = "single.factor")

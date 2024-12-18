@@ -5,7 +5,15 @@
 \alias{simcbo}
 \title{Simulated cost-benefit optimization}
 \usage{
-sim_cbo(comp.var, multSE = NULL, ct = NULL, ck, cj = NULL)
+sim_cbo(
+  comp.var,
+  multSE = NULL,
+  budget = NULL,
+  a = NULL,
+  ca = NULL,
+  cm = NULL,
+  cn
+)
 }
 \arguments{
 \item{comp.var}{Data frame as obtained from \code{\link[=scompvar]{scompvar()}}.}
@@ -13,11 +21,13 @@ sim_cbo(comp.var, multSE = NULL, ct = NULL, ck, cj = NULL)
 \item{multSE}{Optional. Required multivariate standard error for the
 sampling experiment.}
 
-\item{ct}{Optional. Total cost for the sampling experiment.}
+\item{budget}{Optional. Total cost for the sampling experiment.}
 
-\item{ck}{Cost per replicate.}
+\item{ca}{Cost per treatment.}
 
-\item{cj}{Cost per unit.}
+\item{cm}{Cost per replicate.}
+
+\item{cn}{Cost per unit.}
 }
 \value{
 A data frame containing the optimized values for \code{m} number of
