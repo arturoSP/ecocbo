@@ -127,6 +127,7 @@ sim_beta <- function(data, alpha = 0.05){
   return(BetaResult)
 }
 
+
 #-------------------------------------------
 ## S3Methods print()
 #-------------------------------------------
@@ -135,8 +136,7 @@ sim_beta <- function(data, alpha = 0.05){
 #'
 #' @name prints
 #'
-#' @aliases
-#' print.ecocbo_beta
+#' @method print ecocbo_beta
 #'
 #' @usage
 #' \method{print}{ecocbo_beta}(x, ...)
@@ -151,7 +151,7 @@ sim_beta <- function(data, alpha = 0.05){
 #' ordered matrix the estimated power for the different experimental designs
 #' that were considered.
 #'
-# Print ecocbo_beta
+#' @export
 #' @keywords internal
 
 print.ecocbo_beta <- function(x, ...){
@@ -168,7 +168,7 @@ print.ecocbo_beta <- function(x, ...){
     cat("Power at different sampling efforts (n):\n")
     print(x1)
 
-  } else if (x$model == "nested.symmetric" || x$model == "nested.asymmetric") {
+  } else if (x$model == "nested.symmetric") {
     # Caso: Experimento de dos factores anidados
     x1 <- stats::reshape(
       x$Power[, c("m", "n", "Power")],
@@ -185,6 +185,8 @@ print.ecocbo_beta <- function(x, ...){
     print(x1)
 
   } else {
-    stop("Unknown model type. Accepted types are 'single.factor', 'nested.symmetric', or 'nested.asymmetric'.")
+    stop("Unknown model type. Accepted types are 'single.factor' or 'nested.symmetric'.")
   }
+  invisible(x1)
 }
+
