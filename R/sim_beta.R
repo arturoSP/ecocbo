@@ -1,41 +1,36 @@
-#' Calculate beta and power out of simulated samples
+#' Calculate Beta Error and Statistical Power from Simulated Samples
 #'
-#' \code{sim_beta()} can be used to assess the power of a study by comparing the
-#' variation when one can assume whether an ecological community does not have
-#' composition differences (H0 true) or it does (H0 false). For example, if the
-#' beta error is 0.25, then there is a 25% chance of failing to detect a
-#' difference even if the difference is real. The power of the study is
-#' \eqn{1 - \beta}, so in this example, the power of the study is 0.75.
+#' Estimates the statistical power of a study by comparing variation under null
+#' and alternative hypotheses. For instance, if the beta error is 0.25, there is
+#' a 25% chance of failing to detect a real difference, and the power of the study
+#' is \eqn{1 - \beta}, meaning 0.75 in this case.
 #'
-#' @param data An object of class "ecocbo_data" that results from applying
-#' [prep_data()] to a community data frame.
-#' @param alpha Level of significance for Type I error. Defaults to 0.05.
+#' @param data An object of class `"ecocbo_data"` that results from applying
+#' [prep_data()] to a community dataset.
+#' @param alpha Numeric. Significance level for Type I error. Defaults to 0.05.
 #'
-#' @return \code{sim_data()} returns an object of class "ecocbo_beta".
+#' @return A list of class "ecocbo_beta", containing:
+#'   - `$Power`: a data frame with power and beta estimates across different
+#' sampling efforts (`m` sites and `n` samples).
+#'   - `$Results`: a data frame with pseudo-F estimates for `simH0` and `simHa`.
+#'   - `$alpha`: significance level for Type I error.
 #'
-#' The function \code{print()} is used to present a matrix that summarizes the
-#' results by showing the estimate power according to different sampling efforts.
-#'
-#' An object of class "ecocbo_beta" is a list containing the following components:
-#' \itemize{
-#'   \item \code{$Power} a data frame containing the estimation of power and beta for
-#' several combination of sampling efforts (\code{m} sites and \code{n} samples).
-#'   \item \code{$Results} a data frame containing the estimates of pseudoF for \code{simH0}
-#' and \code{simHa}.
-#'   \item \code{$alpha} level of significance for Type I error.
-#' }
+#' @details
+#' The function displays a summary matrix with estimated power values for various
+#' sampling efforts.
 #'
 #' @author Edlin Guerra-Castro (\email{edlinguerra@@gmail.com}), Arturo Sanchez-Porras
 #'
-#' @references Underwood, A. J. (1997). Experiments in ecology: their logical
+#' @references
+#' - Underwood, A. J. (1997). Experiments in ecology: their logical
 #' design and interpretation using analysis of variance. Cambridge university
 #' press.
-#' @references Underwood, A. J., & Chapman, M. G. (2003). Power, precaution,
+#' - Underwood, A. J., & Chapman, M. G. (2003). Power, precaution,
 #' Type II error and sampling design in assessment of environmental impacts.
 #' Journal of Experimental Marine Biology and Ecology, 296(1), 49-70.
-#' @references Anderson, M. J. (2014). Permutational multivariate analysis of
+#' - Anderson, M. J. (2014). Permutational multivariate analysis of
 #' variance (PERMANOVA). Wiley statsref: statistics reference online, 1-15.
-#' @references  Guerra‐Castro, E. J., Cajas, J. C., Simões, N., Cruz‐Motta, J.
+#' - Guerra‐Castro, E. J., Cajas, J. C., Simões, N., Cruz‐Motta, J.
 #'  J., & Mascaró, M. (2021). SSP: an R package to estimate sampling effort in
 #'  studies of ecological communities. Ecography, 44(4), 561-573.
 #'

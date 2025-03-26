@@ -1,38 +1,40 @@
-#' Power curves for different sampling efforts
+#' Power Curves for Different Sampling Efforts
 #'
-#' \code{plot_power()} can be used to visualize the power of a study as a
-#' function of the sampling effort. The power curve plot shows that the
-#' power of the study increases as the sample size increases, and the density
-#' plot shows the overlapping areas where \eqn{\alpha} and \eqn{\beta} are
-#' significant.
+#' visualizes the statistical power of a study as a function of the sampling effort.
+#' The power curve plot illustrates how power increases with sample size, while
+#' the density plot highlights overlapping areas where \eqn{\alpha} and
+#' \eqn{\beta} are significant.
 #'
-#' @param data Object of class "ecocbo_beta" that results from [sim_beta()].
-#' @param m Defaults to NULL, and then the function computes the number of
-#' sites 'm' that result in a sampling effort that is close to (1 - alpha) in
-#' power. If provided, said number of site will be used.
-#' @param n Defaults to NULL, and then the function computes the number of
-#' samples 'n', within the selected 'm', that result in a sampling effort close
-#' to (1 - alpha) in power. If provided, said number of samples will be used.
-#' @param method The desired plot. Options are "power", "density" or "both".
-#' "power" plots the power curve, "density" plots the density distribution of
-#' pseudoF, and "both" draws both plots one next to the other.
+#' @param data Object of class `"ecocbo_beta"` obtained from [sim_beta()].
+#' @param m Optional. Integer. Number of replicates `m` to use for power computation.
+#' Defaults to `NULL`, in which case the function selects the number of sites that
+#' result in a sampling effort that is close to \eqn{1 - \alpha}.
+#' @param n Optional. Integer. Number of samples `n` within the selected `m`.
+#' Defaults to `NULL`, and the function selects the number of samples yielding a
+#' power close to \eqn{1 - \alpha}.
+#' @param method Character. Type of plot to generate:
+#'   - "power": Plots the power curve.
+#'   - "density": Plots the density distribution of pseudo-F values.
+#'   - "both": Displays both plots side by side.
 #'
-#' @return  If the method is "power", then the power curves for the different values
-#' of 'm'. The selected, or computed, 'n' is marked in red. If the method is "density", then a
-#' density plot for the observed pseudoF values and a line marking the value of
-#' pseudoF that marks the significance level indicated in [sim_beta()].
-#' If the method is "both", then a composite with power curves and a
-#' density plot side by side.
+#' @return A plot displaying:
+#'   - If `method = "power"`, power curves for different values of `m`, with the
+#'   selected `n` highlighted in red.
+#'   - If `method = "density"`: a density plot of observed pseudo-F values with
+#'   a vertical line indicating significance from [sim_beta()].
+#'   - If `method = "both"`: a composite figure with both the power curve and the
+#'   density plot.
 #'
-#' The value of the selected 'm', 'n' and the corresponding component of variation
-#' are presented in all methods.
+#' The selected values of `m`, `n`, and the corresponding component of variation
+#' are displayed in all cases.
 #'
 #' @author Edlin Guerra-Castro (\email{edlinguerra@@gmail.com}), Arturo Sanchez-Porras
 #'
-#' @references Underwood, A. J. (1997). Experiments in ecology: their logical
+#' @references
+#' - Underwood, A. J. (1997). Experiments in ecology: their logical
 #' design and interpretation using analysis of variance. Cambridge university
 #' press.
-#' @references Underwood, A. J., & Chapman, M. G. (2003). Power, precaution,
+#' - Underwood, A. J., & Chapman, M. G. (2003). Power, precaution,
 #' Type II error and sampling design in assessment of environmental impacts.
 #' Journal of Experimental Marine Biology and Ecology, 296(1), 49-70.
 #'
@@ -57,9 +59,15 @@
 #' @examples
 #' epiBetaR <- sim_beta(simResults, alpha = 0.05)
 #'
+#' # Power curve visualization
 #' plot_power(data = epiBetaR, n = NULL, m = 3, method = "power")
+#'
+#' # Density plot of pseudo-F values
 #' plot_power(data = epiBetaR, n = NULL, m = 3, method = "density")
+#'
+#' # Composite plot with both power curve and density plot
 #' plot_power(data = epiBetaR, n = 4, m = 3, method = "both")
+#'
 
 plot_power <- function(data, n = NULL, m = NULL, method = "power"){
 # Función para graficar curvas de frecuencia de F para H0 y Ha ----

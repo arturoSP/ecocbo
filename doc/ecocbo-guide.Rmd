@@ -81,10 +81,11 @@ This functions returns an object of class *ecocbo_data* which is a list that con
 data(epiDat)
 
 simResults <- prep_data(data = epiDat, type = "counts", Sest.method = "average",
-                        cases = 5, N = 100, sites = 10,
+                        cases = 5, N = 100, M = 10,
                         n = 5, m = 5, k = 30,
                         transformation = "none", method = "bray",
-                        dummy = FALSE, useParallel = TRUE)
+                        dummy = FALSE, useParallel = TRUE, 
+                        model = "single.factor")
 ```
 
 ### 1. scompvar()
@@ -118,12 +119,12 @@ compVar
 It is necessary to indicate one of the two optional arguments, as that parameter dictates if the function will work either based on budget or precision.
 
 ```{r step21}
-cboCost <- sim_cbo(comp.var = compVar, ct = 20000, ck = 100, cj = 2500)
+cboCost <- sim_cbo(comp.var = compVar, budget = 20000, a = 3, ca = 100, cn = 2500)
 cboCost
 ```
 
 ```{r step22}
-cboPrecision <- sim_cbo(comp.var = compVar, multSE = 0.10, ck = 100, cj = 2500)
+cboPrecision <- sim_cbo(comp.var = compVar, multSE = 0.10, cn = 100, cm = 2500)
 cboPrecision
 
 ```
@@ -162,7 +163,7 @@ The power curve plot shows that the power of the study increases as the sample s
 The argument `n` is set to NULL by default, if it is left like that, the the function looks for a number of samples that allows for a power that is close to $(1-alpha)$, otherwise it uses the value stated by the user. In either case, the computed or provided value will be marked in red in the power curve plot.
 
 ```{r step4}
-plot_power(data = betaResult, n = NULL, m = 3, method = "both")
+plot_power(data = betaResult, n = NULL, method = "power")
 
 ```
 

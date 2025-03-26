@@ -1,26 +1,28 @@
-#' Simulated cost-benefit optimization
+#' Simulated Cost-Benefit Optimization
 #'
-#'\code{sim_cbo()} can be used to apply a cost-benefit optimization model that
-#' depends either on a desired level of precision or on a budgeted total cost,
-#' as proposed by Underwood (1997).
+#' Applies a cost-benefit optimization model based on either a desired level of
+#' precision or a predefined budget, following the approach of Underwood (1997).
 #'
-#' @param comp.var Data frame as obtained from [scompvar()].
-#' @param multSE Optional. Required multivariate standard error for the
+#' @param comp.var Data frame as obtained from [scompvar()], containing variance
+#' component estimates
+#' @param multSE Optional. Numeric. Required multivariate standard error for the
 #' sampling experiment.
-#' @param budget Optional. Total cost for the sampling experiment.
-#' @param ca Cost per treatment.
-#' @param cm Cost per replicate.
-#' @param cn Cost per unit.
+#' @param budget Optional. Numeric. Total budget available for the sampling experiment.
+#' @param a Numeric. Number of treatments to consider.
+#' @param ca Numeric. Cost per treatment.
+#' @param cm Numeric. Cost per replicate.
+#' @param cn Numeric. Cost per sampling unit.
 #'
 #' @return A data frame containing the optimized values for \code{m} number of
-#' sites and \code{n} number of samples to consider.
+#' sites to sample and \code{n} number of samples per site.
 #'
 #' @author Edlin Guerra-Castro (\email{edlinguerra@@gmail.com}), Arturo Sanchez-Porras
 #'
-#' @references Underwood, A. J. (1997). Experiments in ecology: their logical
+#' @references
+#' - Underwood, A. J. (1997). Experiments in ecology: their logical
 #' design and interpretation using analysis of variance. Cambridge university
 #' press.
-#' @references Underwood, A. J., & Chapman, M. G. (2003). Power, precaution,
+#' - Underwood, A. J., & Chapman, M. G. (2003). Power, precaution,
 #' Type II error and sampling design in assessment of environmental impacts.
 #' Journal of Experimental Marine Biology and Ecology, 296(1), 49-70.
 #'
@@ -36,8 +38,12 @@
 #' @examples
 #' compVar <- scompvar(data = simResults)
 #'
-#' sim_cbo(comp.var = compVar, multSE = NULL, ct = 20000, ck = 100, cj = 2500)
-#' sim_cbo(comp.var = compVar, multSE = 0.15, ct = NULL, ck = 100, cj = 2500)
+#' # Optimization based on budget constraint
+#' sim_cbo(comp.var = compVar, multSE = NULL, budget = 20000, a = 3, ca = 2500, cn = 100)
+#'
+#' # Optimization based on precision constraint
+#' sim_cbo(comp.var = compVar, multSE = 0.15, cn = 150)
+#'
 
 sim_cbo <- function(comp.var, multSE = NULL, budget = NULL, a = NULL,
                     ca = NULL, cm = NULL, cn){

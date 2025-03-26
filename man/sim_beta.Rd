@@ -3,58 +3,53 @@
 \name{sim_beta}
 \alias{sim_beta}
 \alias{simbeta}
-\title{Calculate beta and power out of simulated samples}
+\title{Calculate Beta Error and Statistical Power from Simulated Samples}
 \usage{
 sim_beta(data, alpha = 0.05)
 }
 \arguments{
-\item{data}{An object of class "ecocbo_data" that results from applying
-\code{\link[=prep_data]{prep_data()}} to a community data frame.}
+\item{data}{An object of class \code{"ecocbo_data"} that results from applying
+\code{\link[=prep_data]{prep_data()}} to a community dataset.}
 
-\item{alpha}{Level of significance for Type I error. Defaults to 0.05.}
+\item{alpha}{Numeric. Significance level for Type I error. Defaults to 0.05.}
 }
 \value{
-\code{sim_data()} returns an object of class "ecocbo_beta".
-
-The function \code{print()} is used to present a matrix that summarizes the
-results by showing the estimate power according to different sampling efforts.
-
-An object of class "ecocbo_beta" is a list containing the following components:
+A list of class "ecocbo_beta", containing:
 \itemize{
-\item \code{$Power} a data frame containing the estimation of power and beta for
-several combination of sampling efforts (\code{m} sites and \code{n} samples).
-\item \code{$Results} a data frame containing the estimates of pseudoF for \code{simH0}
-and \code{simHa}.
-\item \code{$alpha} level of significance for Type I error.
+\item \verb{$Power}: a data frame with power and beta estimates across different
+sampling efforts (\code{m} sites and \code{n} samples).
+\item \verb{$Results}: a data frame with pseudo-F estimates for \code{simH0} and \code{simHa}.
+\item \verb{$alpha}: significance level for Type I error.
 }
 }
 \description{
-\code{sim_beta()} can be used to assess the power of a study by comparing the
-variation when one can assume whether an ecological community does not have
-composition differences (H0 true) or it does (H0 false). For example, if the
-beta error is 0.25, then there is a 25\% chance of failing to detect a
-difference even if the difference is real. The power of the study is
-\eqn{1 - \beta}, so in this example, the power of the study is 0.75.
+Estimates the statistical power of a study by comparing variation under null
+and alternative hypotheses. For instance, if the beta error is 0.25, there is
+a 25\% chance of failing to detect a real difference, and the power of the study
+is \eqn{1 - \beta}, meaning 0.75 in this case.
+}
+\details{
+The function displays a summary matrix with estimated power values for various
+sampling efforts.
 }
 \examples{
 sim_beta(data = simResults, alpha = 0.05)
 
 }
 \references{
-Underwood, A. J. (1997). Experiments in ecology: their logical
+\itemize{
+\item Underwood, A. J. (1997). Experiments in ecology: their logical
 design and interpretation using analysis of variance. Cambridge university
 press.
-
-Underwood, A. J., & Chapman, M. G. (2003). Power, precaution,
+\item Underwood, A. J., & Chapman, M. G. (2003). Power, precaution,
 Type II error and sampling design in assessment of environmental impacts.
 Journal of Experimental Marine Biology and Ecology, 296(1), 49-70.
-
-Anderson, M. J. (2014). Permutational multivariate analysis of
+\item Anderson, M. J. (2014). Permutational multivariate analysis of
 variance (PERMANOVA). Wiley statsref: statistics reference online, 1-15.
-
-Guerra‐Castro, E. J., Cajas, J. C., Simões, N., Cruz‐Motta, J.
+\item Guerra‐Castro, E. J., Cajas, J. C., Simões, N., Cruz‐Motta, J.
 J., & Mascaró, M. (2021). SSP: an R package to estimate sampling effort in
 studies of ecological communities. Ecography, 44(4), 561-573.
+}
 }
 \seealso{
 \code{\link[=plot_power]{plot_power()}}

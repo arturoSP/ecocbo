@@ -23,7 +23,7 @@ option is "P".}
 \item{method}{appropriate distance/dissimilarity metric (e.g. Gower,
 Bray–Curtis, Jaccard, etc).}
 
-\item{transformation}{Mathematical function to reduce the weight of very
+\item{transformation}{Mathematical function to reduce the weight of
 dominant species.}
 }
 \value{
