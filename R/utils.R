@@ -11,7 +11,7 @@
 #' @references Anderson, M. J. (2014). Permutational multivariate analysis of
 #' variance (PERMANOVA). Wiley statsref: statistics reference online, 1-15.
 #'
-#' @export
+#'
 #' @keywords internal
 #'
 
@@ -49,7 +49,7 @@ SS <- function (d) {
 #'
 #' @seealso [vegan::vegdist()]
 #'
-#' @export
+#'
 #' @keywords internal
 
 ## PERMANOVA ----
@@ -197,7 +197,7 @@ permanova_oneway <- function(x, factEnv, type = "P", method = "bray", transforma
 #'
 #' @seealso [sampling::balancedtwostage()]
 #'
-#' @export
+#'
 #' @keywords internal
 
 balanced_sampling <- function(i, Y, mm, nn, YPU, H0Sim, HaSim, resultsHa, transformation, method){
@@ -263,7 +263,7 @@ balanced_sampling <- function(i, Y, mm, nn, YPU, H0Sim, HaSim, resultsHa, transf
 #'
 #' @seealso [vegan::vegdist()]
 #'
-#' @export
+#'
 #' @keywords internal
 
 ## PERMANOVA Two factors ----
@@ -561,7 +561,7 @@ permanova_twoway <- function(x, factEnv, method = "bray",
 #'
 #' @seealso [sampling::balancedtwostage()]
 #'
-#' @export
+#'
 #' @keywords internal
 #'
 
@@ -661,7 +661,7 @@ balanced_sampling2 <- function(i, Y, mm, nn, YPU, H0Sim, HaSim, factEnv, results
 #'
 #' @seealso [sampling::balancedtwostage()]
 #'
-#' @export
+#'
 #' @keywords internal
 #'
 

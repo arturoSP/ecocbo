@@ -93,7 +93,7 @@ cost_v <- function(n, comp.var, multSE){
     if(is.null(multSE)){
       # when working for total cost, the optimal n will be what can be
       # done with the available economic resources
-      nOpt <- floor((budget - (ca * a)) / cn)
+      nOpt <- floor((budget - (ca * a)) / (cn * a))
     } else {
       # when working with SE, the optimal n comes from solving Var=MSR/n for n
       nOpt <- floor(comp.var[1,2] / (multSE * multSE))

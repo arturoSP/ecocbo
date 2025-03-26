@@ -55,7 +55,7 @@
 #' [sim_cbo()]
 #' [scompvar()]
 #'
-#' @export
+#'
 #' @importFrom SSP assempar simdata
 #' @importFrom utils setTxtProgressBar txtProgressBar
 #' @importFrom parabar configure_bar start_backend export par_lapply
@@ -247,7 +247,7 @@ prep_data_single <- function(data, type = "counts", Sest.method = "average",
 #' [sim_cbo()]
 #' [scompvar()]
 #'
-#' @export
+#'
 #' @importFrom SSP assempar simdata
 #' @importFrom utils setTxtProgressBar txtProgressBar
 #' @importFrom dplyr mutate bind_rows relocate across
@@ -266,7 +266,7 @@ prep_data_nestedsymmetric <- function(data, type = "counts",
                                       transformation = "none", method = "bray",
                                       dummy = FALSE, useParallel = TRUE){
   # Temporal change of value for useParallel, it'll be removed when I find the
-  # cure for whatever the error is
+  # fix for whatever the error is
   useParallel <- FALSE
 
   # get values for size limits
@@ -278,39 +278,19 @@ prep_data_nestedsymmetric <- function(data, type = "counts",
   model <- "nested.symmetric"
 
   # Simulated data for H0 ----
-  ListSim <- vector(mode = "list", length = nSect)
-  names(ListSim) <- nivel
+  datH0 <- data[,-1]
+  datH0[,1] <- as.factor("zero")
 
-  # run the simulation for the different sectors
-  for(i in nivel){
-    # dissect by treatment/sector
-    dataTrimmed <- data[data$sector == i, -1]
+  parH0 <- assempar(datH0, type = type, Sest.method = Sest.method)
+  simH0 <- simdata(parH0, cases = cases, N = N * M, sites = 1)
+  simH0 <- lapply(simH0, mutate, sector = as.factor("zero"))
 
-    # calculate simulation parameters
-    dataParameter <- assempar(dataTrimmed, type = type, Sest.method = Sest.method)
-    # simmulate the corresponding community
-    dataSim <- simdata(dataParameter, cases = cases, N = N * M, sites = 1)
-    dataSim <- lapply(dataSim, mutate, sector = as.factor(i))
-
-    if(dummy == TRUE){
-      dataSim <- lapply(dataSim, mutate, dummy = 1)
-    }
-
-    # store the simulations in the final list
-    ListSim[[i]] <- dataSim
+  if(dummy == TRUE){
+    simH0 <- lapply(simH0, mutate, dummy = 1)
   }
-
-  # Organize the data from the different simulations
-  simH0 <- vector(mode = "list", length=cases)
-  for(j in seq_len(cases)){
-    for(i in nivel){
-      simH0[[j]] <- bind_rows(as.data.frame(simH0[[j]]),
-                              as.data.frame(ListSim[[i]][j]))
-    }
-    # Fill NA spaces with 0
-    simH0[[j]] <- mutate(simH0[[j]], across(everything(), ~replace_na(.x, 0))) |>
-      relocate(c(starts_with("unseen"), sector, sites, N), .after = last_col())
-  }
+  simH0 <- lapply(simH0, FUN = relocate,
+                  c(starts_with("unseen"), sector, sites, N),
+                  .after = last_col())
 
   # Simulated data for Ha ----
   # Create a list to store the results
