@@ -57,7 +57,7 @@ data(epiDat)
 
 simResults <- prep_data(data = epiDat, 
                         type = "counts", Sest.method = "average",
-                        cases = 5, N = 100, sites = 10,
+                        cases = 5, N = 100, M = 10,
                         n = 5, m = 5, k = 30,
                         transformation = "none", method = "bray",
                         dummy = FALSE, useParallel = FALSE,
@@ -81,12 +81,13 @@ compVar
 The sampling effort can be evaluated depending on an economic budget (ct) or desired precision level (multSE), depending on the proposed parameter, the function will calculate optimal values for number of treatments (bOpt) and replicates (nOpt).
 
 ```{r step4}
-cboCost <- sim_cbo(comp.var = compVar, ct = 20000, ck = 100, cj = 2500)
+cboCost <- sim_cbo(comp.var = compVar, budget = 20000, 
+                   a = 3, ca = 100, cn = 2500)
 cboCost
 ```
 
 ```{r step5}
-cboPrecision <- sim_cbo(comp.var = compVar, multSE = 0.10, ck = 100, cj = 2500)
+cboPrecision <- sim_cbo(comp.var = compVar, multSE = 0.10, cn = 100, cm = 2500)
 cboPrecision
 
 ```
@@ -103,7 +104,7 @@ betaResult
 
 ```{r}
 # This plot will look different in every simulation
-plot_power(data = betaResult, n = NULL, m = 3, method = "power")
+plot_power(data = betaResult, n = NULL, method = "power")
 
 ```
 

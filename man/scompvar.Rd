@@ -3,43 +3,43 @@
 \name{scompvar}
 \alias{scompvar}
 \alias{compvar}
-\title{Simulated components of variation}
+\title{Simulated Components of Variation}
 \usage{
 scompvar(data, n = NULL, m = NULL)
 }
 \arguments{
-\item{data}{Object of class "ecocbo_data" that results from \code{\link[=prep_data]{prep_data()}}.}
+\item{data}{Object of class \code{"ecocbo_data"} obtained from \code{\link[=prep_data]{prep_data()}}.}
 
-\item{n}{Number of samples to be considered. Defaults to NULL.}
+\item{n}{Optional. Integer. Number of samples to consider.}
 
-\item{m}{Site label to be used as basis for the computation. Defaults to NULL.}
+\item{m}{Optional. Integer. Number of replicates to consider.}
 }
 \value{
 A data frame containing the values for the variation component
 among sites \code{compVarA} and in the residuals \code{compVarR}.
 }
 \description{
-\code{scompvar} can be used to calculate the average component of variation
-among units and the average component of variation within samples in terms
-of sampling effort.
+Computes the average components of variation among sampling units and within
+samples in relation to sampling effort.
 }
-\note{
-If \code{m} or \code{n} are left as NULL, the function will calculate
-the components of variation using the largest available values as set in
-the experimental design in \code{\link[=sim_beta]{sim_beta()}}.
+\details{
+If \code{m} or \code{n} are set to \code{NULL}, the function automatically uses the
+largest available values from the experimental design set in \code{\link[=sim_beta]{sim_beta()}}.
 }
 \examples{
 scompvar(data = simResults)
 scompvar(data = simResults, n = 5, m = 2)
+
 }
 \references{
-Underwood, A. J. (1997). Experiments in ecology: their logical
+\itemize{
+\item Underwood, A. J. (1997). Experiments in ecology: their logical
 design and interpretation using analysis of variance. Cambridge university
 press.
-
-Underwood, A. J., & Chapman, M. G. (2003). Power, precaution,
+\item Underwood, A. J., & Chapman, M. G. (2003). Power, precaution,
 Type II error and sampling design in assessment of environmental impacts.
 Journal of Experimental Marine Biology and Ecology, 296(1), 49-70.
+}
 }
 \seealso{
 \code{\link[=sim_beta]{sim_beta()}}

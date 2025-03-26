@@ -1,27 +1,26 @@
-#' Simulated components of variation
+#' Simulated Components of Variation
 #'
-#' \code{scompvar} can be used to calculate the average component of variation
-#' among units and the average component of variation within samples in terms
-#' of sampling effort.
+#' Computes the average components of variation among sampling units and within
+#' samples in relation to sampling effort.
 #'
-#' @param data Object of class "ecocbo_data" that results from [prep_data()].
-#' @param m Site label to be used as basis for the computation. Defaults to NULL.
-#' @param n Number of samples to be considered. Defaults to NULL.
+#' @param data Object of class `"ecocbo_data"` obtained from [prep_data()].
+#' @param m Optional. Integer. Number of replicates to consider.
+#' @param n Optional. Integer. Number of samples to consider.
 #'
-#' @note
-#' If \code{m} or \code{n} are left as NULL, the function will calculate
-#' the components of variation using the largest available values as set in
-#' the experimental design in [sim_beta()].
+#' @details
+#' If \code{m} or \code{n} are set to `NULL`, the function automatically uses the
+#' largest available values from the experimental design set in [sim_beta()].
 #'
 #' @return A data frame containing the values for the variation component
 #' among sites \code{compVarA} and in the residuals \code{compVarR}.
 #'
 #' @author Edlin Guerra-Castro (\email{edlinguerra@@gmail.com}), Arturo Sanchez-Porras
 #'
-#' @references Underwood, A. J. (1997). Experiments in ecology: their logical
+#' @references
+#' - Underwood, A. J. (1997). Experiments in ecology: their logical
 #' design and interpretation using analysis of variance. Cambridge university
 #' press.
-#' @references Underwood, A. J., & Chapman, M. G. (2003). Power, precaution,
+#' - Underwood, A. J., & Chapman, M. G. (2003). Power, precaution,
 #' Type II error and sampling design in assessment of environmental impacts.
 #' Journal of Experimental Marine Biology and Ecology, 296(1), 49-70.
 #'
@@ -39,6 +38,7 @@
 #' @examples
 #' scompvar(data = simResults)
 #' scompvar(data = simResults, n = 5, m = 2)
+#'
 
 scompvar <- function(data, n = NULL, m = NULL){
   # Determine variation components  ----

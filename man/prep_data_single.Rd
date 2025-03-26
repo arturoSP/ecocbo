@@ -10,7 +10,7 @@ prep_data_single(
   Sest.method = "average",
   cases = 5,
   N = 100,
-  sites = 3,
+  M = 3,
   n,
   m = NULL,
   k = 50,
@@ -37,11 +37,11 @@ Bootstrap "boot". By default, the "average" of the four estimates is used.}
 
 \item{N}{Total number of samples to be simulated in each site.}
 
-\item{sites}{Total number of sites to be simulated in each data set.}
+\item{M}{Total number of sites to be simulated in each data set.}
 
 \item{n}{Maximum number of samples to consider.}
 
-\item{m}{Maximum number of sites.}
+\item{m}{Maximum number of replicates.}
 
 \item{k}{Number of resamples the process will take. Defaults to 50.}
 

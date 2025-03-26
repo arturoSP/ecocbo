@@ -18,9 +18,9 @@
 #' Bootstrap "boot". By default, the "average" of the four estimates is used.
 #' @param cases Number of data sets to be simulated.
 #' @param N Total number of samples to be simulated in each site.
-#' @param sites Total number of sites to be simulated in each data set.
+#' @param M Total number of sites to be simulated in each data set.
 #' @param n Maximum number of samples to consider.
-#' @param m Maximum number of sites.
+#' @param m Maximum number of replicates.
 #' @param k Number of resamples the process will take. Defaults to 50.
 #' @param transformation Mathematical function to reduce the weight of very
 #' dominant species: 'square root', 'fourth root', 'Log (X+1)', 'P/A', 'none'
@@ -56,24 +56,22 @@
 #' [scompvar()]
 #'
 #' @export
-#' @import parallel
-#' @import doParallel
-#' @import foreach
 #' @importFrom SSP assempar simdata
 #' @importFrom utils setTxtProgressBar txtProgressBar
-#' @importFrom doSNOW registerDoSNOW
+#' @importFrom parabar configure_bar start_backend export par_lapply
+#' @importFrom parallelly availableCores
 #'
 #' @keywords internal
 
 prep_data_single <- function(data, type = "counts", Sest.method = "average",
-                      cases = 5, N = 100, sites = 3,
+                      cases = 5, N = 100, M = 3,
                       n, m = NULL, k = 50,
                       transformation = "none", method = "bray",
                       dummy = FALSE, useParallel = TRUE){
 
   # read data and store it in two objects, one for H0 and one for Ha ----
   datH0 <- data
-  datH0[,1] <- as.factor("T___0")
+  datH0[,1] <- as.factor("zero")
   datHa <- data
   datHa[,1] <- as.factor(data[,1])
 
@@ -84,11 +82,11 @@ prep_data_single <- function(data, type = "counts", Sest.method = "average",
                          type = type, Sest.method = Sest.method)
 
   simH0 <- SSP::simdata(parH0, cases = cases,
-                        N = (N * sites), sites = 1)
+                        N = (N * M), sites = 1)
   simHa <- SSP::simdata(parHa, cases = cases,
-                        N = N, sites = sites)
+                        N = N, sites = M)
 
-  # Simulation parameters ---
+  # Simulation arguments ---
   xH0 <- dim(simHa[[1]])[1]
   yH0 <- dim(simHa[[1]])[2]
   casesHa <- length(simHa)
@@ -118,16 +116,6 @@ prep_data_single <- function(data, type = "counts", Sest.method = "average",
   H0Sim[,c((yH0-1):yH0),] <- labHa
 
   ## Helper matrix to store labels ----
-  # NN <- casesHa * k * (m-1) * (n-1)
-  # resultsHa <- matrix(nrow = NN, ncol = 8)
-  # resultsHa[, 1] <- rep(seq(casesHa), times = 1, each = (k * (m-1) * (n-1)))
-  # resultsHa[, 2] <- rep(1:k, times = (n-1) * (m-1) * casesHa)
-  # resultsHa[, 3] <- rep(seq(2, m), times = (n-1), each = k)
-  # resultsHa[, 4] <- rep(seq(2, n), times = 1, each = k * (m-1))
-  # colnames(resultsHa) <- c("dat.sim", "k", "m", "n",
-  #                          "pseudoFH0", "pseudoFHa",
-  #                          "MSA", "MSR")
-
   # Changing the routine so that the results matrix will only include one case of m
   # that corresponds to the one we have in the original experiment.
   # We are taking out MSA as it is not relevant for the package.
@@ -139,53 +127,58 @@ prep_data_single <- function(data, type = "counts", Sest.method = "average",
 
   resultsHa[, 1] <- rep(seq(casesHa), times = 1, each = (k * (n-1)))
   resultsHa[, 2] <- rep(1:k, times = (n-1) * casesHa)
-  resultsHa[, 3] <- sites
+  resultsHa[, 3] <- M
   resultsHa[, 4] <- rep(seq(2, n), times = 1, each = k)
 
 
   # Loop to calculate pseudoF ----
   # Loop parameters
-  Y <- cbind(1:(N * sites))
-  YPU <- as.numeric(gl(sites, N))
+  Y <- cbind(1:(N * M))
+  YPU <- as.numeric(gl(M, N))
   mm <- resultsHa[,3]
   nn <- resultsHa[,3] * resultsHa[,4]
 
-  pb <- txtProgressBar(max = NN, style = 3)
-
   if(useParallel){
-    cl <- parallel::makeCluster(parallel::detectCores() - 2)
-    registerDoSNOW(cl)
-    # doParallel::registerDoParallel(cl)
+    # Registering the cluster of workers with parabar
+    parabar::configure_bar(type = "modern", format = "[:bar] :percent")
+    cl <- parabar::start_backend(cores = parallelly::availableCores()/2,
+                                 cluster_type="psock",
+                                 backend_type="async")
 
-    progress <- function(n) setTxtProgressBar(pb, n)
-    opts <- list(progress=progress)
+    # Exporing functions needed for the parallel iterations
+    parabar::export(cl, c("balanced_sampling", "permanova_twoway", "SS"))
 
-    parallel::clusterExport(cl, list("balanced_sampling", "permanova_oneway"))
-    result1 <- foreach::foreach(i=1:NN, .combine = rbind,
-                                .options.snow = opts) %dopar% {
-                                  balanced_sampling(i, Y, mm, nn, YPU,
-                                                    H0Sim, HaSim, resultsHa,
-                                                    transformation, method)
-                                }
-    resultsHa[,5] <- result1[,1]
-    resultsHa[,6] <- result1[,2]
-    resultsHa[,7] <- result1[,4]
+    # Executing the loop in parallel
+    result1 <- parabar::par_lapply(cl, x = 1:NN, fun= balanced_sampling,
+                                   Y, mm, nn, YPU, H0Sim, HaSim, resultsHa,
+                                   transformation, method) |>
+      unlist() |>
+      matrix(ncol=4, byrow=TRUE)
+    colnames(result1) <- c("FobsH0", "FobsHa", "MSBA", "MSR")
+
+    # Assigning the results to the outcome matrix
+    resultsHa[,5:7] <- result1[,c(1,2,4)]
+    rm(result1)
   } else {
+    pb <- txtProgressBar(max = NN, style = 3)
+
     for (i in seq_len(NN)){
+      # Performs the operation iteratively in a for loop
       result1 <- balanced_sampling(i, Y, mm, nn, YPU,
                                    H0Sim, HaSim, resultsHa,
                                    transformation, method)
+      # Assigning results to the results matrix
       resultsHa[i,5] <- result1[,1]
       resultsHa[i,6] <- result1[,2]
       resultsHa[i,7] <- result1[,4]
 
+      # Updating the progress bar
       setTxtProgressBar(pb, i)
-
     }
+    rm(result1)
+    close(pb)
   }
 
-  stopCluster(cl)
-  close(pb)
 
   resultsHa <- resultsHa[!is.na(resultsHa[,5]) & !is.na(resultsHa[,6]),]
   resultsHa <- resultsHa[,-3]
@@ -217,9 +210,9 @@ prep_data_single <- function(data, type = "counts", Sest.method = "average",
 #' Bootstrap "boot". By default, the "average" of the four estimates is used.
 #' @param cases Number of data sets to be simulated.
 #' @param N Total number of samples to be simulated in each site.
-#' @param sites Total number of sites to be simulated in each data set.
+#' @param M Total number of sites to be simulated in each data set.
 #' @param n Maximum number of samples to consider.
-#' @param m Maximum number of sites.
+#' @param m Maximum number of replicates.
 #' @param k Number of resamples the process will take. Defaults to 50.
 #' @param transformation Mathematical function to reduce the weight of very
 #' dominant species: 'square root', 'fourth root', 'Log (X+1)', 'P/A', 'none'
@@ -255,48 +248,108 @@ prep_data_single <- function(data, type = "counts", Sest.method = "average",
 #' [scompvar()]
 #'
 #' @export
-#' @import parallel
-#' @import doParallel
-#' @import foreach
 #' @importFrom SSP assempar simdata
 #' @importFrom utils setTxtProgressBar txtProgressBar
-#' @importFrom doSNOW registerDoSNOW
+#' @importFrom dplyr mutate bind_rows relocate across
+#' @importFrom tidyr replace_na starts_with
+#' @importFrom tidyselect everything last_col
+#' @importFrom parabar configure_bar start_backend export par_lapply
+#' @importFrom parallelly availableCores
 #'
 #' @keywords internal
 #'
 
 prep_data_nestedsymmetric <- function(data, type = "counts",
                                       Sest.method = "average",
-                                      cases = 5, N = 100, sites = 3,
+                                      cases = 5, N = 100, M = 3,
                                       n, m, k = 50,
                                       transformation = "none", method = "bray",
                                       dummy = FALSE, useParallel = TRUE){
+  # Temporal change of value for useParallel, it'll be removed when I find the
+  # cure for whatever the error is
+  useParallel <- FALSE
+
   # get values for size limits
   data[,1] <- as.factor(data[,1])
   factSect <- data[,1]
   nSect <- nlevels(factSect)         # number of sectors
-
-  # adapt data set so it only has 1 label column
-  datSim <- data
-  datSim[,2] <- as.factor(paste0(data[,1], "___", data[,2]))
-  datSim <- datSim[,-1]
-
-
-  # generate data for H0 and Ha
-  datH0 <- datSim
-  datH0[,1] <- "T___0"
-
-  datHa <- datSim
+  nivel <- levels(factSect)
 
   model <- "nested.symmetric"
 
-  # calculate simulation parameters
-  parH0 <- assempar(datH0, type = type, Sest.method = Sest.method)
-  parHa <- assempar(datHa, type = type, Sest.method = Sest.method)
+  # Simulated data for H0 ----
+  ListSim <- vector(mode = "list", length = nSect)
+  names(ListSim) <- nivel
 
-  # calculate simulated communities
-  simH0 <- simdata(parH0, cases = cases, N = (N * sites * nSect), sites = 1)
-  simHa <- simdata(parHa, cases = cases, N = (N * nSect), sites = sites)
+  # run the simulation for the different sectors
+  for(i in nivel){
+    # dissect by treatment/sector
+    dataTrimmed <- data[data$sector == i, -1]
+
+    # calculate simulation parameters
+    dataParameter <- assempar(dataTrimmed, type = type, Sest.method = Sest.method)
+    # simmulate the corresponding community
+    dataSim <- simdata(dataParameter, cases = cases, N = N * M, sites = 1)
+    dataSim <- lapply(dataSim, mutate, sector = as.factor(i))
+
+    if(dummy == TRUE){
+      dataSim <- lapply(dataSim, mutate, dummy = 1)
+    }
+
+    # store the simulations in the final list
+    ListSim[[i]] <- dataSim
+  }
+
+  # Organize the data from the different simulations
+  simH0 <- vector(mode = "list", length=cases)
+  for(j in seq_len(cases)){
+    for(i in nivel){
+      simH0[[j]] <- bind_rows(as.data.frame(simH0[[j]]),
+                              as.data.frame(ListSim[[i]][j]))
+    }
+    # Fill NA spaces with 0
+    simH0[[j]] <- mutate(simH0[[j]], across(everything(), ~replace_na(.x, 0))) |>
+      relocate(c(starts_with("unseen"), sector, sites, N), .after = last_col())
+  }
+
+  # Simulated data for Ha ----
+  # Create a list to store the results
+  ListSim <- vector(mode = "list", length = nSect)
+  names(ListSim) <- nivel
+  # run the simulation for the different sectors we already have.
+  for(i in nivel){
+    # Prepare the data by dissecting by treatment
+    dataTrimmed <- data[data$sector == i,-1]
+
+    # Calculate simulation parameters
+    dataParameter <- assempar(dataTrimmed, type = type, Sest.method = Sest.method)
+    # Calculate simulated communities
+    dataSim <- simdata(dataParameter, cases = cases, N = N, sites = M)
+    dataSim <- lapply(dataSim, mutate, sector = as.factor(i))
+
+    if(dummy == TRUE){
+      dataSim <- lapply(dataSim, mutate, dummy = 1)
+    }
+
+    # Store the simulations in the list
+    ListSim[[i]] <- dataSim
+  }
+
+  # Organize the data from different simulations in cases
+  # Create a list to store results
+  simHa <- vector(mode = "list", length = cases)
+  # Using two nested loops we can arrange the data into the simulated cases
+  for(j in seq_len(cases)){
+    for(i in nivel){
+      simHa[[j]] <- bind_rows(as.data.frame(simHa[[j]]),
+                              as.data.frame(ListSim[[i]][j]))
+    }
+    # Fill NA spaces with 0 and then reorder the columns to have the labels at the end
+    simHa[[j]] <- mutate(simHa[[j]], across(everything(), ~replace_na(.x, 0))) |>
+      relocate(c(starts_with("unseen"), sector, sites, N), .after = last_col())
+  }
+
+  rm(dataTrimmed, dataParameter, dataSim, ListSim)
 
   # design and fill the results matrix ----
   NN <- cases * k * (m-1) * (n-1)
@@ -313,71 +366,78 @@ prep_data_nestedsymmetric <- function(data, type = "counts",
   # design the arrays to store the lists ----
   # H0 comes from simdata as-is, it does not include a column for sectors given that
   # its data was simulated by merging sectors and sites together
-  H0Sim <- array(unlist(simH0), dim = c((N * sites * nSect), length(simH0[[1]]), cases))
+  H0Sim <- array(unlist(simH0), dim = c((N * M * nSect), length(simH0[[1]]), cases))
   colnames(H0Sim) <- colnames(simH0[[1]])
-  H0Sim <- H0Sim[,1:(dim(H0Sim)[2]-2),]
+  H0Sim <- H0Sim[,1:(dim(H0Sim)[2]-3),]
 
-  HaSim <- array(unlist(simHa), dim = c((N * sites * nSect), length(simHa[[1]]), cases))
+  HaSim <- array(unlist(simHa), dim = c((N * M * nSect), length(simHa[[1]]), cases))
   colnames(HaSim) <- colnames(simHa[[1]])
-  HaSim <- HaSim[,1:(dim(HaSim)[2]-2),]
+  HaSim <- HaSim[,1:(dim(HaSim)[2]-3),]
 
   # Factors matrix and data matrix for Ha
-  factEnv <- as.data.frame(simHa[[1]][,(dim(simHa[[1]])[2]-1):dim(simHa[[1]])[2]])
-  factEnv$sites <- as.factor(rep(seq_len(sites), each = N, times = nSect))
-  factEnv$sector <- as.factor(rep(levels(factSect), each = N*sites))
+  factEnv <- as.data.frame(simHa[[1]][,(dim(simHa[[1]])[2]-2):dim(simHa[[1]])[2]])
+  # factEnv$sites <- as.factor(rep(seq_len(M), each = N, times = nSect))
 
   rm(simH0, simHa)
 
   # Set of parameters for using balancedtwostage ----
   # index marking the size of each resampled site
-  Y <- cbind(1:(N * sites))
+  Y <- cbind(1:(N * M))
   # index for the sites repeated N times
-  YPU <- as.numeric(gl(sites, N))
+  YPU <- as.numeric(gl(M, N))
   # labels for sites (i.e. (m-1) sites, repeated k times)
   mm <- resultsHa[,3]
   # number of samples to consider (i.e. m * n)
   nn <- resultsHa[,3] * resultsHa[,4]
 
-  # progress bar
-  pb <- txtProgressBar(max = NN, style = 3)
+  Y1 <- cbind(Y, YPU)
+  mn <- cbind(mm, nn)
+
+  # # progress bar
+  # pb <- txtProgressBar(max = NN, style = 3)
 
   if(useParallel){
-    cl <- parallel::makeCluster(parallel::detectCores() - 2)
-    doSNOW::registerDoSNOW(cl)
+    # Registering the cluster of workers with parabar
+    parabar::configure_bar(type = "modern", format = "[:bar] :percent")
+    cl <- parabar::start_backend(cores = parallelly::availableCores()/2,
+                                 cluster_type="psock",
+                                 backend_type="async")
+    # Exporing functions needed for the parallel iterations
+    parabar::export(cl, c("balanced_sampling2_3", "permanova_twoway", "SS"))
 
-    progress <- function(n) setTxtProgressBar(pb, n)
-    opts <- list(progress=progress)
+    # Executing the loop in parallel
+    result1 <- parabar::par_lapply(cl, x = 1:NN, fun = balanced_sampling2_3,
+                                   NN, Y1, mn, nSect, M, N,
+                                   H0Sim, HaSim, resultsHa, factEnv,
+                                   transformation, method, model) |>
+        unlist() |>
+        matrix(ncol=4, byrow=TRUE)
+    colnames(result1) <- c("FobsH0", "FobsHa", "MSBA", "MSR")
 
-    parallel::clusterExport(cl, list("balanced_sampling2", "permanova_twoway", "SS"))
-    result1 <- foreach::foreach(i=1:NN, .combine = rbind,
-                                .options.snow = opts) %dopar% {
-                                  balanced_sampling2(i, Y, mm, nn, YPU,
-                                                     H0Sim, HaSim, factEnv, resultsHa,
-                                                     transformation, method, model,
-                                                     nSect, sites, N)
-                                }
-    resultsHa[,5] <- result1[,1]
-    resultsHa[,6] <- result1[,2]
-    resultsHa[,7] <- result1[,4]
-    resultsHa[,8] <- result1[,5]
+    # Assigning results to the results matrix
+    resultsHa[,5:8] <- result1
+    rm(result1)
 
   } else {
-    for (i in seq_len(NN)){
-      result1 <- balanced_sampling2(i, Y, mm, nn, YPU,
-                                    H0Sim, HaSim, factEnv, resultsHa,
-                                    transformation, method, model,
-                                    nSect, sites, N)
-      resultsHa[i,5] <- result1[,1]
-      resultsHa[i,6] <- result1[,2]
-      resultsHa[i,7] <- result1[,4]
-      resultsHa[i,8] <- result1[,5]
+    pb <- txtProgressBar(max = NN, style = 3)
 
+    for (i in seq_len(NN)){
+      # Performs the operation iteratively in a for loop
+      result1 <- balanced_sampling2_3(i, NN, Y1, mn, nSect, M, N,
+                                      H0Sim, HaSim, resultsHa, factEnv,
+                                      transformation, method, model)
+
+      # Assigning results to the results matrix
+      resultsHa[i,5:8] <- result1
+
+      # Updating the progress bar
       setTxtProgressBar(pb, i)
     }
+
+    rm(result1)
+    close(pb)
   }
 
-  stopCluster(cl)
-  close(pb)
 
   resultsHa <- resultsHa[!is.na(resultsHa[,5]) & !is.na(resultsHa[,6]),]
 
@@ -387,3 +447,5 @@ prep_data_nestedsymmetric <- function(data, type = "counts",
   return(SimResults)
 
 }
+
+
