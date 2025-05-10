@@ -16,6 +16,8 @@
 #'   - "power": Plots the power curve.
 #'   - "density": Plots the density distribution of pseudo-F values.
 #'   - "both": Displays both plots side by side.
+#' @param completePlot Logical. Is the plot to be drawn complete? If TRUE the
+#' plot will be trimmed to present a better distribution of the density plot.
 #'
 #' @return A plot displaying:
 #'   - If `method = "power"`, power curves for different values of `m`, with the
@@ -57,19 +59,18 @@
 #' @importFrom rlang .data
 #'
 #' @examples
-#' epiBetaR <- sim_beta(simResults, alpha = 0.05)
-#'
 #' # Power curve visualization
-#' plot_power(data = epiBetaR, n = NULL, m = 3, method = "power")
+#' plot_power(data = epiBetaR, method = "power")
 #'
 #' # Density plot of pseudo-F values
-#' plot_power(data = epiBetaR, n = NULL, m = 3, method = "density")
+#' plot_power(data = epiBetaR, method = "density")
 #'
 #' # Composite plot with both power curve and density plot
-#' plot_power(data = epiBetaR, n = 4, m = 3, method = "both")
+#' plot_power(data = epiBetaR, method = "both")
 #'
 
-plot_power <- function(data, n = NULL, m = NULL, method = "power"){
+plot_power <- function(data, n = NULL, m = NULL,
+                       method = "power", completePlot = TRUE){
 # Función para graficar curvas de frecuencia de F para H0 y Ha ----
   ## Reading data ----
   if(!inherits(data, "ecocbo_beta")){
@@ -133,12 +134,12 @@ plot_power <- function(data, n = NULL, m = NULL, method = "power"){
 
   if(method == "both") {
     p1 <- power_curve(powr, m, n, cVar, model)
-    p2 <- density_plot(results, powr, m, n, method, cVar = NULL, model)
+    p2 <- density_plot(results, powr, m, n, method, cVar = NULL, model, completePlot)
     plotF <- ggpubr::ggarrange(p1, p2)
   } else if(method == "power") {
     plotF <- power_curve(powr, m, n, cVar, model)
   } else if(method == "density") {
-    plotF <- density_plot(results, powr, m, n, method, cVar, model)
+    plotF <- density_plot(results, powr, m, n, method, cVar, model, completePlot)
   }
   return(plotF)
 }

@@ -272,7 +272,7 @@ prep_data_nestedsymmetric <- function(data, type = "counts",
   # get values for size limits
   data[,1] <- as.factor(data[,1])
   factSect <- data[,1]
-  nSect <- nlevels(factSect)         # number of sectors
+  nSect <- nlevels(factSect)         # number of treatments
   nivel <- levels(factSect)
 
   model <- "nested.symmetric"
@@ -282,7 +282,7 @@ prep_data_nestedsymmetric <- function(data, type = "counts",
   datH0[,1] <- as.factor("zero")
 
   parH0 <- assempar(datH0, type = type, Sest.method = Sest.method)
-  simH0 <- simdata(parH0, cases = cases, N = N * M, sites = 1)
+  simH0 <- simdata(parH0, cases = cases, N = N * M * nSect, sites = 1)
   simH0 <- lapply(simH0, mutate, sector = as.factor("zero"))
 
   if(dummy == TRUE){
@@ -331,18 +331,6 @@ prep_data_nestedsymmetric <- function(data, type = "counts",
 
   rm(dataTrimmed, dataParameter, dataSim, ListSim)
 
-  # design and fill the results matrix ----
-  NN <- cases * k * (m-1) * (n-1)
-  resultsHa <- matrix(nrow = NN, ncol = 8)
-  colnames(resultsHa) <- c("dat.sim", "k", "m", "n",
-                           "pseudoFH0", "pseudoFHa",
-                           "MSB(A)", "MSR")
-
-  resultsHa[, 1] <- rep(seq(cases), times = 1, each = (k * (m-1) * (n-1)))
-  resultsHa[, 2] <- rep(1:k, times = (n-1) * (m-1) * cases)
-  resultsHa[, 3] <- rep(seq(2, m), times = (n-1), each = k)
-  resultsHa[, 4] <- rep(seq(2, n), times = 1, each = k * (m-1))
-
   # design the arrays to store the lists ----
   # H0 comes from simdata as-is, it does not include a column for sectors given that
   # its data was simulated by merging sectors and sites together
@@ -360,7 +348,19 @@ prep_data_nestedsymmetric <- function(data, type = "counts",
 
   rm(simH0, simHa)
 
-  # Set of parameters for using balancedtwostage ----
+  # design and fill the results matrix ----
+  NN <- cases * k * (m-1) * (n-1)
+  resultsHa <- matrix(nrow = NN, ncol = 8)
+  colnames(resultsHa) <- c("dat.sim", "k", "m", "n",
+                           "pseudoFH0", "pseudoFHa",
+                           "MSB(A)", "MSR")
+
+  resultsHa[, 1] <- rep(seq(cases), times = 1, each = (k * (m-1) * (n-1)))
+  resultsHa[, 2] <- rep(1:k, times = (n-1) * (m-1) * cases)
+  resultsHa[, 3] <- rep(seq(2, m), times = (n-1), each = k)
+  resultsHa[, 4] <- rep(seq(2, n), times = 1, each = k * (m-1))
+
+    # Set of parameters for using balancedtwostage ----
   # index marking the size of each resampled site
   Y <- cbind(1:(N * M))
   # index for the sites repeated N times
@@ -372,13 +372,12 @@ prep_data_nestedsymmetric <- function(data, type = "counts",
 
   Y1 <- cbind(Y, YPU)
   mn <- cbind(mm, nn)
-
-  # # progress bar
-  # pb <- txtProgressBar(max = NN, style = 3)
+  rm(Y, YPU, mm, nn)
 
   if(useParallel){
     # Registering the cluster of workers with parabar
     parabar::configure_bar(type = "modern", format = "[:bar] :percent")
+    # parabar::configure_bar(type = "basic", style = 3)
     cl <- parabar::start_backend(cores = parallelly::availableCores()/2,
                                  cluster_type="psock",
                                  backend_type="async")

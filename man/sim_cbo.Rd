@@ -5,49 +5,28 @@
 \alias{simcbo}
 \title{Simulated Cost-Benefit Optimization}
 \usage{
-sim_cbo(
-  comp.var,
-  multSE = NULL,
-  budget = NULL,
-  a = NULL,
-  ca = NULL,
-  cm = NULL,
-  cn
-)
+sim_cbo(data, cn, cm = NULL)
 }
 \arguments{
-\item{comp.var}{Data frame as obtained from \code{\link[=scompvar]{scompvar()}}, containing variance
-component estimates}
-
-\item{multSE}{Optional. Numeric. Required multivariate standard error for the
-sampling experiment.}
-
-\item{budget}{Optional. Numeric. Total budget available for the sampling experiment.}
-
-\item{a}{Numeric. Number of treatments to consider.}
-
-\item{ca}{Numeric. Cost per treatment.}
-
-\item{cm}{Numeric. Cost per replicate.}
+\item{data}{Object of class \code{"ecocbo_beta"} obtained from \code{\link[=sim_beta]{sim_beta()}}.}
 
 \item{cn}{Numeric. Cost per sampling unit.}
+
+\item{cm}{Numeric. Cost per replicate.}
 }
 \value{
 A data frame containing the optimized values for \code{m} number of
 sites to sample and \code{n} number of samples per site.
 }
 \description{
-Applies a cost-benefit optimization model based on either a desired level of
-precision or a predefined budget, following the approach of Underwood (1997).
+Applies a cost-benefit optimization based on a desired level of statistical
+power and the sampling cost.
 }
 \examples{
 compVar <- scompvar(data = simResults)
 
-# Optimization based on budget constraint
-sim_cbo(comp.var = compVar, multSE = NULL, budget = 20000, a = 3, ca = 2500, cn = 100)
-
-# Optimization based on precision constraint
-sim_cbo(comp.var = compVar, multSE = 0.15, cn = 150)
+# Optimization of single factor experiment
+sim_cbo(data = epiBetaR, cn = 80)
 
 }
 \references{
@@ -64,6 +43,7 @@ Journal of Experimental Marine Biology and Ecology, 296(1), 49-70.
 \code{\link[=sim_beta]{sim_beta()}}
 \code{\link[=plot_power]{plot_power()}}
 \code{\link[=scompvar]{scompvar()}}
+\code{\link[=Underwood_cbo]{Underwood_cbo()}}
 }
 \author{
 Edlin Guerra-Castro (\email{edlinguerra@gmail.com}), Arturo Sanchez-Porras
