@@ -409,21 +409,25 @@ permanova_twoway <- function(x, factEnv, method = "bray",
     # Apply transformation and calculate distance matrix
     if (transformation == "square root") {
       x.t <- sqrt(x)
+      d <- vegan::vegdist(x.t, method = method)
     } else if (transformation == "fourth root") {
       x.t <- sqrt(sqrt(x))
+      d <- vegan::vegdist(x.t, method = method)
     } else if (transformation == "Log (X+1)") {
       x.t <- log(x + 1)
+      d <- vegan::vegdist(x.t, method = method)
     } else if (transformation == "P/A") {
       x.t <- 1 * (x > 0)
+      d <- vegan::vegdist(x.t, method = method, binary = TRUE)
     } else {
       x.t <- x
+      d <- vegan::vegdist(x.t, method = method)
     }
     rm(x)
-    d <- vegan::vegdist(x.t, method = method)
 
     # size for the labels we work with
-    a = nlevels(as.factor(factEnv$sector))  # number of sectors (A)
-    b = length(unique(as.factor(factEnv$sites)))   # number of sites (B)
+    a = nlevels(as.factor(factEnv$sector))  # number of treatments (A)
+    b = length(unique(as.factor(factEnv$site)))   # number of replicates (B)
     factEnv["secsit"] <- paste0(factEnv$sector, factEnv$site) # intersections AB
     nBA = nlevels(as.factor(factEnv$secsit))  # number of intersections AB
     nRep = dim(factEnv)[1] / nBA  # number of times we're repeating each intersection
@@ -449,6 +453,22 @@ permanova_twoway <- function(x, factEnv, method = "bray",
     # the SS for the Euclidian distance matrix is calculated. The SS are summed
     # to calculate SS_B(A)
     sector_groups <- split(rownames(factEnv), factEnv$sector)
+
+    # listBA <- vector(mode = "list")
+    # for(i in nNm){
+    #   factEnv
+    #   dBA <- vegan::vegdist(x.t[factEnv[,1] == i,])
+    #   tCentroid <- vegan::betadisper(dBA,
+    #                                  group = factEnv[factEnv[,1] == i, 3],
+    #                                  type = "centroid",
+    #                                  bias.adjust = FALSE)
+    #   Eig <- which(tCentroid$eig > 0)
+    #   listBA[[i]] <- SS(vegan::vegdist(tCentroid$centroids[, Eig, drop = FALSE],
+    #                     method = "euclidean"))
+    # }
+    # SSBA <- dplyr::bind_rows(listBA)
+    # SSBA <- sum(SSBA[2,]) * nRep
+
     listBA <- sapply(sector_groups, function(rw) {
       dBA <- vegan::vegdist(x.t[rw,], method = "bray")
       tCentroid <- vegan::betadisper(dBA,

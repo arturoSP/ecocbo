@@ -5,7 +5,7 @@
 \alias{plotpower}
 \title{Power Curves for Different Sampling Efforts}
 \usage{
-plot_power(data, n = NULL, m = NULL, method = "power")
+plot_power(data, n = NULL, m = NULL, method = "power", completePlot = TRUE)
 }
 \arguments{
 \item{data}{Object of class \code{"ecocbo_beta"} obtained from \code{\link[=sim_beta]{sim_beta()}}.}
@@ -24,6 +24,9 @@ result in a sampling effort that is close to \eqn{1 - \alpha}.}
 \item "density": Plots the density distribution of pseudo-F values.
 \item "both": Displays both plots side by side.
 }}
+
+\item{completePlot}{Logical. Is the plot to be drawn complete? If TRUE the
+plot will be trimmed to present a better distribution of the density plot.}
 }
 \value{
 A plot displaying:
@@ -46,16 +49,14 @@ the density plot highlights overlapping areas where \eqn{\alpha} and
 \eqn{\beta} are significant.
 }
 \examples{
-epiBetaR <- sim_beta(simResults, alpha = 0.05)
-
 # Power curve visualization
-plot_power(data = epiBetaR, n = NULL, m = 3, method = "power")
+plot_power(data = epiBetaR, method = "power")
 
 # Density plot of pseudo-F values
-plot_power(data = epiBetaR, n = NULL, m = 3, method = "density")
+plot_power(data = epiBetaR, method = "density")
 
 # Composite plot with both power curve and density plot
-plot_power(data = epiBetaR, n = 4, m = 3, method = "both")
+plot_power(data = epiBetaR, method = "both")
 
 }
 \references{

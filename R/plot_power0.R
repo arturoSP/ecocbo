@@ -76,6 +76,7 @@ power_curve <- function(powr, m = NULL, n, cVar, model){
     powrPl$m <- factor(powrPl$m, ordered = TRUE)
     powrPl$Sel <- powrPl$m == mm
     powrPl$Sel <- as.numeric(ifelse(powrPl$Sel == TRUE, 1, 0.9))
+    labx <- max(powr$n) - 1
 
     p1 <- ggplot(data = powrPl, aes(x = n, y = .data$Power,
                               # color = m, alpha = .data$Sel))+
@@ -84,7 +85,7 @@ power_curve <- function(powr, m = NULL, n, cVar, model){
       geom_point(data = powrPl[powrPl$m == mm,], size = 2, show.legend = FALSE)+
       geom_point(data = powrPl[powrPl$m == mm & powrPl$n == nn,],
                  shape = 21, size = 3, stroke = 1.5, fill = "white")+
-      annotate("label", x = 1.25, y = 0.9,
+      annotate("label", x = labx, y = 0.1,
                label = paste0("m = ", mm,
                               "\nn = ", nn,
                               "\nCV = ", as.numeric(cVar[1])))+
@@ -124,6 +125,8 @@ power_curve <- function(powr, m = NULL, n, cVar, model){
 #' @param cVar Calculated variation components.
 #' @param model Model used for calculating power. Options, so far, are
 #' 'single.factor' and 'nested.symmetric'.
+#' @param complete Logical. Is the plot to be drawn complete? If FALSE the plot will
+#' be trimmed to present a better distribution of the density plot.
 #'
 #' @return  A density plot for the observed pseudoF values and a line marking
 #' the value of pseudoF that marks the significance level indicated in [sim_beta()].
@@ -161,7 +164,8 @@ power_curve <- function(powr, m = NULL, n, cVar, model){
 #' @keywords internal
 
 ## Probability density curve ----
-density_plot <- function(results, powr, m = NULL, n, method, cVar, model){
+density_plot <- function(results, powr, m = NULL, n, method, cVar, model,
+                         completePlot){
 
   if(model == "single.factor"){
     # Intersection point (FCrit)
@@ -230,21 +234,40 @@ density_plot <- function(results, powr, m = NULL, n, method, cVar, model){
                        fill = "#E69F00", color = "#E69F00",
                        alpha = 0.5)+
     geom_vline(xintercept = xIntersect, linetype = 2)+
-    geom_label(aes(x = xIntersect, y = 0,
+    geom_label(aes(x = xIntersect + 1, y = 0.95,
                    label = paste0("Fcrit = ",round(xIntersect, 2))),
                alpha = 0.2, nudge_x = 0.1)+
     theme_bw()+
     scale_x_continuous(name = "pseudoF",
                        breaks = function(x)seq(floor(bottom), ceiling(top)))+
     scale_y_continuous(name = "Density", limits = c(0, 1), breaks = seq(0, 1, 0.2))+
-    coord_cartesian(xlim = c(bottom,top))+
+    # coord_cartesian(xlim = c(bottom,top))+
     ggplot2::theme(panel.grid.minor = element_blank(),
                    panel.border = element_rect(linewidth = 0.4),
                    axis.ticks= element_line(linewidth = 0.2))
 
-  if(method == "density"){
+  if(completePlot == FALSE){
+    ftop <- densHistHa[8:13,]
+    ftop <- as.numeric(rownames(ftop[rank(ftop[,2], ties.method="first")[1],]))
+
     p1 <- p1 +
-      geom_label(aes(x = bottom, y = 0.9, label = cVarLabel))
+      coord_cartesian(xlim = c(floor(bottom), ceiling(densHistHa[ftop,1])))
+    if(method == "density"){
+      p1 <- p1 +
+        geom_label(aes(x = densHistHa[ftop,1] - 1, y = 0.9, label = cVarLabel))
+    }
+  } else {
+    p1 <- p1 +
+      coord_cartesian(xlim = c(0, ceiling(top)))
+    if(method == "density"){
+      p1 <- p1 +
+        geom_label(aes(x = top - 1, y = 0.9, label = cVarLabel))
+    }
   }
+
+  # if(method == "density"){
+  #   p1 <- p1 +
+  #     geom_label(aes(x = top - 1, y = 0.9, label = cVarLabel))
+  # }
   return(p1)
 }

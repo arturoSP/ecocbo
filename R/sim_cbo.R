@@ -1,15 +1,9 @@
 #' Simulated Cost-Benefit Optimization
 #'
-#' Applies a cost-benefit optimization model based on either a desired level of
-#' precision or a predefined budget, following the approach of Underwood (1997).
+#' Applies a cost-benefit optimization based on a desired level of statistical
+#' power and the sampling cost.
 #'
-#' @param comp.var Data frame as obtained from [scompvar()], containing variance
-#' component estimates
-#' @param multSE Optional. Numeric. Required multivariate standard error for the
-#' sampling experiment.
-#' @param budget Optional. Numeric. Total budget available for the sampling experiment.
-#' @param a Numeric. Number of treatments to consider.
-#' @param ca Numeric. Cost per treatment.
+#' @param data Object of class `"ecocbo_beta"` obtained from [sim_beta()].
 #' @param cm Numeric. Cost per replicate.
 #' @param cn Numeric. Cost per sampling unit.
 #'
@@ -30,6 +24,7 @@
 #' [sim_beta()]
 #' [plot_power()]
 #' [scompvar()]
+#' [Underwood_cbo()]
 #'
 #' @aliases simcbo
 #'
@@ -38,77 +33,130 @@
 #' @examples
 #' compVar <- scompvar(data = simResults)
 #'
-#' # Optimization based on budget constraint
-#' sim_cbo(comp.var = compVar, multSE = NULL, budget = 20000, a = 3, ca = 2500, cn = 100)
-#'
-#' # Optimization based on precision constraint
-#' sim_cbo(comp.var = compVar, multSE = 0.15, cn = 150)
+#' # Optimization of single factor experiment
+#' sim_cbo(data = epiBetaR, cn = 80)
 #'
 
-sim_cbo <- function(comp.var, multSE = NULL, budget = NULL, a = NULL,
-                    ca = NULL, cm = NULL, cn){
+sim_cbo <- function(data, cn, cm = NULL){
+  # Obtaining parameters from the ecocbo_beta object
+  # data <- beta2
+  # beta1 <- sim_beta(data = simResults, alpha = 0.05)
+  powr <- data$Power
+  objective <- 1 - data$alpha
+  model <- data$model
 
-# Optimal cost-benefit model
+  if(model == "nested.symmetric"){
+    # Calculates total cost
+    powr$Cost <- powr$m * cm + powr$m * powr$n * cn
 
-# Helper functions ----
-# Function to determine optimal m by setting costs.
-cost_n <- function(n, budget, cm, cn){
-  m <- data.frame(nOpt = n, mOpt = NA)
+    # Find the combinations that achieve the criteria
+    powr$OptPower <- powr$Power >= objective
 
-  # Using equation 9.19 (Underwood, 1997)
-  m[,2] <- floor(budget / (n * cn + cm))
+    costOK <- powr$Cost[powr$OptPower]
 
-  return(m)
-  }
-
-# Function to determine optimal m by setting desired variability.
-cost_v <- function(n, comp.var, multSE){
-  m <- data.frame(nOpt = n, mOpt = NA)
-
-  # Using equation 9.18 (Underwood, 1997)
-  m[,2] <- floor((comp.var[2,2] + n * comp.var[1,2]) /
-                   (multSE * multSE * n))
-
-  return(m)
-  }
-
-# Main function ----
-  ## Validating data ----
-  if(is.null(multSE) & is.null(budget)){
-    stop("It is necessary to provide either multSE or ct")
-  }
-
-  if(dim(comp.var)[1] == 1 & is.null(ca) & is.null(multSE) |
-     dim(comp.var)[1] == 1 & is.null(a) & is.null(multSE)) {
-    stop("For single factor experiments, it is necessary to provide the
-         number of treatments and its cost")
-  }
-
-  if(dim(comp.var)[1] == 2 & is.null(cm)){
-    stop("Cost per unit is required for a multivariate model")
-  }
-
-  ## Calculate optimal n ----
-  if(dim(comp.var)[1] == 1){
-    if(is.null(multSE)){
-      # when working for total cost, the optimal n will be what can be
-      # done with the available economic resources
-      nOpt <- floor((budget - (ca * a)) / (cn * a))
+    if(length(costOK) == 0){
+      warning("No power values above the specified precision.")
+      for(i in unique(powr[,1])){
+        powr[powr[,1] ==i & powr$Power == max(powr[powr[,1] == i,3]), 7] <- TRUE
+        ideal <- powr[powr[,7] == TRUE, -c(4,5)]
+      }
     } else {
-      # when working with SE, the optimal n comes from solving Var=MSR/n for n
-      nOpt <- floor(comp.var[1,2] / (multSE * multSE))
+      ideal <- powr[powr[,3] >= objective, -c(4,5)]
     }
-    m <- data.frame(nOpt)
-  } else if(dim(comp.var)[1] == 2){
-    nOpt <- floor(sqrt((cm * comp.var[2,2]) / (cn * comp.var[1,2])))
 
-    ## Calculate optimal m ----
-    if(is.null(multSE)) {
-      m <- cost_n(nOpt, budget, cm, cn)
-    } else {
-      m <- cost_v(nOpt, comp.var, multSE)
+    # Obtaining the unique identifiers for n or m
+    emes <- unique(ideal[,1])
+
+    # Selects the minimum sampling effort, considering the power requirements
+    # then it calculates the cost for such an experiment.
+    ideally <- sapply(emes, function(rw){
+      idealTrimm <- ideal[ideal[,1] == rw,]
+      # Selecting the minimun n for each m
+      enes <- min(idealTrimm[,2])
+      idealTrimm <- idealTrimm[idealTrimm[,2] == enes,]
+      # Calculating the associated cost
+      idealTrimm[,"Cost"] <- idealTrimm[,1] * cm +
+        idealTrimm[,2] * cn
+      return(idealTrimm)
+    }, simplify=F)
+
+    # Puts together all the iterations
+    powerCost <- do.call(rbind, ideally)
+    rownames(powerCost) <- NULL
+
+    # Find the minimum number of samples within the desired range
+    powerCost$OptCost <- powerCost$Cost == min(powerCost$Cost[powerCost$OptPower == TRUE])
+
+    # Completes the dataframe in case any m didn't reach the range
+    powerCost <- merge(x = data.frame(m = unique(powr[,1])),
+                       y = powerCost,
+                       by = "m",
+                       all.x = TRUE,
+                       sort = TRUE)
+
+    # Fills the empty data with the highest attainable power, then calculates
+    # the associated cost
+    for(i in powerCost[,1]){
+      if(is.na(powerCost[powerCost[,1] == i,2])){
+        # Finds the maximum n
+        powerCost[powerCost[,1] == i,2] <- max(powr[powr[,1] == i,2])
+        # Finds the maximum power
+        powerCost[powerCost[,1] == i,3] <- powr$Power[powr$m == i &
+                                                        powr$n == powerCost[powerCost[,1] == i,2]]
+        # Calculates the associated cost
+        powerCost[powerCost[,1] == i,4] <- powerCost[powerCost[,1] == i,1] * cm +
+          powerCost[powerCost[,1] == i,2] * cn
+
+        # Fills logical values
+        powerCost[powerCost[,1] == i, 5] <- FALSE
+        powerCost[powerCost[,1] == i, 6] <- FALSE
+      }
     }
+
+    # Tags the optimal case (minimum cost within the identified sampling effort)
+    powerCost$Optimal <- powerCost$OptPower & powerCost$OptCost
+    powerCost$Optimal <- ifelse(powerCost$Optimal == TRUE, "***", "")
+    powerCost <- powerCost[,-c(5,6)]
+
+    # # Subsetting the power dataframe to get data that is within the range:
+    # # (1 - alpha) <--> 1
+    # ideal <- powr[powr[,3] >= objective, -c(4,5)]
+    #
+
+    #
+    #
+    #
+
+    #
+
+
+    #
+    # # Finds the minimum cost and marks it with an asterisc
+    # powerCost$Optimal <- powerCost$Cost == min(powerCost$Cost)
+    # powerCost$Optimal <- ifelse(powerCost$Optimal == TRUE, "***", "")
+
+  } else {
+    # Calculating the cost
+    powerCost <- powr[,-c(3,4)]
+    powerCost$Cost <- powerCost[,1] * cn
+    # Find the iterations that meet the desired power range
+    powerCost$OptPower <- powerCost$Power >= objective
+
+    # Safe search of the minimum cost among cases where objective is met
+    costOK <- powerCost$Cost[powerCost$OptPower]
+
+    if(length(costOK) == 0){
+      warning("No power values above the specified precision.")
+      powerCost[length(powr), 4] <- TRUE
+    }
+    # Find the minimum number of samples within the desired range
+    powerCost$OptCost <- powerCost$Cost == min(powerCost$Cost[powerCost$OptPower == TRUE])
+    # Tags the optimal case (minimum cost within the identified sampling effort)
+    powerCost$Optimal <- powerCost$OptPower * powerCost$OptCost
+    powerCost$Optimal <- ifelse(powerCost$Optimal == TRUE, "***", "")
+
+    powerCost <- powerCost[,-c(4,5)]
   }
-  return(m)
+
+  return(powerCost)
 }
-

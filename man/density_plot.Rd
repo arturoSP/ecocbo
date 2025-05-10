@@ -5,7 +5,7 @@
 \alias{densityplot}
 \title{Power curves for different sampling efforts}
 \usage{
-density_plot(results, powr, m = NULL, n, method, cVar, model)
+density_plot(results, powr, m = NULL, n, method, cVar, model, completePlot)
 }
 \arguments{
 \item{results}{Part of the object of class "ecocbo_beta" that results from
@@ -26,6 +26,9 @@ the user selects \code{both} as method.}
 
 \item{model}{Model used for calculating power. Options, so far, are
 'single.factor' and 'nested.symmetric'.}
+
+\item{complete}{Logical. Is the plot to be drawn complete? If FALSE the plot will
+be trimmed to present a better distribution of the density plot.}
 }
 \value{
 A density plot for the observed pseudoF values and a line marking
