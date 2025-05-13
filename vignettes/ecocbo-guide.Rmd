@@ -36,8 +36,8 @@ knitr::opts_chunk$set(
 
 - **prep_data()** formats and arranges the initial data so that it can be readily used by the other functions in the package.
 - **scompvar()** calculates the components of variation among sites and within samples. This information is necessary for calculating the optimal sampling effort.
-- **sim_cbo()** estimates the optimal number of replicated units and replicates per unit depending on the major constrains of budget or precision to be achieved.
 - **sim_beta()** computes the statistical power at different sampling efforts.
+- **sim_cbo()** estimates the optimal number of replicated units and replicates per unit depending on the major constrains of budget or precision to be achieved.
 - **plot_power()** allows the user to visualize the changes in statistical power given the certain number of sampling units or sites.
 
 ------------
@@ -58,7 +58,7 @@ The provided data `epiDat` is a subset of the original `epibionts` (Guerra-Castr
 | Sest.method | Method for estimating species richness. The function specpool is used for this. Available methods are the incidence-based Chao "chao", first order jackknife "jack1", second order jackknife "jack2" and Bootstrap "boot". By default, the "average" of the four estimates is used.|
 | cases | Number of data sets to be simulated.|
 | N | Total number of samples to be simulated in each site.|
-| sites | Total number of sites to be simulated in each data set.|
+| M | Total number of sites to be simulated in each data set.|
 | n | Maximum number of samples to consider. |
 | m | Maximum number of sites. |
 | k | Number of resamples the process will take. Defaults to 50. |
@@ -66,12 +66,11 @@ The provided data `epiDat` is a subset of the original `epibionts` (Guerra-Castr
 | method | The appropriate distance/dissimilarity metric that will be used by `vegan::vegdist()` (e.g. Gower, Bray–Curtis, Jaccard, etc).|
 | dummy | Logical. It is recommended to use TRUE in cases where there are observations that are empty.|
 | useParallel | Logical. Should R call to several cores to work on parallel computing? This is done to speed up the processing time.|
+| model | What type of model is the function implementing? Options are "single.factor" and "nested.symmetric". |
 
-The first step or preparing the data is to save it in two different objects: `epiH0` in which the data is treated as if it came from the same site thus accepting the null hypothesis, and `epiHa` in which the opposite is true, so that the samples come from different sites and portray different characteristics. The defining variable for doing so is `site` which will be set to a single label for `epiH0`, and left as-is for `epiHa`.
+The first step or preparing the data is to simulate two different objects: `simH0` in which the data is treated as if it came from the same site thus accepting the null hypothesis, and `simHa` in which the opposite is true, so that the samples come from different sites and portray different characteristics. The defining variable for doing so is `M` which will be set to a single label for `epiH0`, and left as-is for `epiHa`.
 
-The workflow for **SSP** requires the computation of simulation parameters, this is done with `SSP::assempar()` and using the same arguments for both datasets. Both datasets are then used for the simulation of ecological communities, which is done by `SSP::simdata()`, and that results in the data that we will use to work with **ecocbo**.
-
-It is required that the resulting datasets are the same size, so the parameters `sites` and `N` are used by `SSP::simdata(...)` to that end. For this example, the values used to calculate the simulations are `sites=1` and `N=1000` in the case in which the null hypothesis is true, and then `sites=10` and `N=100` for the alternative hypothesis, thus resulting in 3 matrices (`cases=3`) of 1000 rows and 95 columns (the number of columns depends on the simulation parameters from `SSP::assempar()`) for both of the resulting datasets.
+It is required that the resulting datasets are the same size, so the parameters `M` and `N` are used by `SSP::simdata(...)` to that end. For this example, the values used to calculate the simulations are `M=1` and `N=1000` in the case in which the null hypothesis is true, and then `M=10` and `N=100` for the alternative hypothesis, thus resulting in 3 matrices (`cases=3`) of 1000 rows and 95 columns (the number of columns depends on the simulation parameters from `SSP::assempar()`) for both of the resulting datasets.
 
 This functions returns an object of class *ecocbo_data* which is a list that contains a dataframe that lists the results of resampling the data with several sampling efforts to calculate pseudo-F and the mean squares that are needed for the other functions in the package to work.
 
@@ -105,33 +104,7 @@ compVar
 
 ```
 
-### 2. sim_cbo()
-**sim_cbo()** estimates the optimal number of sites and replicates per site to perform based on either available budget or desired precision.
-
-| Argument | Description |
-|:---------|:------------|
-| comp.var | Data frame as obtained from **scompvar()**. |
-| multSE | Optional. Required multivariate standard error for the sampling experiment. |
-| ct | Optional. Total cost for the sampling experiment. |
-| ck | Cost per replicate. |
-| cj | Cost per unit. |
-
-It is necessary to indicate one of the two optional arguments, as that parameter dictates if the function will work either based on budget or precision.
-
-```{r step21}
-cboCost <- sim_cbo(comp.var = compVar, multSE = NULL, budget = 20000, a = 3, ca = 2500, cn = 100)
-cboCost
-
-```
-
-```{r step22}
-cboPrecision <- sim_cbo(comp.var = compVar, multSE = 0.15, cn = 150)
-cboPrecision
-
-```
-
-## Additionally...
-### 3. sim_beta()
+### 2. sim_beta()
 **sim_beta()** computes the statistical power for a combination of up to `m` sites and `n` samples per site. Its arguments are: 
 
 | Argument | Description |
@@ -143,11 +116,28 @@ The value of `k` defines the number of times that the combination of sites and s
 
 The function returns an object of class *ecocbo_beta* which prints to a table showing the statistical power at different sampling efforts. The object, however, is a list that contains two data frames and the value of alpha; one data frame comprises the information about power and beta, and the second one lists the results of the resampling of values indicated by `k`.
 
-```{r step3}
+```{r step2}
 betaResult <- sim_beta(simResults, alpha = 0.05)
 betaResult
 
 ```
+
+### 3. sim_cbo()
+**sim_cbo()** estimates the optimal number of sites and replicates per site to perform based on either available budget or desired statistical power.
+
+| Argument | Description |
+|:---------|:------------|
+| data | Object obtained from **sim_beta()**. |
+| cn | Cost per sampling unit. |
+| cm | Cost per sampling replicate. |
+
+
+```{r step31}
+cboCost <- sim_cbo(betaResult, cn = 75)
+cboCost
+```
+
+## Additionally...
 
 ### 4. plot_power()
 **plot_power()** makes plots for either a power curve, a density plot, or both. Its parameters are:
@@ -164,7 +154,7 @@ The power curve plot shows that the power of the study increases as the sample s
 The argument `n` is set to NULL by default, if it is left like that, the the function looks for a number of samples that allows for a power that is close to $(1-alpha)$, otherwise it uses the value stated by the user. In either case, the computed or provided value will be marked in red in the power curve plot.
 
 ```{r step4}
-plot_power(data = betaResult, n = NULL, method = "both")
+plot_power(data = betaResult, n = NULL, method = "power")
 
 ```
 

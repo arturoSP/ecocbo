@@ -11,21 +11,26 @@ Description: A system for calculating the optimal sampling effort, based on the 
     "Ecological cost-benefit optimization" as developed by A. Underwood (1997, 
     ISBN 0 521 55696 1). Data is obtained from simulated ecological communities with
     prep_data() which formats and arranges the initial data, and then the 
-    optimization follows the following procedure of four functions: (1) scompvar() 
-    calculates the variation components necessary for (2) sim_cbo() to calculate
+    optimization follows the following procedure of four functions: (1) prep_data()
+    takes the original dataset and creates simulated sets that can be used as a 
+    basis for estimating statistical power and tipe II error. (2) sim_beta() is used
+    to estimate the statistical power for the different sampling efforts specified
+    by the user. (3) sim_cbo() calculates then the optimal sampling effort, based
+    on the statistical power and the sampling costs. Additionally, (4) scompvar() 
+    calculates the variation components necessary for (5) Underwood_cbo() to calculate
     the optimal combination of number of sites and samples depending on either 
-    an economic budget or on a desired statistical accuracy. Additionally, (3) 
-    sim_beta() estimates statistical power and type 2 error by using Permutational 
-    Multivariate Analysis of Variance, and (6) plot_power() represents the 
-    results of the previous function.
+    an economic budget or on a desired statistical accuracy. Lastly, (6) plot_power() 
+    helps the user visualize the results of sim_beta().
 License: GPL (>= 3)
+URL: https://github.com/arturoSP/ecocbo
+BugReports: https://github.com/arturoSP/ecocbo/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Imports: 
     ggplot2, ggpubr, sampling, stats, rlang,
     dplyr, tidyr, tidyselect, parabar, parallelly,
-    vegan, SSP
+    vegan, SSP, plotly
 Depends: 
     R (>= 3.5.0)
 LazyData: true

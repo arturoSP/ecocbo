@@ -125,7 +125,7 @@ power_curve <- function(powr, m = NULL, n, cVar, model){
 #' @param cVar Calculated variation components.
 #' @param model Model used for calculating power. Options, so far, are
 #' 'single.factor' and 'nested.symmetric'.
-#' @param complete Logical. Is the plot to be drawn complete? If FALSE the plot will
+#' @param completePlot Logical. Is the plot to be drawn complete? If FALSE the plot will
 #' be trimmed to present a better distribution of the density plot.
 #'
 #' @return  A density plot for the observed pseudoF values and a line marking
@@ -271,3 +271,80 @@ density_plot <- function(results, powr, m = NULL, n, method, cVar, model,
   # }
   return(p1)
 }
+
+#' Power surface for different sampling efforts
+#'
+#' \code{plot_power()} can be used to visualize the power of a study as a
+#' function of the sampling effort. The power curve plot shows that the
+#' power of the study increases as the sample size increases, and the density
+#' plot shows the overlapping areas where \eqn{\alpha} and \eqn{\beta} are
+#' significant.
+#'
+#' @param powr Part of the object of class "ecocbo_beta" that results from
+#' [sim_beta()].
+#' @param model Model used for calculating power. Options, so far, are
+#' 'single.factor' and 'nested.symmetric'.
+#'
+#' @return  A surface plot for the observed statistical power at different sampling
+#' efforts, as indicated in [sim_beta()].
+#'
+#' The value of the selected 'm', 'n' and the corresponding component of variation
+#' are presented in all methods.
+#'
+#' @author Edlin Guerra-Castro (\email{edlinguerra@@gmail.com}), Arturo Sanchez-Porras
+#'
+#' @references Underwood, A. J. (1997). Experiments in ecology: their logical
+#' design and interpretation using analysis of variance. Cambridge university
+#' press.
+#' @references Underwood, A. J., & Chapman, M. G. (2003). Power, precaution,
+#' Type II error and sampling design in assessment of environmental impacts.
+#' Journal of Experimental Marine Biology and Ecology, 296(1), 49-70.
+#'
+#' @seealso
+#' [sim_beta()]
+#' [scompvar()]
+#' [sim_cbo()]
+#' [prep_data()]
+#' [plot_power()]
+#'
+#' @aliases surfaceplot
+#'
+#' @importFrom plotly plot_ly add_surface layout
+#'
+#' @keywords internal
+
+## Probability density curve ----
+surface_plot <- function(powr, model){
+
+  if(model == "single.factor"){
+    message("The surface plot is available only for nested factors experiments.")
+  } else {
+    # Getting the unique dimensions
+    ms <- sort(unique(powr$m))
+    ns <- sort(unique(powr$n))
+
+    # Saving powr to a matrix
+    Z <- matrix(powr$Power,
+                nrow = length(ns),
+                ncol = length(ms),
+                byrow = FALSE)
+
+    # Plotting the surface with plotly
+    p1 <- plotly::plot_ly(x = ~ms,
+                    y = ~ns,
+                    z = ~Z,
+                    contours = list(z = list(show = TRUE,
+                                             start = 0, end = 1,
+                                             size = 0.05,
+                                             highlightcolor = "red"))) |>
+      plotly::add_surface() |>
+      plotly::layout(scene = list(
+        xaxis = list(title = "m"),
+        yaxis = list(title = "n"),
+        zaxis = list(title = "Power", nticks = 5)
+      ))
+  }
+
+  return(p1)
+}
+

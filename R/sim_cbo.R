@@ -1,14 +1,20 @@
-#' Simulated Cost-Benefit Optimization
+#' Cost-Benefit Optimization for Sampling Effort
 #'
-#' Applies a cost-benefit optimization based on a desired level of statistical
-#' power and the sampling cost.
+#' Given a table of statistical power estimates produced by \code{\link{sim_beta}},
+#' \code{sim_cbo} finds the sampling design (number of replicates/site and sites)
+#' that minimizes total cost while achieving a user‐specified power threshold.
 #'
-#' @param data Object of class `"ecocbo_beta"` obtained from [sim_beta()].
-#' @param cm Numeric. Cost per replicate.
+#' @param data Object of class \code{"ecocbo_beta"}, as returned by
+#' \code{\link{sim_beta}}.
+#' @param cm Numeric. Fixed cost per replicate.
 #' @param cn Numeric. Cost per sampling unit.
 #'
-#' @return A data frame containing the optimized values for \code{m} number of
-#' sites to sample and \code{n} number of samples per site.
+#' @return A data frame with one row per candidate design. In the single factor
+#' case, the results include the available \code{n} values, their statistical
+#' power and cost. For the nested symmetric experiments, the results include all
+#' the available values for \code{m}, the optimal \code{n}, according to the
+#' power, and the associated cost. The results also mark a suggested sampling
+#' effort, based on the cost and power range as selected by the user.
 #'
 #' @author Edlin Guerra-Castro (\email{edlinguerra@@gmail.com}), Arturo Sanchez-Porras
 #'
@@ -31,10 +37,11 @@
 #' @export
 #'
 #' @examples
-#' compVar <- scompvar(data = simResults)
-#'
 #' # Optimization of single factor experiment
 #' sim_cbo(data = epiBetaR, cn = 80)
+#'
+#' # Optimization of a nested factor experiment
+#' sim_cbo(data = betaNested, cn = 80, cm = 180)
 #'
 
 sim_cbo <- function(data, cn, cm = NULL){
@@ -114,26 +121,9 @@ sim_cbo <- function(data, cn, cm = NULL){
     }
 
     # Tags the optimal case (minimum cost within the identified sampling effort)
-    powerCost$Optimal <- powerCost$OptPower & powerCost$OptCost
-    powerCost$Optimal <- ifelse(powerCost$Optimal == TRUE, "***", "")
+    powerCost$Suggested <- powerCost$OptPower & powerCost$OptCost
+    powerCost$Suggested <- ifelse(powerCost$Suggested == TRUE, "***", "")
     powerCost <- powerCost[,-c(5,6)]
-
-    # # Subsetting the power dataframe to get data that is within the range:
-    # # (1 - alpha) <--> 1
-    # ideal <- powr[powr[,3] >= objective, -c(4,5)]
-    #
-
-    #
-    #
-    #
-
-    #
-
-
-    #
-    # # Finds the minimum cost and marks it with an asterisc
-    # powerCost$Optimal <- powerCost$Cost == min(powerCost$Cost)
-    # powerCost$Optimal <- ifelse(powerCost$Optimal == TRUE, "***", "")
 
   } else {
     # Calculating the cost
@@ -152,8 +142,8 @@ sim_cbo <- function(data, cn, cm = NULL){
     # Find the minimum number of samples within the desired range
     powerCost$OptCost <- powerCost$Cost == min(powerCost$Cost[powerCost$OptPower == TRUE])
     # Tags the optimal case (minimum cost within the identified sampling effort)
-    powerCost$Optimal <- powerCost$OptPower * powerCost$OptCost
-    powerCost$Optimal <- ifelse(powerCost$Optimal == TRUE, "***", "")
+    powerCost$Suggested <- powerCost$OptPower * powerCost$OptCost
+    powerCost$Suggested <- ifelse(powerCost$Suggested == TRUE, "***", "")
 
     powerCost <- powerCost[,-c(4,5)]
   }

@@ -1,6 +1,6 @@
-#' Power Curves for Different Sampling Efforts
+#' Plot Statistical Power and Pseudo-F Distributions
 #'
-#' visualizes the statistical power of a study as a function of the sampling effort.
+#' Visualizes the statistical power of a study as a function of the sampling effort.
 #' The power curve plot illustrates how power increases with sample size, while
 #' the density plot highlights overlapping areas where \eqn{\alpha} and
 #' \eqn{\beta} are significant.
@@ -16,6 +16,8 @@
 #'   - "power": Plots the power curve.
 #'   - "density": Plots the density distribution of pseudo-F values.
 #'   - "both": Displays both plots side by side.
+#'   - "surface": Displays a 3d surface plot of the power curves for nested
+#'   factors experiments.
 #' @param completePlot Logical. Is the plot to be drawn complete? If TRUE the
 #' plot will be trimmed to present a better distribution of the density plot.
 #'
@@ -26,6 +28,8 @@
 #'   a vertical line indicating significance from [sim_beta()].
 #'   - If `method = "both"`: a composite figure with both the power curve and the
 #'   density plot.
+#'   - If `method = "surface"`: a surface plot for the statistical power in different
+#'   sampling designs.
 #'
 #' The selected values of `m`, `n`, and the corresponding component of variation
 #' are displayed in all cases.
@@ -55,6 +59,7 @@
 #' @importFrom ggplot2 scale_linetype_manual element_blank element_rect element_line
 #' @importFrom ggplot2 theme guides geom_col geom_area geom_vline coord_cartesian
 #' @importFrom ggplot2 annotate
+#' @importFrom plotly plot_ly add_surface layout
 #' @importFrom stats density
 #' @importFrom rlang .data
 #'
@@ -63,10 +68,10 @@
 #' plot_power(data = epiBetaR, method = "power")
 #'
 #' # Density plot of pseudo-F values
-#' plot_power(data = epiBetaR, method = "density")
+#' plot_power(data = betaNested, method = "density")
 #'
 #' # Composite plot with both power curve and density plot
-#' plot_power(data = epiBetaR, method = "both")
+#' plot_power(data = betaNested, method = "both")
 #'
 
 plot_power <- function(data, n = NULL, m = NULL,
@@ -96,6 +101,9 @@ plot_power <- function(data, n = NULL, m = NULL,
       if(n <= 1){stop("n must be larger than 1")}
       if(n > max(powr$n)){stop("n is larger than the simulated n value")}
     }
+    if(method == "surface"){
+      stop("Surface is only available for nested factors experiments.")
+    }
 
   } else {                                 ### Double-factor-model validation ----
     if(is.null(m)){
@@ -123,8 +131,8 @@ plot_power <- function(data, n = NULL, m = NULL,
   }
 
   # Validating selected method
-  if(method != "both" & method != "power" & method != "density"){
-    stop("Available methods are \"power\", \"density\" and \"both\"")
+  if(method != "both" & method != "power" & method != "density" & method != "surface"){
+    stop("Available methods are \"power\", \"density\", \"both\" and \"surface\"")
   }
 
   ## Plot according to the parameters ----
@@ -140,6 +148,8 @@ plot_power <- function(data, n = NULL, m = NULL,
     plotF <- power_curve(powr, m, n, cVar, model)
   } else if(method == "density") {
     plotF <- density_plot(results, powr, m, n, method, cVar, model, completePlot)
+  } else if(method == "surface") {
+    plotF <- surface_plot(powr, model)
   }
   return(plotF)
 }

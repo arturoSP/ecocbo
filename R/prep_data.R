@@ -111,7 +111,7 @@ prep_data <- function(data, type = "counts", Sest.method = "average",
   } else if(model == "nested.symmetric"){
     prep_data_nestedsymmetric(data, type, Sest.method, cases, N,
                M, n, m, k, transformation, method,
-               dummy, useParallel)
+               dummy, useParallel, model)
   }
 
   return(Results)
