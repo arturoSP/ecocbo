@@ -27,7 +27,7 @@ the user selects \code{both} as method.}
 \item{model}{Model used for calculating power. Options, so far, are
 'single.factor' and 'nested.symmetric'.}
 
-\item{complete}{Logical. Is the plot to be drawn complete? If FALSE the plot will
+\item{completePlot}{Logical. Is the plot to be drawn complete? If FALSE the plot will
 be trimmed to present a better distribution of the density plot.}
 }
 \value{

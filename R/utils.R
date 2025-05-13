@@ -13,6 +13,7 @@
 #'
 #'
 #' @keywords internal
+#' @noRd
 #'
 
 SS <- function (d) {
@@ -51,6 +52,8 @@ SS <- function (d) {
 #'
 #'
 #' @keywords internal
+#' @noRd
+#'
 
 ## PERMANOVA ----
 permanova_oneway <- function(x, factEnv, type = "P", method = "bray", transformation = "none"){
@@ -199,6 +202,8 @@ permanova_oneway <- function(x, factEnv, type = "P", method = "bray", transforma
 #'
 #'
 #' @keywords internal
+#' @noRd
+#'
 
 balanced_sampling <- function(i, Y, mm, nn, YPU, H0Sim, HaSim, resultsHa, transformation, method){
   # Get the samples index
@@ -265,6 +270,8 @@ balanced_sampling <- function(i, Y, mm, nn, YPU, H0Sim, HaSim, resultsHa, transf
 #'
 #'
 #' @keywords internal
+#' @noRd
+#'
 
 ## PERMANOVA Two factors ----
 permanova_twoway <- function(x, factEnv, method = "bray",
@@ -548,102 +555,6 @@ permanova_twoway <- function(x, factEnv, method = "bray",
 #' Develops the experimental design based on the provided conditions
 #'
 #' @param i pointer to the index in the list of experimental designs to try.
-#' @param Y index to the data.frame the function will work with.
-#' @param mm number of site the function is working with in each iteration.
-#' @param nn number of samples to consider in each iteration.
-#' @param YPU label for the sites in each iteration, as used by
-#' [sampling::balancedtwostage()]
-#' @param H0Sim simulated community from \code{SSP::simdata()} in which H0 is
-#' true.
-#' @param HaSim simulated community from \code{SSP::simdata()} in which H0 is
-#' false.
-#' @param resultsHa helper matrix that stores labels and later the results.
-#' @param transformation Mathematical function to reduce the weight of very
-#' dominant species.
-#' @param method appropriate distance/dissimilarity metric (e.g. Gower,
-#' Bray–Curtis, Jaccard, etc).
-#' @param model which algorithm to use for the calculation? At the moment, the only
-#' option is "nested.symmetric".
-#' @param nSect Total number of sectors to be simulated in each data set.
-#' @param sites Total number of sites to be simulated in each data set.
-#' @param N Total number of samples to be simulated in each site.
-#'
-#' @return a data frame with values for observed F (for H0 and Ha), and the Ha mean
-#' squares for residuals and variation among sites.
-#'
-#' @author Edlin Guerra-Castro (\email{edlinguerra@@gmail.com}), Arturo Sanchez-Porras
-#'
-#' @references Underwood, A. J. (1997). Experiments in ecology: their logical
-#' design and interpretation using analysis of variance. Cambridge university
-#' press.
-#'
-#' @importFrom sampling balancedtwostage
-#'
-#' @seealso [sampling::balancedtwostage()]
-#'
-#'
-#' @keywords internal
-#'
-
-balanced_sampling2 <- function(i, Y, mm, nn, YPU, H0Sim, HaSim, factEnv, resultsHa,
-                               transformation, method, model, nSect, sites, N){
-  # Get the samples index
-  sel <- sampling::balancedtwostage(Y, selection = 1, m = mm[i],
-                                    n = nn[i], PU = YPU, comment = FALSE)
-  sel[sel[,1] <= -1, 1] <- 0
-  sel[sel[,1] >= 2, 1] <- 1
-
-  ones <- which(sel[,1] %in% 1)
-  ones_n <- rep(ones, nSect)
-  ones_s <- rep(c(0:(nSect-1)) * sites * N, each = length(ones))
-  ones <- ones_n + ones_s
-
-  y0 <- H0Sim[ones,,resultsHa[i,1]]
-  rownames(y0) <- ones
-  ya <- HaSim[ones,,resultsHa[i,1]]
-  rownames(ya) <- ones
-  factEnv_s <- factEnv[ones,]
-
-  # Apply PERMANOVA to get F and mean squares
-  result1 <- permanova_twoway(x = y0,
-                              factEnv = factEnv_s,
-                              transformation = transformation,
-                              method = method,
-                              model = model)
-  result2 <- permanova_twoway(x = ya,
-                              factEnv = factEnv_s,
-                              transformation = transformation,
-                              method = method,
-                              model = model)
-  # result0 <- matrix(nrow = 1, ncol = 5)
-  result0 <- matrix(nrow = 1, ncol = 4)
-
-  # Values of pseudoF for A are stored in the result, values for MSA and MSR
-  # come from the dataset with Ha
-  # colnames(result0) <- c("FobsH0", "FobsHa", "MSA", "MSBA", "MSR")
-  colnames(result0) <- c("FobsH0", "FobsHa", "MSBA", "MSR")
-
-  # Gather the results and return
-  # result0[,1] <- result1["A", "F"]
-  # result0[,2] <- result2["A", "F"]
-  # result0[,3] <- result2["A", "MS"]
-  # result0[,4] <- result2["B(A)", "MS"]
-  # result0[,5] <- result2["R", "MS"]
-  # return(result0)
-  result0[,1] <- result1[1]
-  result0[,2] <- result2[1]
-  result0[,3] <- result2[3]
-  result0[,4] <- result2[4]
-
-  return(result0)
-
-}
-
-#' Balanced sampling 2_3
-#'
-#' Develops the experimental design based on the provided conditions
-#'
-#' @param i pointer to the index in the list of experimental designs to try.
 #' @param NN Total number of iterations that the experiment will consider.
 #' @param Y1 A data frame with two columns, one indicates the auxiliary variables
 #' on which the sample must be balanced and the other contains the vector of integers
@@ -683,9 +594,10 @@ balanced_sampling2 <- function(i, Y, mm, nn, YPU, H0Sim, HaSim, factEnv, results
 #'
 #'
 #' @keywords internal
+#' @noRd
 #'
 
-balanced_sampling2_3 <- function(i, NN, Y1, mn, nSect, M, N, H0Sim, HaSim, resultsHa,
+balanced_sampling2 <- function(i, NN, Y1, mn, nSect, M, N, H0Sim, HaSim, resultsHa,
                                  factEnv, transformation, method, model){
   # Determine index for sampling units
   indice <- sampling::balancedtwostage(as.matrix(Y1[,1]), selection = 1, m = mn[i,1],

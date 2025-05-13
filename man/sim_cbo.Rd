@@ -3,30 +3,37 @@
 \name{sim_cbo}
 \alias{sim_cbo}
 \alias{simcbo}
-\title{Simulated Cost-Benefit Optimization}
+\title{Cost-Benefit Optimization for Sampling Effort}
 \usage{
 sim_cbo(data, cn, cm = NULL)
 }
 \arguments{
-\item{data}{Object of class \code{"ecocbo_beta"} obtained from \code{\link[=sim_beta]{sim_beta()}}.}
+\item{data}{Object of class \code{"ecocbo_beta"}, as returned by
+\code{\link{sim_beta}}.}
 
 \item{cn}{Numeric. Cost per sampling unit.}
 
-\item{cm}{Numeric. Cost per replicate.}
+\item{cm}{Numeric. Fixed cost per replicate.}
 }
 \value{
-A data frame containing the optimized values for \code{m} number of
-sites to sample and \code{n} number of samples per site.
+A data frame with one row per candidate design. In the single factor
+case, the results include the available \code{n} values, their statistical
+power and cost. For the nested symmetric experiments, the results include all
+the available values for \code{m}, the optimal \code{n}, according to the
+power, and the associated cost. The results also mark a suggested sampling
+effort, based on the cost and power range as selected by the user.
 }
 \description{
-Applies a cost-benefit optimization based on a desired level of statistical
-power and the sampling cost.
+Given a table of statistical power estimates produced by \code{\link{sim_beta}},
+\code{sim_cbo} finds the sampling design (number of replicates/site and sites)
+that minimizes total cost while achieving a user‐specified power threshold.
 }
 \examples{
-compVar <- scompvar(data = simResults)
-
 # Optimization of single factor experiment
 sim_cbo(data = epiBetaR, cn = 80)
+
+# Optimization of a nested factor experiment
+sim_cbo(data = betaNested, cn = 80, cm = 180)
 
 }
 \references{

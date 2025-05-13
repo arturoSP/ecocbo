@@ -76,23 +76,6 @@ compVar
 
 ```
 
-### Determine optimal sampling effort
-
-The sampling effort can be evaluated depending on an economic budget (ct) or desired precision level (multSE), depending on the proposed parameter, the function will calculate optimal values for number of treatments (bOpt) and replicates (nOpt).
-
-```{r step4}
-cboCost <- sim_cbo(comp.var = compVar, budget = 20000, 
-                   a = 3, ca = 100, cn = 2500)
-cboCost
-```
-
-```{r step5}
-cboPrecision <- sim_cbo(comp.var = compVar, multSE = 0.10, cn = 100, cm = 2500)
-cboPrecision
-
-```
-
-## Additionally... 
 ### Calculate statistical power
 
 ```{r step1}
@@ -100,6 +83,16 @@ betaResult <- sim_beta(simResults, alpha = 0.05)
 betaResult
 ```
 
+### Determine optimal sampling effort
+
+The sampling effort can be evaluated depending on an economic budget (ct) or desired precision level (multSE), depending on the proposed parameter, the function will calculate optimal values for number of treatments (bOpt) and replicates (nOpt).
+
+```{r step4}
+cboCost <- sim_cbo(betaResult, cn = 75)
+cboCost
+```
+
+## Additionally... 
 ### Plot the power progression as sampling increases.
 
 ```{r}
@@ -110,7 +103,7 @@ plot_power(data = betaResult, n = NULL, method = "power")
 
 ## R packages required for running ecocbo
 
--   Required: SSP, ggplot2, ggpubr, sampling, stats, rlang, foreach, parallel, doParallel, doSNOW, vegan
+-   Required: SSP, ggplot2, ggpubr, sampling, stats, rlang, foreach, parallel, doParallel, doSNOW, vegan, plotly
 
 -   Suggested: knitr, rmarkdown, testthat
 

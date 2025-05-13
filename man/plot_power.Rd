@@ -3,7 +3,7 @@
 \name{plot_power}
 \alias{plot_power}
 \alias{plotpower}
-\title{Power Curves for Different Sampling Efforts}
+\title{Plot Statistical Power and Pseudo-F Distributions}
 \usage{
 plot_power(data, n = NULL, m = NULL, method = "power", completePlot = TRUE)
 }
@@ -23,6 +23,8 @@ result in a sampling effort that is close to \eqn{1 - \alpha}.}
 \item "power": Plots the power curve.
 \item "density": Plots the density distribution of pseudo-F values.
 \item "both": Displays both plots side by side.
+\item "surface": Displays a 3d surface plot of the power curves for nested
+factors experiments.
 }}
 
 \item{completePlot}{Logical. Is the plot to be drawn complete? If TRUE the
@@ -37,13 +39,15 @@ selected \code{n} highlighted in red.
 a vertical line indicating significance from \code{\link[=sim_beta]{sim_beta()}}.
 \item If \code{method = "both"}: a composite figure with both the power curve and the
 density plot.
+\item If \code{method = "surface"}: a surface plot for the statistical power in different
+sampling designs.
 }
 
 The selected values of \code{m}, \code{n}, and the corresponding component of variation
 are displayed in all cases.
 }
 \description{
-visualizes the statistical power of a study as a function of the sampling effort.
+Visualizes the statistical power of a study as a function of the sampling effort.
 The power curve plot illustrates how power increases with sample size, while
 the density plot highlights overlapping areas where \eqn{\alpha} and
 \eqn{\beta} are significant.
@@ -53,10 +57,10 @@ the density plot highlights overlapping areas where \eqn{\alpha} and
 plot_power(data = epiBetaR, method = "power")
 
 # Density plot of pseudo-F values
-plot_power(data = epiBetaR, method = "density")
+plot_power(data = betaNested, method = "density")
 
 # Composite plot with both power curve and density plot
-plot_power(data = epiBetaR, method = "both")
+plot_power(data = betaNested, method = "both")
 
 }
 \references{
