@@ -35,6 +35,7 @@
 #' @aliases simcbo
 #'
 #' @export
+#' @importFrom dplyr filter group_by arrange slice mutate
 #'
 #' @examples
 #' # Optimization of single factor experiment
@@ -48,105 +49,125 @@ sim_cbo <- function(data, cn, cm = NULL){
   # Obtaining parameters from the ecocbo_beta object
   # data <- beta2
   # beta1 <- sim_beta(data = simResults, alpha = 0.05)
-  powr <- data$Power
+  powr <- subset(data$Power, select = -c(Beta, fCrit))
   objective <- 1 - data$alpha
   model <- data$model
+  a <- data$a
 
   if(model == "nested.symmetric"){
+    if(is.null(cm)){
+      stop("Cost for sites is missing.")
+    }
+
     # Calculates total cost
     powr$Cost <- powr$m * cm + powr$m * powr$n * cn
 
     # Find the combinations that achieve the criteria
     powr$OptPower <- powr$Power >= objective
+    powr$OptPerm <- minimum_cbo(model, a = a,
+                                m = powr$m, n = powr$n)
 
-    costOK <- powr$Cost[powr$OptPower]
+    ideal <- powr |>
+      dplyr::filter(OptPower, OptPerm)
 
-    if(length(costOK) == 0){
+    if(nrow(ideal) == 0){
       warning("No power values above the specified precision.")
-      for(i in unique(powr[,1])){
-        powr[powr[,1] ==i & powr$Power == max(powr[powr[,1] == i,3]), 7] <- TRUE
-        ideal <- powr[powr[,7] == TRUE, -c(4,5)]
-      }
-    } else {
-      ideal <- powr[powr[,3] >= objective, -c(4,5)]
+      ideal <- powr |>
+        group_by(m) |>
+        arrange(desc(Power)) |>
+        slice(1) |>
+        mutate(OptPower = TRUE) |>
+        filter(OptPerm)
+
+      powr <- merge(powr[,-c(5)], ideal[,c(1,2,5)],
+            all.x=TRUE) |>
+        mutate(OptPower = ifelse(is.na(OptPower), FALSE, TRUE))
     }
 
-    # Obtaining the unique identifiers for n or m
-    emes <- unique(ideal[,1])
+    idCost <- which.min(ideal$Cost)
+    idBest <- ideal[idCost,]
 
-    # Selects the minimum sampling effort, considering the power requirements
-    # then it calculates the cost for such an experiment.
-    ideally <- sapply(emes, function(rw){
-      idealTrimm <- ideal[ideal[,1] == rw,]
-      # Selecting the minimun n for each m
-      enes <- min(idealTrimm[,2])
-      idealTrimm <- idealTrimm[idealTrimm[,2] == enes,]
-      # Calculating the associated cost
-      idealTrimm[,"Cost"] <- idealTrimm[,1] * cm +
-        idealTrimm[,2] * cn
-      return(idealTrimm)
-    }, simplify=F)
-
-    # Puts together all the iterations
-    powerCost <- do.call(rbind, ideally)
-    rownames(powerCost) <- NULL
-
-    # Find the minimum number of samples within the desired range
-    powerCost$OptCost <- powerCost$Cost == min(powerCost$Cost[powerCost$OptPower == TRUE])
-
-    # Completes the dataframe in case any m didn't reach the range
-    powerCost <- merge(x = data.frame(m = unique(powr[,1])),
-                       y = powerCost,
-                       by = "m",
-                       all.x = TRUE,
-                       sort = TRUE)
-
-    # Fills the empty data with the highest attainable power, then calculates
-    # the associated cost
-    for(i in powerCost[,1]){
-      if(is.na(powerCost[powerCost[,1] == i,2])){
-        # Finds the maximum n
-        powerCost[powerCost[,1] == i,2] <- max(powr[powr[,1] == i,2])
-        # Finds the maximum power
-        powerCost[powerCost[,1] == i,3] <- powr$Power[powr$m == i &
-                                                        powr$n == powerCost[powerCost[,1] == i,2]]
-        # Calculates the associated cost
-        powerCost[powerCost[,1] == i,4] <- powerCost[powerCost[,1] == i,1] * cm +
-          powerCost[powerCost[,1] == i,2] * cn
-
-        # Fills logical values
-        powerCost[powerCost[,1] == i, 5] <- FALSE
-        powerCost[powerCost[,1] == i, 6] <- FALSE
-      }
-    }
-
-    # Tags the optimal case (minimum cost within the identified sampling effort)
-    powerCost$Suggested <- powerCost$OptPower & powerCost$OptCost
-    powerCost$Suggested <- ifelse(powerCost$Suggested == TRUE, "***", "")
-    powerCost <- powerCost[,-c(5,6)]
+    powr$OptCost <- FALSE
+    powr[powr$m == idBest$m & powr$n == idBest$n, "OptCost"] <- TRUE
 
   } else {
     # Calculating the cost
-    powerCost <- powr[,-c(3,4)]
-    powerCost$Cost <- powerCost[,1] * cn
+    powr$Cost <- powr$n * cn
+
     # Find the iterations that meet the desired power range
-    powerCost$OptPower <- powerCost$Power >= objective
+    powr$OptPower <- powr$Power >= objective
+    powr$OptPerm <- minimum_cbo(model, a = a,
+                                n = powr$n)
 
-    # Safe search of the minimum cost among cases where objective is met
-    costOK <- powerCost$Cost[powerCost$OptPower]
+    ideal <- powr |>
+      dplyr::filter(OptPower, OptPerm)
 
-    if(length(costOK) == 0){
+    if(nrow(ideal) == 0){
       warning("No power values above the specified precision.")
-      powerCost[length(powr), 4] <- TRUE
     }
-    # Find the minimum number of samples within the desired range
-    powerCost$OptCost <- powerCost$Cost == min(powerCost$Cost[powerCost$OptPower == TRUE])
-    # Tags the optimal case (minimum cost within the identified sampling effort)
-    powerCost$Suggested <- powerCost$OptPower * powerCost$OptCost
-    powerCost$Suggested <- ifelse(powerCost$Suggested == TRUE, "***", "")
 
-    powerCost <- powerCost[,-c(4,5)]
+    idCost <- which.min(ideal$Cost)
+    idBest <- ideal[idCost,]
+
+    powr$OptCost <- FALSE
+    powr[powr$n == idBest$n, "OptCost"] <- TRUE
+
   }
 
-  return(powerCost)
+  class(powr) <- c("cbo_result", class(powr))
+  return(powr)
+}
+
+
+#-------------------------------------------
+## S3Methods print()
+#-------------------------------------------
+
+#' S3Methods for Printing
+#'
+#' @name print.cbo_result
+#'
+#' @method print cbo_result
+#'
+#' @usage
+#' \method{print}{cbo_result}(x, ...)
+#'
+#' @description prints for \code{ecocbo::sim_cbo()} objects.
+#'
+#' @param x Object from \code{ecocbo::sim_cbo()} function.
+#'
+#' @param ... Additional arguments
+#'
+#' @return Prints a summary for the results of \code{ecocbo::sim_cbo()} function,
+#' showing in an ordered matrix the suggested experimental design, according to
+#' cost and estimated power.
+#'
+#' @importFrom dplyr mutate group_by ungroup arrange slice filter select
+#'
+#' @export
+#' @keywords internal
+
+print.cbo_result <- function(x, ...){
+  # Create the subset of suggested options
+  if(length(x) == 6){
+    x1 <- x |>
+      mutate(Suggested = ifelse(OptCost, "***", "")) |>
+      select(n, Power, Cost, Suggested)
+  } else {
+    x1 <- x |>
+      filter(OptPower) |>
+      group_by(m) |>
+      arrange(n, Cost) |>
+      slice(1) |>
+      ungroup() |>
+      mutate(Suggested = ifelse(OptCost, "***", "")) |>
+      select(m, n, Power, Cost, Suggested)
+  }
+
+  # Print
+  cat("Sampling designs that meet the required power:\n")
+  print.data.frame(x1, row.names=FALSE, right=TRUE)
+  cat("\nThe listed cost is per treatment.")
+  invisible(x1)
+
 }
