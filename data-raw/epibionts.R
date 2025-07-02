@@ -27,11 +27,12 @@ useParallel = T
 model = "single.factor"
 type = "counts"
 Sest.method = "average"
-data <- epiDat
+data <- epiDat |> as.data.frame()
 
 ## Función prep_data ----
-epiBetaR <- prep_data(data, type, Sest.method, cases, N, M, n, m, k,
+simResults <- prep_data(data, type, Sest.method, cases, N, M, n, m, k,
                            transformation, method, dummy, useParallel, model)
+usethis::use_data(simResults, overwrite=TRUE)
 
-epiBetaR <- sim_beta(epiBetaR, 0.05)
+epiBetaR <- sim_beta(simResults, 0.05)
 usethis::use_data(epiBetaR, overwrite=TRUE)
