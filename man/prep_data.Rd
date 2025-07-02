@@ -76,6 +76,8 @@ An object of class "ecocbo_data" is a list containing:
 includes mean squares for variance component estimation.
 \item \code{$model}, a label for keeping track of the model that is being used
 in the analysis.
+\item \code{$a}, an integer for the number of treatments recorded from the original
+data.
 }
 }
 \description{
