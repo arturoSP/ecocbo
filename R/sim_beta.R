@@ -121,8 +121,9 @@ sim_beta <- function(data, alpha = 0.05){
   BetaResult <- list(Power = powr,
                      Results = as.data.frame(data$Results),
                      alpha = alpha,
-                     model = data$model)
-  class(BetaResult) <- "ecocbo_beta"
+                     model = data$model,
+                     a = data$a)
+  class(BetaResult) <- c("ecocbo_beta", class(BetaResult))
 
   return(BetaResult)
 }
@@ -134,7 +135,7 @@ sim_beta <- function(data, alpha = 0.05){
 
 #' S3Methods for Printing
 #'
-#' @name prints
+#' @name print.ecocbo_beta
 #'
 #' @method print ecocbo_beta
 #'
