@@ -51,6 +51,8 @@
 #'   includes mean squares for variance component estimation.
 #'   - \code{$model}, a label for keeping track of the model that is being used
 #'   in the analysis.
+#'   - \code{$a}, an integer for the number of treatments recorded from the original
+#'   data.
 #'
 #' @author Edlin Guerra-Castro (\email{edlinguerra@@gmail.com}), Arturo Sanchez-Porras
 #'

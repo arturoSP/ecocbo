@@ -76,6 +76,7 @@ prep_data_single <- function(data, type = "counts", Sest.method = "average",
   datH0[,1] <- as.factor("zero")
   datHa <- data
   datHa[,1] <- as.factor(data[,1])
+  a <- nlevels(datHa[,1])
 
   # calculate simulation parameters, then simulate communities ----
   parH0 <- SSP::assempar(data = datH0,
@@ -185,8 +186,8 @@ prep_data_single <- function(data, type = "counts", Sest.method = "average",
   resultsHa <- resultsHa[!is.na(resultsHa[,5]) & !is.na(resultsHa[,6]),]
   resultsHa <- resultsHa[,-3]
 
-  SimResults <- list(Results = resultsHa, model = "single.factor")
-  class(SimResults) <- "ecocbo_data"
+  SimResults <- list(Results = resultsHa, model = "single.factor", a = a)
+  class(SimResults) <- c("ecocbo_data", class(SimResults))
 
   return(SimResults)
 
@@ -277,6 +278,13 @@ prep_data_nestedsymmetric <- function(data, type = "counts",
   factSect <- data[,1]
   nSect <- nlevels(factSect)         # number of treatments
   nivel <- levels(factSect)
+
+  # Apply PERMANOVA to the original data, to get an estimated MSB(A)
+  # to supplement the simulated MSB(A)
+  # vegan::adonis2(data[,-c(1:2)]~ Locality / Site, data = data[,c(1:2)], strata = data$Locality, by = "terms")
+  sigma2_est <- label_permanova(dataP = data[,-c(1:2)], factEnvP = data[,c(1:2)],
+                               method = method, transformation = transformation,
+                               dummy = dummy, model = model)["B(A)", "MS"]
 
   ## Simulated data for Ha ----
   # Create a list to store the results
@@ -422,7 +430,7 @@ prep_data_nestedsymmetric <- function(data, type = "counts",
   for (i in seq_len(NN)){
     result1 <- balanced_sampling2(i, NN, Y1, mn, nSect, M, N, H0Sim, HaSim,
                                     resultsHa, factEnv, transformation,
-                                    method, model)
+                                    method, model, sigma2_est)
     resultsHa[i,5] <- result1[1]
     resultsHa[i,6] <- result1[2]
     resultsHa[i,7] <- result1[3]
@@ -434,8 +442,8 @@ prep_data_nestedsymmetric <- function(data, type = "counts",
 
   resultsHa <- resultsHa[!is.na(resultsHa[,5]) & !is.na(resultsHa[,6]),]
 
-  SimResults <- list(Results = resultsHa, model = model)
-  class(SimResults) <- "ecocbo_data"
+  SimResults <- list(Results = resultsHa, model = model, a = nSect)
+  class(SimResults) <- c("ecocbo_data", class(SimResults))
 
   return(SimResults)
 
