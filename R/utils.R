@@ -122,39 +122,6 @@ permanova_oneway <- function(x, factEnv, type = "P", method = "bray", transforma
     return(Fobs)
   }
 
-  # Prueba Brown-Forsythe ---
-  # está desactivada, pero guardada por si se quiere usar algún día
-  # pseudoF_BF <- function(x, factEnv, method = "bray"){
-  #   d <- vegan::vegdist(x, method = method)
-  #   SST <- SS(d)[2]
-  #
-  #   # Size for labels
-  #   lev <- table(factEnv)
-  #   nlev <- length(lev)
-  #
-  #   # Empty helper vectors
-  #   Var <- numeric(nlev)
-  #   d.res <- Var
-  #
-  #   # Calculate SS and Var for residuals
-  #   lista <- split(x, factEnv)
-  #   vdist <- lapply(lista, vegan::vegdist)
-  #   SSi <- lapply(vdist, SS)
-  #   SSi <- array(unlist(SSi), dim = c(1,2,nlev))
-  #
-  #   Var <- SSi[,2,]/(SSi[,1,]-1)
-  #   d.res <- (1-(lev/sum(lev)))*Var
-  #   den <- sum(d.res)
-  #
-  #   # Resultados
-  #   SSR <- sum(SSi[,2,])
-  #   SSA <- abs(SST-SSR)
-  #   Fobs<- SSA/den
-  #
-  #   Fobs <- data.frame(SSA, SSR, SST, den, Fobs)
-  #   return(Fobs)
-  # }
-
   # Main function which returns pseudoF and MS ----
   # Validating data
   if(dim(x)[1] != length(factEnv))
@@ -275,7 +242,8 @@ balanced_sampling <- function(i, Y, mm, nn, YPU, H0Sim, HaSim, resultsHa, transf
 
 ## PERMANOVA Two factors ----
 permanova_twoway <- function(x, factEnv, method = "bray",
-                             transformation = "none", model = "nested.symmetric"){
+                             transformation = "none", model = "nested.symmetric",
+                             sigma2_est){
 
   pseudoF_2Orthogonal <- function(x, factEnv, method = "bray", transformation = "none"){
     # data transformation, if necessary, and calculate the distance matrix
@@ -394,25 +362,8 @@ permanova_twoway <- function(x, factEnv, method = "bray",
     return(Fobs)
   }
 
-  pseudoF_2NestedSymmetric <- function(x, factEnv, method, transformation){
-    # Validate transformation method
-    valid_transformations <- c("none", "square root", "fourth root", "Log (X+1)", "P/A")
-    if (!transformation %in% valid_transformations) {
-      stop("Invalid transformation method. Choose from: none, square root, fourth root, Log (X+1), P/A.")
-    }
-
-    # Validate distance method
-    valid_methods <- c("euclidean", "bray", "jaccard", "gower")
-    if (!method %in% valid_methods) {
-      stop("Invalid distance method. Choose from: euclidean, bray, jaccard, gower.")
-    }
-
-    # Ensure dimensions match
-    if (dim(x)[1] != dim(factEnv)[1]) {
-      stop("The dimensions of the data matrix and the factor labels do not match.")
-    }
-    rm(valid_transformations, valid_methods)
-
+  pseudoF_2NestedSymmetric <- function(x, factEnv, method, transformation,
+                                       sigma2_est){
     # Apply transformation and calculate distance matrix
     if (transformation == "square root") {
       x.t <- sqrt(x)
@@ -430,7 +381,7 @@ permanova_twoway <- function(x, factEnv, method = "bray",
       x.t <- x
       d <- vegan::vegdist(x.t, method = method)
     }
-    rm(x)
+    # rm(x)
 
     # size for the labels we work with
     a = nlevels(as.factor(factEnv$sector))  # number of treatments (A)
@@ -451,7 +402,7 @@ permanova_twoway <- function(x, factEnv, method = "bray",
       SS(vegan::vegdist(x.t[rw,], method = method))
     }, simplify = "array")
     SSR <- sum(listR[2,])
-    rm(secsite_groups, listR)
+    # rm(secsite_groups, listR)
 
     # calculates SS_B(A)
 
@@ -460,34 +411,21 @@ permanova_twoway <- function(x, factEnv, method = "bray",
     # the SS for the Euclidian distance matrix is calculated. The SS are summed
     # to calculate SS_B(A)
     sector_groups <- split(rownames(factEnv), factEnv$sector)
-
-    # listBA <- vector(mode = "list")
-    # for(i in nNm){
-    #   factEnv
-    #   dBA <- vegan::vegdist(x.t[factEnv[,1] == i,])
-    #   tCentroid <- vegan::betadisper(dBA,
-    #                                  group = factEnv[factEnv[,1] == i, 3],
-    #                                  type = "centroid",
-    #                                  bias.adjust = FALSE)
-    #   Eig <- which(tCentroid$eig > 0)
-    #   listBA[[i]] <- SS(vegan::vegdist(tCentroid$centroids[, Eig, drop = FALSE],
-    #                     method = "euclidean"))
-    # }
-    # SSBA <- dplyr::bind_rows(listBA)
-    # SSBA <- sum(SSBA[2,]) * nRep
+    # sector_groups <- lapply(sector_groups, as.numeric)
 
     listBA <- sapply(sector_groups, function(rw) {
       dBA <- vegan::vegdist(x.t[rw,], method = "bray")
       tCentroid <- vegan::betadisper(dBA,
-                                     group = factEnv[rw, 4],
+                                     group = factEnv[rw, "secsit"],
                                      type = "centroid",
                                      bias.adjust = FALSE)
       Eig <- which(tCentroid$eig > 0)
-      SS(vegan::vegdist(tCentroid$centroids[, Eig, drop = FALSE], method = "euclidean"))
+      SS(vegan::vegdist(tCentroid$centroids[, Eig, drop = FALSE],
+                        method = "euclidean"))
     }, simplify = "array")
     SSBA <- sum(listBA[2,]) * nRep  # * nRep is added so that when calculating
     # the variation between nested groups it is weighted by the size of the subgroup
-    rm(sector_groups, listBA)
+    # rm(sector_groups, listBA)
 
     # calculates SSA
     SSA <- SST - SSBA - SSR
@@ -501,7 +439,9 @@ permanova_twoway <- function(x, factEnv, method = "bray",
 
     # mean squares
     MSA <- SSA / DoFA
-    MSBA <- SSBA / DoFBA
+    # MSBA <- SSBA / DoFBA
+    MSBAsim <- (sigma2_est / DoFBA) * rchisq(1, df = DoFBA) # sigma2_est <- scompvar(permanova(datospiloto))$BA
+    MSBA <- (SSBA / DoFBA) + MSBAsim
     MSR <- SSR / DoFR
 
     # observed pseudoF
@@ -539,9 +479,11 @@ permanova_twoway <- function(x, factEnv, method = "bray",
          \"orthogonal\" and \"single.factor\"")
 
   if(model == "nested.symmetric"){
-    Results <- pseudoF_2NestedSymmetric(x, factEnv, method, transformation)
+    Results <- pseudoF_2NestedSymmetric(x, factEnv, method, transformation,
+                                        sigma2_est)
   } else if(model == "nested.asymmetric"){
-    Results <- pseudoF_2NestedSymmetric(x, factEnv, method, transformation)
+    Results <- pseudoF_2NestedSymmetric(x, factEnv, method, transformation,
+                                        sigma2_est)
   } else {
     Results <- pseudoF_2Orthogonal(x, factEnv, method, transformation)
   }
@@ -598,7 +540,8 @@ permanova_twoway <- function(x, factEnv, method = "bray",
 #'
 
 balanced_sampling2 <- function(i, NN, Y1, mn, nSect, M, N, H0Sim, HaSim, resultsHa,
-                                 factEnv, transformation, method, model){
+                                 factEnv, transformation, method, model,
+                               sigma2_est){
   # Determine index for sampling units
   indice <- sampling::balancedtwostage(as.matrix(Y1[,1]), selection = 1, m = mn[i,1],
                                        n = mn[i,2], PU = Y1[,2], comment = FALSE)[,1] |>
@@ -622,12 +565,14 @@ balanced_sampling2 <- function(i, NN, Y1, mn, nSect, M, N, H0Sim, HaSim, results
                                factEnv = factEnvX,
                                transformation=transformation,
                                method = method,
-                               model = model)
+                               model = model,
+                               sigma2_est = sigma2_est)
   result_a <- permanova_twoway(x = ya,
                                factEnv = factEnvX,
                                transformation=transformation,
                                method = method,
-                               model = model)
+                               model = model,
+                               sigma2_est = sigma2_est)
 
   if(length(result_0) != 4){result_0 <- c(NA, NA, NA, NA)}
   if(length(result_a) != 4){result_a <- c(NA, NA, NA, NA)}
@@ -639,4 +584,235 @@ balanced_sampling2 <- function(i, NN, Y1, mn, nSect, M, N, H0Sim, HaSim, results
   return(result1)
 }
 
+#' mimimun permutations
+#'
+#' Determine if sampling effort allows for at least 100 permutations
+#'
+#' @param model which algorithm to use for the calculation? At the moment, the only
+#' option is "nested.symmetric".
+#' @param a Integer. Levels for the treatment factor.
+#' @param m Integer. Levels for site within treatment. Only used in Nested Symmetric
+#' experiments.
+#' @param n Integer. Replicates in the experiment (either per treatment or site).
+#'
+#' @return Logical. TRUE if at least 100 permutations are guaranteed.
+#'
+#' @author Edlin Guerra-Castro (\email{edlinguerra@@gmail.com}), Arturo Sanchez-Porras
+#'
+#' @keywords internal
+#' @noRd
+#'
 
+minimum_cbo <- function(model, a, n, m = NULL){
+
+  thr <- c(log(100))
+
+  if(model == "single.factor"){
+    permA <- lgamma(a * n+1) - lgamma(a + 1) - a * lgamma(n + 1)
+
+    return(permA > thr)
+  } else {
+    if(is.null(m)) stop("m is required for the nested model")
+
+    permA <- lgamma(a * m + 1) - lgamma(a + 1) - a * lgamma(m + 1)
+    permBA <- a * (lgamma(m * n + 1) - lgamma(m + 1) - m * lgamma(n + 1))
+
+    return((permA > thr) & (permBA > thr))
+  }
+}
+
+#' PERMANOVA by exchanging labels
+#'
+#' Classic Permutational Multivariate Analysis of Variance
+#'
+#' @param data
+#' @param factEnv
+#' @param method
+#' @param transformation
+#' @param dummy
+#' @param model
+#' @param k
+#'
+#' @return PERMANOVA table
+#'
+#' @author Edlin Guerra-Castro (\email{edlinguerra@@gmail.com}), Arturo Sanchez-Porras
+#'
+#' @keywords internal
+#' @noRd
+#'
+
+label_permanova <- function(dataP, factEnvP, method, transformation,
+                            dummy, model){
+
+  if(dummy){
+    dataP$dummy = 1
+  }
+
+  # Apply transformation and calculate distance matrix
+  if (transformation == "square root") {
+    x.t <- sqrt(dataP)
+    d <- vegan::vegdist(x.t, method = method)
+  } else if (transformation == "fourth root") {
+    x.t <- sqrt(sqrt(dataP))
+    d <- vegan::vegdist(x.t, method = method)
+  } else if (transformation == "Log (X+1)") {
+    x.t <- log(dataP + 1)
+    d <- vegan::vegdist(x.t, method = method)
+  } else if (transformation == "P/A") {
+    x.t <- 1 * (dataP > 0)
+    d <- vegan::vegdist(x.t, method = method, binary = TRUE)
+  } else {
+    x.t <- dataP
+    d <- vegan::vegdist(x.t, method = method)
+  }
+  # rm(dataP)
+
+  # Compute the number of permutations available to the experiment,
+  # then compare it with the given k
+  a = nlevels(as.factor(factEnvP[,1]))  # number of treatments (A)
+  b = length(unique(as.factor(factEnvP[,2])))   # number of replicates (B)
+  factEnvP["secsit"] <- paste0(factEnvP[,1], factEnvP[,2]) # intersections AB
+  nBA = nlevels(as.factor(factEnvP$secsit))  # number of intersections AB
+  nRep = dim(factEnvP)[1] / nBA  # number of times we're repeating each intersection
+  nNm = unique(factEnvP[,1]) # unique values for the sectors
+  nScSt = unique(factEnvP$secsit)  # unique values for the intersections site-sector
+
+  # Only necessary for full PERMANOVA
+  # permutaciones_rep <- replicate(999,
+  #                                  expr = factEnvP[sample(nrow(factEnvP)), ],
+  #                                  simplify= FALSE)
+
+  # calculates SS for all
+  SST <- SS(d)[2]
+
+  permList <- vector("list", 999 + 1)
+  # degrees of freedom
+  DoFA <- a - 1
+  DoFBA <- a * (b - 1)
+  DoFR <- a * b * (nRep - 1)
+  DoFT <- (a * b * nRep) - 1
+
+  # Only necessary for full PERMANOVA
+
+  # for(i in c(1:999)){
+  #   # dataframe en esta iteración
+  #   currentPerm <- permutaciones_rep[[i]]
+  #
+  #   # calculates SS within replicates
+  #   # secsite_groups <- split(rownames(permutaciones_rep[[i]]), factEnvP$secsit)
+  #   secsite_groups <- split(rownames(x.t), currentPerm$secsit)
+  #   listR <- sapply(secsite_groups, function(rw) {
+  #     SS(vegan::vegdist(x.t[rw,], method = method))
+  #   }, simplify = "array")
+  #   SSR <- sum(listR[2,])
+  #   # calculates SS_B(A)
+  #   # sector_groups <- split(rownames(permutaciones_rep[[i]]), factEnvP[,1])
+  #   sector_groups <- split(rownames(x.t), currentPerm$Locality)
+  #
+  #   listBA <- sapply(sector_groups, function(rw) {
+  #     dBA <- vegan::vegdist(x.t[rw,], method = "bray")
+  #     tCentroid <- vegan::betadisper(dBA,
+  #                                    group = currentPerm[rw, "secsit"],
+  #                                    type = "centroid",
+  #                                    bias.adjust = FALSE)
+  #     Eig <- which(tCentroid$eig > 0)
+  #     SS(vegan::vegdist(tCentroid$centroids[, Eig, drop = FALSE],
+  #                       method = "euclidean"))
+  #   }, simplify = "array")
+  #   SSBA <- sum(listBA[2,]) * nRep  # * nRep is added so that when calculating
+  #   # the variation between nested groups it is weighted by the size of the subgroup
+  #   # rm(sector_groups, listBA)
+  #
+  #   # calculates SSA
+  #   SSA <- SST - SSBA - SSR
+  #
+  #   # fill the permanova table
+  #   # mean squares
+  #   MSA <- SSA / DoFA
+  #   MSBA <- SSBA / DoFBA
+  #   # MSBAsim <- (sigma2_est / DoFBA) * rchisq(1, df = DoFBA) # sigma2_est <- scompvar(permanova(datospiloto))$BA
+  #   MSBA <- (SSBA / DoFBA) #+ MSBAsim
+  #   MSR <- SSR / DoFR
+  #
+  #   # observed pseudoF
+  #   FobsA <- MSA / MSBA
+  #   FobsBA <- MSBA / MSR
+  #
+  #   Fobs <- as.data.frame(matrix(nrow = 4, ncol = 4))
+  #   colnames(Fobs) <- c("SS", "DoF", "MS", "F")
+  #   rownames(Fobs) <- c("A", "B(A)", "R", "T")
+  #   Fobs[1,1] <- SSA
+  #   Fobs[1,2] <- DoFA
+  #   Fobs[1,3] <- MSA
+  #   Fobs[1,4] <- FobsA
+  #   Fobs[2,1] <- SSBA
+  #   Fobs[2,2] <- DoFBA
+  #   Fobs[2,3] <- MSBA
+  #   Fobs[2,4] <- FobsBA
+  #   Fobs[3,1] <- SSR
+  #   Fobs[3,2] <- DoFR
+  #   Fobs[3,3] <- MSR
+  #   Fobs[4,1] <- SST
+  #   Fobs[4,2] <- DoFT
+  #
+  #   permList[[i]] <- Fobs
+  # }
+
+  # Compute ANOVA for the original data
+  secsite_groups <- split(rownames(factEnvP), factEnvP$secsit)
+  listR <- sapply(secsite_groups, function(rw) {
+    SS(vegan::vegdist(x.t[rw,], method = method))
+  }, simplify = "array")
+  SSR <- sum(listR[2,])
+  # calculates SS_B(A)
+  sector_groups <- split(rownames(factEnvP), factEnvP[,1])
+
+  listBA <- sapply(sector_groups, function(rw) {
+    dBA <- vegan::vegdist(x.t[rw,], method = "bray")
+    tCentroid <- vegan::betadisper(dBA,
+                                   group = factEnvP[rw, "secsit"],
+                                   type = "centroid",
+                                   bias.adjust = FALSE)
+    Eig <- which(tCentroid$eig > 0)
+    SS(vegan::vegdist(tCentroid$centroids[, Eig, drop = FALSE],
+                      method = "euclidean"))
+  }, simplify = "array")
+  SSBA <- sum(listBA[2,]) * nRep
+
+  # calculates SSA
+  SSA <- SST - SSBA - SSR
+
+  # fill the permanova table
+  # mean squares
+  MSA <- SSA / DoFA
+  MSBA <- SSBA / DoFBA
+  MSBA <- (SSBA / DoFBA)
+  MSR <- SSR / DoFR
+
+  # observed pseudoF
+  FobsA <- MSA / MSBA
+  FobsBA <- MSBA / MSR
+
+  Fobs <- as.data.frame(matrix(nrow = 4, ncol = 4))
+  colnames(Fobs) <- c("SS", "DoF", "MS", "F")
+  rownames(Fobs) <- c("A", "B(A)", "R", "T")
+  Fobs[1,1] <- SSA
+  Fobs[1,2] <- DoFA
+  Fobs[1,3] <- MSA
+  Fobs[1,4] <- FobsA
+  Fobs[2,1] <- SSBA
+  Fobs[2,2] <- DoFBA
+  Fobs[2,3] <- MSBA
+  Fobs[2,4] <- FobsBA
+  Fobs[3,1] <- SSR
+  Fobs[3,2] <- DoFR
+  Fobs[3,3] <- MSR
+  Fobs[4,1] <- SST
+  Fobs[4,2] <- DoFT
+
+  # Only necessary for full PERMANOVA
+  # permList[[1000]] <- Fobs
+
+  # If this were full PERMANOVA, it's necessary to change the return to permList
+  return(Fobs)
+}
