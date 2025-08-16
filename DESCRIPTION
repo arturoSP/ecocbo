@@ -32,7 +32,7 @@ Imports:
     dplyr, tidyr, tidyselect, parabar, parallelly,
     vegan, SSP, plotly
 Depends: 
-    R (>= 3.5.0)
+    R (>= 4.1.0)
 LazyData: true
 Suggests: 
     knitr,rmarkdown, testthat (>= 3.0.0)
