@@ -221,6 +221,8 @@ balanced_sampling <- function(i, Y, mm, nn, YPU, H0Sim, HaSim, resultsHa, transf
 #' Bray–Curtis, Jaccard, etc).
 #' @param transformation Mathematical function to reduce the weight of very
 #' dominant species.
+#' @param model Character. Select the model to use.
+#' @param sigma2_est An estimation on the value for sigma_e^2.
 #'
 #' @return A data frame containing the resulting PERMANOVA table.
 #' @author Edlin Guerra-Castro (\email{edlinguerra@@gmail.com}), Arturo Sanchez-Porras
@@ -243,9 +245,10 @@ balanced_sampling <- function(i, Y, mm, nn, YPU, H0Sim, HaSim, resultsHa, transf
 ## PERMANOVA Two factors ----
 permanova_twoway <- function(x, factEnv, method = "bray",
                              transformation = "none", model = "nested.symmetric",
-                             sigma2_est){
+                             sigma2_est = NULL){
 
-  pseudoF_2Orthogonal <- function(x, factEnv, method = "bray", transformation = "none"){
+  pseudoF_2Orthogonal <- function(x, factEnv, method = "bray", transformation = "none",
+                                  sigma2_est){
     # data transformation, if necessary, and calculate the distance matrix
     if (transformation == "square root") {
       x.t <- sqrt(x)
@@ -485,7 +488,8 @@ permanova_twoway <- function(x, factEnv, method = "bray",
     Results <- pseudoF_2NestedSymmetric(x, factEnv, method, transformation,
                                         sigma2_est)
   } else {
-    Results <- pseudoF_2Orthogonal(x, factEnv, method, transformation)
+    Results <- pseudoF_2Orthogonal(x, factEnv, method, transformation,
+                                   sigma2_est)
   }
 
   Fobs <- Results
@@ -539,9 +543,9 @@ permanova_twoway <- function(x, factEnv, method = "bray",
 #' @noRd
 #'
 
-balanced_sampling2 <- function(i, NN, Y1, mn, nSect, M, N, H0Sim, HaSim, resultsHa,
-                                 factEnv, transformation, method, model,
-                               sigma2_est){
+balanced_sampling2 <- function(i, NN, Y1, mn, nSect, M, N, H0Sim, HaSim,
+                               resultsHa, factEnv, transformation, method,
+                               model, sigma2_est){
   # Determine index for sampling units
   indice <- sampling::balancedtwostage(as.matrix(Y1[,1]), selection = 1, m = mn[i,1],
                                        n = mn[i,2], PU = Y1[,2], comment = FALSE)[,1] |>
@@ -625,13 +629,17 @@ minimum_cbo <- function(model, a, n, m = NULL){
 #'
 #' Classic Permutational Multivariate Analysis of Variance
 #'
-#' @param data
-#' @param factEnv
-#' @param method
-#' @param transformation
-#' @param dummy
-#' @param model
-#' @param k
+#' @param data Data frame where columns represent species names and rows correspond
+#' to samples.
+#' @param factEnv Data frame containing the environmental factors for the data.
+#' @param method Character. Dissimilarity metric used [vegan::vegdist()]. Common
+#' options include: "Gower", "Bray–Curtis", "Jaccard", etc.
+#' @param transformation Character. Transformation applied to reduce the weight
+#' of dominant species: "square root", "fourth root", "Log (X+1)", "P/A", "none".
+#' @param dummy Character. Transformation applied to reduce the weight
+#' of dominant species: "square root", "fourth root", "Log (X+1)", "P/A", "none".
+#' @param model Character. Select the model to use. Options, so far, are
+#' @param k Integer. Number of resampling iterations. Defaults to 50.
 #'
 #' @return PERMANOVA table
 #'
@@ -685,7 +693,7 @@ label_permanova <- function(dataP, factEnvP, method, transformation,
   # calculates SS for all
   SST <- SS(d)[2]
 
-  permList <- vector("list", 999 + 1)
+  # permList <- vector("list", 999 + 1)
   # degrees of freedom
   DoFA <- a - 1
   DoFBA <- a * (b - 1)

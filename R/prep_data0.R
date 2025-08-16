@@ -161,6 +161,8 @@ prep_data_single <- function(data, type = "counts", Sest.method = "average",
 
     # Assigning the results to the outcome matrix
     resultsHa[,5:7] <- result1[,c(1,2,4)]
+
+    parabar::stop_backend(cl)
     rm(result1)
   } else {
     pb <- txtProgressBar(max = NN, style = 3)
@@ -271,7 +273,7 @@ prep_data_nestedsymmetric <- function(data, type = "counts",
                                       dummy = FALSE, useParallel = TRUE, model){
   # Temporal change of value for useParallel, it'll be removed when I find the
   # fix for whatever the error is
-  useParallel <- FALSE
+  # useParallel <- FALSE
 
   # get values for size limits
   data[,1] <- as.factor(data[,1])
@@ -420,25 +422,50 @@ prep_data_nestedsymmetric <- function(data, type = "counts",
   # number of samples to consider (i.e. m * n)
   nn <- resultsHa[,3] * resultsHa[,4]
 
-  # progress bar
-  pb <- txtProgressBar(max = NN, style = 3)
-
   # Se crean dos dataframes para el muestreo
   Y1 <- cbind(Y, YPU)
   mn <- cbind(mm, nn)
 
-  for (i in seq_len(NN)){
-    result1 <- balanced_sampling2(i, NN, Y1, mn, nSect, M, N, H0Sim, HaSim,
+  if(useParallel){
+    # Registering the cluster of workers with parabar
+    parabar::configure_bar(type = "modern", format = "[:bar] :percent")
+    cl <- parabar::start_backend(cores = parallelly::availableCores()/2,
+                                 cluster_type="psock",
+                                 backend_type="async")
+
+    # Exporing functions needed for the parallel iterations
+    parabar::export(cl, c("balanced_sampling2", "permanova_twoway", "SS"))
+
+    # Executing the loop in parallel
+    result1 <- parabar::par_lapply(cl, x = 1:NN, fun= balanced_sampling2,
+                                   NN,
+                                   Y1, mn, nSect, M, N, H0Sim, HaSim, resultsHa,
+                                   factEnv, transformation, method, model, sigma2_est) |>
+      unlist() |>
+      matrix(ncol=4, byrow=TRUE)
+    colnames(result1) <- c("FobsH0", "FobsHa", "MSBA", "MSR")
+
+    # Assigning the results to the outcome matrix
+    resultsHa[,5:8] <- result1[,c(1,2,3,4)]
+    parabar::stop_backend(cl)
+    rm(result1)
+  } else {
+    # progress bar
+    pb <- txtProgressBar(max = NN, style = 3)
+
+    for (i in seq_len(NN)){
+      result1 <- balanced_sampling2(i, NN, Y1, mn, nSect, M, N, H0Sim, HaSim,
                                     resultsHa, factEnv, transformation,
                                     method, model, sigma2_est)
-    resultsHa[i,5] <- result1[1]
-    resultsHa[i,6] <- result1[2]
-    resultsHa[i,7] <- result1[3]
-    resultsHa[i,8] <- result1[4]
-    setTxtProgressBar(pb, i)
+      resultsHa[i,5] <- result1[1]
+      resultsHa[i,6] <- result1[2]
+      resultsHa[i,7] <- result1[3]
+      resultsHa[i,8] <- result1[4]
+      setTxtProgressBar(pb, i)
+    }
+    rm(result1)
+    close(pb)
   }
-  rm(result1)
-  close(pb)
 
   resultsHa <- resultsHa[!is.na(resultsHa[,5]) & !is.na(resultsHa[,6]),]
 
