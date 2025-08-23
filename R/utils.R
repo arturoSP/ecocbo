@@ -234,6 +234,7 @@ balanced_sampling <- function(i, Y, mm, nn, YPU, H0Sim, HaSim, resultsHa, transf
 #' variance (PERMANOVA). Wiley statsref: statistics reference online, 1-15.
 #'
 #' @importFrom vegan vegdist betadisper
+#' @importFrom stats rchisq
 #'
 #' @seealso [vegan::vegdist()]
 #'
