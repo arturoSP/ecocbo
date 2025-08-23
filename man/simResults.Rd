@@ -23,7 +23,7 @@ The format is:
 }
 \source{
 Data available from the Dryad Digital Repository:
-\url{http://dx.doi.org/10.5061/dryad.3bk3j9kj5} (Guerra-Castro et al. 2020).
+\doi{10.5061/dryad.3bk3j9kj5} (Guerra-Castro et al. 2020).
 }
 \usage{
 simResults

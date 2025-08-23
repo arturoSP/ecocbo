@@ -6,7 +6,7 @@
 #' @format A data frame with count of individuals for 24 observations on 151 species.
 #'
 #' @source Data available from the Dryad Digital Repository:
-#' <http://dx.doi.org/10.5061/dryad.3bk3j9kj5> (Guerra-Castro et al. 2020).
+#' \doi{10.5061/dryad.3bk3j9kj5} (Guerra-Castro et al. 2020).
 #'
 
 "epiDat"
@@ -39,7 +39,7 @@
 #' }
 #'
 #' @source Data available from the Dryad Digital Repository:
-#' <http://dx.doi.org/10.5061/dryad.3bk3j9kj5> (Guerra-Castro et al. 2020).
+#' \doi{10.5061/dryad.3bk3j9kj5} (Guerra-Castro et al. 2020).
 #'
 
 "simResults"

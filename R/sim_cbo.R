@@ -142,7 +142,7 @@ sim_cbo <- function(data, cn, cm = NULL){
 #' showing in an ordered matrix the suggested experimental design, according to
 #' cost and estimated power.
 #'
-#' @importFrom dplyr mutate group_by ungroup arrange slice filter select
+#' @importFrom dplyr mutate group_by ungroup arrange slice filter select desc
 #'
 #' @export
 #' @keywords internal

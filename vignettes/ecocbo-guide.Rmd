@@ -89,7 +89,7 @@ data(epiDat)
 
 simResults <- prep_data(data = epiDat, type = "counts", Sest.method = "average",
                         cases = 5, N = 100, M = 10,
-                        n = 5, m = 5, k = 30,
+                        n = 5, k = 30,
                         transformation = "none", method = "bray",
                         dummy = FALSE, useParallel = TRUE,
                         model = "single.factor")
