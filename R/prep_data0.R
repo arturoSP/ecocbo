@@ -149,7 +149,10 @@ prep_data_single <- function(data, type = "counts", Sest.method = "average",
                                  backend_type="async")
 
     # Exporing functions needed for the parallel iterations
-    parabar::export(cl, c("balanced_sampling", "permanova_twoway", "SS"))
+    parabar::export(cl,
+                    variables = c("balanced_sampling", "permanova_twoway", "SS"),
+                    environment = asNamespace("ecocbo"))
+    # parabar::export(cl, c("balanced_sampling", "permanova_twoway", "SS"))
 
     # Executing the loop in parallel
     result1 <- parabar::par_lapply(cl, x = 1:NN, fun= balanced_sampling,
@@ -434,7 +437,10 @@ prep_data_nestedsymmetric <- function(data, type = "counts",
                                  backend_type="async")
 
     # Exporing functions needed for the parallel iterations
-    parabar::export(cl, c("balanced_sampling2", "permanova_twoway", "SS"))
+    parabar::export(cl,
+                    variables = c("balanced_sampling2", "permanova_twoway", "SS"),
+                    environment = asNamespace("ecocbo"))
+    # parabar::export(cl, c("balanced_sampling2", "permanova_twoway", "SS"))
 
     # Executing the loop in parallel
     result1 <- parabar::par_lapply(cl, x = 1:NN, fun= balanced_sampling2,
