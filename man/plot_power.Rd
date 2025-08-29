@@ -5,10 +5,21 @@
 \alias{plotpower}
 \title{Plot Statistical Power and Pseudo-F Distributions}
 \usage{
-plot_power(data, n = NULL, m = NULL, method = "power", completePlot = TRUE)
+plot_power(
+  data,
+  cbo = NULL,
+  n = NULL,
+  m = NULL,
+  method = "power",
+  completePlot = TRUE
+)
 }
 \arguments{
 \item{data}{Object of class \code{"ecocbo_beta"} obtained from \code{\link[=sim_beta]{sim_beta()}}.}
+
+\item{cbo}{Optional. Object of class \code{"cbo_result"} obtained from \code{\link[=sim_cbo]{sim_cbo()}}.
+If this is included, \code{plot_power()} uses the optimal values that have been already
+calculated.}
 
 \item{n}{Optional. Integer. Number of samples \code{n} within the selected \code{m}.
 Defaults to \code{NULL}, and the function selects the number of samples yielding a
