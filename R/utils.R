@@ -599,8 +599,12 @@ balanced_sampling2 <- function(i, NN, Y1, mn, nSect, M, N, H0Sim, HaSim,
 #' @param m Integer. Levels for site within treatment. Only used in Nested Symmetric
 #' experiments.
 #' @param n Integer. Replicates in the experiment (either per treatment or site).
+#' @param perm Integer. Minimum number of permutations needed to reject the null
+#' hypothesis. Defaults to 100, as it would allow for rejecting with alpha = 0.05,
+#' the user can change this value to make the testing more strict (e.g. 200 for
+#' testing alpha = 0.01 or 5000 for testing alpha = 0.001).
 #'
-#' @return Logical. TRUE if at least 100 permutations are guaranteed.
+#' @return Logical. TRUE if the required number of permutations are guaranteed.
 #'
 #' @author Edlin Guerra-Castro (\email{edlinguerra@@gmail.com}), Arturo Sanchez-Porras
 #'
@@ -608,19 +612,23 @@ balanced_sampling2 <- function(i, NN, Y1, mn, nSect, M, N, H0Sim, HaSim,
 #' @noRd
 #'
 
-minimum_cbo <- function(model, a, n, m = NULL){
+minimum_cbo <- function(model, a, n, m = NULL, perm){
 
-  thr <- c(log(100))
+  # thr <- c(log(100))
+  thr <- perm
 
   if(model == "single.factor"){
-    permA <- lgamma(a * n+1) - lgamma(a + 1) - a * lgamma(n + 1)
+    permA <- factorial(a*n)/(factorial(a)*(factorial(n)^a)) #num. permutaciones factor A
+    # permA <- lgamma(a * n+1) - lgamma(a + 1) - a * lgamma(n + 1)
 
     return(permA > thr)
   } else {
     if(is.null(m)) stop("m is required for the nested model")
 
-    permA <- lgamma(a * m + 1) - lgamma(a + 1) - a * lgamma(m + 1)
-    permBA <- a * (lgamma(m * n + 1) - lgamma(m + 1) - m * lgamma(n + 1))
+    permA <- factorial(a*m)/(factorial(a)*(factorial(m)^a)) #num. permutaciones factor A
+    permBA <- factorial(n)^(a*m) #num permutaciones factor B(A)
+    # permA <- lgamma(a * m + 1) - lgamma(a + 1) - a * lgamma(m + 1)
+    # permBA <- a * (lgamma(m * n + 1) - lgamma(m + 1) - m * lgamma(n + 1))
 
     return((permA > thr) & (permBA > thr))
   }
