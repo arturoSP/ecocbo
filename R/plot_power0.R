@@ -50,56 +50,53 @@
 
 ## Power curve ----
 power_curve <- function(powr, m = NULL, n, cVar, model){
+
+  labx <- max(powr$n) - 1
+
   if(model == "single.factor"){
     nn <- n
-    dummy <- data.frame(n = 1, Power = 0, Sel = FALSE)
-    powrPl <- data.frame(powr[,c(1:2)], Sel = FALSE)
+    dummy <- data.frame(n = 1, Power = 0)
+    powrPl <- data.frame(powr[,c(1:2)])
     powrPl <- rbind(dummy, powrPl)
-    powrPl$Sel <- powrPl$n == n
-    powrPl$Sel <- ifelse(powrPl$Sel == TRUE, 1, 0.95)
 
     p1 <- ggplot(data = powrPl, aes(x = n, y = .data$Power))+
       geom_line()+
-      geom_point()+
+      geom_point(size = 1)+
       geom_point(data = powrPl[powrPl$n == nn,],
-                 shape = 21, size = 3, stroke = 1.5, fill = "white")+
-      annotate("label", x = 1.25, y = 0.9,
+                 shape = 21, size = 2, stroke = 1.5, fill = "white")+
+      annotate("label", x = labx, y = 0.1,
                label = paste0("n = ", nn,
-                              "\nCV = ", as.numeric(cVar[1])))
+                              "\nCV_B(A) = ", as.numeric(cVar[1])))
   } else {
     mTot <- c(2:max(powr$m))
     mm <- m
     nn <- n
-    dummy <- data.frame(m = mTot, n = 1, Power = 0, Sel = FALSE)
-    powrPl <- data.frame(powr[,c(1:3)], Sel = FALSE)
+    dummy <- data.frame(m = mTot, n = 1, Power = 0)
+    powrPl <- data.frame(powr[,c(1:3)])
     powrPl <- rbind(dummy, powrPl)
     powrPl$m <- factor(powrPl$m, ordered = TRUE)
-    powrPl$Sel <- powrPl$m == mm
-    powrPl$Sel <- as.numeric(ifelse(powrPl$Sel == TRUE, 1, 0.9))
-    labx <- max(powr$n) - 1
 
-    p1 <- ggplot(data = powrPl, aes(x = n, y = .data$Power,
-                              # color = m, alpha = .data$Sel))+
-                              color = m))+
+    p1 <- ggplot(data = powrPl[powrPl$m == mm,], aes(x = n, y = .data$Power))+
       geom_line() +
-      geom_point(data = powrPl[powrPl$m == mm,], size = 2, show.legend = FALSE)+
+      geom_point(size = 1, show.legend = FALSE)+
       geom_point(data = powrPl[powrPl$m == mm & powrPl$n == nn,],
-                 shape = 21, size = 3, stroke = 1.5, fill = "white")+
+                 shape = 21, size = 2, stroke = 1.5, fill = "white")+
       annotate("label", x = labx, y = 0.1,
                label = paste0("m = ", mm,
                               "\nn = ", nn,
-                              "\nCV = ", as.numeric(cVar[1])))+
-      scale_color_manual(breaks = levels(powrPl$m), values = mTot)
+                              "\nCV_B(A) = ", as.numeric(cVar[1])))
   }
 
   p1 <- p1 +
     scale_linetype_manual(values = c(2,1))+
     scale_x_continuous(breaks = c(1:max(powr$n)))+
-    scale_y_continuous(name = "Power", limits = c(0, 1), breaks = seq(0, 1, 0.2))+
+    scale_y_continuous(name = "Power", limits = c(0, 1), breaks = seq(0, 1, 0.1),
+                       minor_breaks=seq(0,1,0.05))+
     theme_bw()+
-    theme(panel.grid.minor = element_blank(),
+    theme(panel.grid.minor.x = element_blank(),
           panel.border = element_rect(linewidth = 0.4),
-          axis.ticks= element_line(linewidth = 0.2))+
+          axis.ticks= element_line(linewidth = 0.2),
+          )+
     guides(alpha = "none", size = "none")
 
   return(p1)
@@ -176,7 +173,7 @@ density_plot <- function(results, powr, m = NULL, n, method, cVar, model,
 
     # Label for the plot
     cVarLabel <- paste0("n = ", n,
-                        "\nCV = ", as.numeric(cVar[1]))
+                        "\\nCV_B(A) = ", as.numeric(cVar[1]))
   } else {
     # intersection point (Fcrit)
     xIntersect <- powr[powr$m == m & powr$n == n,][,5]
@@ -187,7 +184,7 @@ density_plot <- function(results, powr, m = NULL, n, method, cVar, model,
     # Label for the plot
     cVarLabel <- paste0("m = ", m,
                         "\nn = ", n,
-                        "\nCV = ", as.numeric(cVar[1]))
+                        "\\nCV_B(A) = ", as.numeric(cVar[1]))
   }
 
   # helper values for the histogram
