@@ -1,3 +1,5 @@
+# ecocbo 0.13.1
+
 # ecocbo 0.13.0
 
 This is a maintenance and feature-update release, preparing the package for resubmission to CRAN.
