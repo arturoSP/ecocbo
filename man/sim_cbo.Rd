@@ -5,7 +5,7 @@
 \alias{simcbo}
 \title{Cost-Benefit Optimization for Sampling Effort}
 \usage{
-sim_cbo(data, cn, cm = NULL)
+sim_cbo(data, cn, cm = NULL, perm = 100)
 }
 \arguments{
 \item{data}{Object of class \code{"ecocbo_beta"}, as returned by
@@ -14,6 +14,11 @@ sim_cbo(data, cn, cm = NULL)
 \item{cn}{Numeric. Cost per sampling unit.}
 
 \item{cm}{Numeric. Fixed cost per replicate.}
+
+\item{perm}{Integer. Minimum number of permutations needed to reject the null
+hypothesis. Defaults to 100, as it would allow for rejecting with alpha = 0.05,
+the user can change this value to make the testing more strict (e.g. 200 for
+testing alpha = 0.01 or 5000 for testing alpha = 0.001).}
 }
 \value{
 A data frame with one row per candidate design. In the single factor
