@@ -122,16 +122,16 @@ prep_data_single <- function(data, type = "counts", Sest.method = "average",
   # Changing the routine so that the results matrix will only include one case of m
   # that corresponds to the one we have in the original experiment.
   # We are taking out MSA as it is not relevant for the package.
-  NN <- casesHa * k * (n-1)
+  NN <- casesHa * k * (n-2)
   resultsHa <- matrix(nrow = NN, ncol = 7)
   colnames(resultsHa) <- c("dat.sim", "k", "m", "n",
                            "pseudoFH0", "pseudoFHa",
                            "MSR")
 
-  resultsHa[, 1] <- rep(seq(casesHa), times = 1, each = (k * (n-1)))
-  resultsHa[, 2] <- rep(1:k, times = (n-1) * casesHa)
+  resultsHa[, 1] <- rep(seq(casesHa), times = 1, each = (k * (n-2)))
+  resultsHa[, 2] <- rep(1:k, times = (n-2) * casesHa)
   resultsHa[, 3] <- M
-  resultsHa[, 4] <- rep(seq(2, n), times = 1, each = k)
+  resultsHa[, 4] <- rep(seq(3, n), times = 1, each = k)
 
 
   # Loop to calculate pseudoF ----
@@ -387,16 +387,16 @@ prep_data_nestedsymmetric <- function(data, type = "counts",
   }
 
   ## design and fill the results matrix ----
-  NN <- cases * k * (m-1) * (n-1)
+  NN <- cases * k * (m-1) * (n-2)
   resultsHa <- matrix(nrow = NN, ncol = 8)
   colnames(resultsHa) <- c("dat.sim", "k", "m", "n",
                            "pseudoFH0", "pseudoFHa",
                            "MSB(A)", "MSR")
 
-  resultsHa[, 1] <- rep(seq(cases), times = 1, each = (k * (m-1) * (n-1)))
-  resultsHa[, 2] <- rep(1:k, times = (n-1) * (m-1) * cases)
-  resultsHa[, 3] <- rep(seq(2, m), times = (n-1) * cases, each = k)
-  resultsHa[, 4] <- rep(seq(2, n), times = cases, each = k * (m-1))
+  resultsHa[, 1] <- rep(seq(cases), times = 1, each = (k * (m-1) * (n-2)))
+  resultsHa[, 2] <- rep(1:k, times = (n-2) * (m-1) * cases)
+  resultsHa[, 3] <- rep(seq(2, m), times = (n-2) * cases, each = k)
+  resultsHa[, 4] <- rep(seq(3, n), times = cases, each = k * (m-1))
 
   ## design the arrays to store the lists ----
   # H0 comes from simdata as-is, it does not include a column for sectors given that
@@ -413,7 +413,7 @@ prep_data_nestedsymmetric <- function(data, type = "counts",
   factEnv <- as.data.frame(simHa[[1]][,(dim(simHa[[1]])[2]-2):dim(simHa[[1]])[2]])
   names(factEnv) <- c("sector", "site", "N")
 
-  # rm(simH0, simHa)
+  rm(simH0, simHa)
 
   ## Set of parameters for using balancedtwostage ----
   # index marking the size of each resampled site

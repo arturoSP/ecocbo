@@ -97,7 +97,7 @@ prep_data <- function(data, type = "counts", Sest.method = "average",
 
   if (n > N){stop("'n' must be equal or less than 'N' on simulated data")}
   if(ceiling(n) != floor(n)){stop("n must be integer")}
-  if(n <= 1){stop("n must be larger than 1")}
+  if(n <= 2){stop("n must be larger than 2")}
 
   if(model != "single.factor"){
     if (m > M){stop("'m' must be equal or less than 'M' on simulated data")}

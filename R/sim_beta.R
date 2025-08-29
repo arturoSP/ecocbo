@@ -180,7 +180,7 @@ print.ecocbo_beta <- function(x, ...){
     )
 
     x1 <- x1[, -1]  # Eliminar la columna de 'm'
-    colnames(x1) <- paste0("n = ", c(2:max(x$Power$n)))
+    colnames(x1) <- paste0("n = ", c(3:max(x$Power$n)))
 
     cat("Power at different sampling efforts (m x n):\n")
     print(x1)
