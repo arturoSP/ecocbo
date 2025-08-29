@@ -21,9 +21,11 @@
 #' ("boot"). By default, the average ("average") of the four estimates is used.
 #' @param cases Integer. Number of simulated datasets.
 #' @param N Integer. Total number of samples simulated per site.
-#' @param M Integer. Total number of replicates simulated per dataset.
+#' @param M Integer. Total number of replicates simulated per dataset. Not needed
+#' for single factor experiments.
 #' @param n Integer. Maximum number of samples to consider (must be `<= N`).
-#' @param m Integer. Number of replicates to consider. (must be `<=M`)
+#' @param m Integer. Number of replicates to consider. (must be `<=M`). Not needed
+#' for single factor experiments.
 #' @param k Integer. Number of resampling iterations. Defaults to 50.
 #' @param transformation Character. Transformation applied to reduce the weight
 #' of dominant species: "square root", "fourth root", "Log (X+1)", "P/A", "none".
@@ -88,8 +90,8 @@
 #'
 
 prep_data <- function(data, type = "counts", Sest.method = "average",
-                      cases = 5, N = 100, M = 3,
-                      n, m, k = 50,
+                      cases = 5, N = 100, M = NULL,
+                      n, m = NULL, k = 50,
                       transformation = "none", method = "bray",
                       dummy = FALSE, useParallel = TRUE,
                       model = "single.factor"){
