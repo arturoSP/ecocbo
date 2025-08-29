@@ -6,6 +6,9 @@
 #' \eqn{\beta} are significant.
 #'
 #' @param data Object of class `"ecocbo_beta"` obtained from [sim_beta()].
+#' @param cbo Optional. Object of class `"cbo_result"` obtained from [sim_cbo()].
+#' If this is included, `plot_power()` uses the optimal values that have been already
+#' calculated.
 #' @param m Optional. Integer. Number of replicates `m` to use for power computation.
 #' Defaults to `NULL`, in which case the function selects the number of sites that
 #' result in a sampling effort that is close to \eqn{1 - \alpha}.
@@ -74,12 +77,18 @@
 #' plot_power(data = betaNested, method = "both")
 #'
 
-plot_power <- function(data, n = NULL, m = NULL,
+plot_power <- function(data, cbo = NULL, n = NULL, m = NULL,
                        method = "power", completePlot = TRUE){
 # Función para graficar curvas de frecuencia de F para H0 y Ha ----
   ## Reading data ----
   if(!inherits(data, "ecocbo_beta")){
-    stop("data is not the right class(\"ecocbo_beta\")")
+    stop("data is not the right class (\"ecocbo_beta\")")
+  }
+
+  if(!is.null(cbo)){
+    if(!inherits(cbo, "cbo_result")){
+      stop("cbo data is not the right class (\"cbo_result\")")
+    }
   }
 
   powr <- data[["Power"]]
@@ -93,8 +102,14 @@ plot_power <- function(data, n = NULL, m = NULL,
     m <- NULL
 
     if(is.null(n)){
-      # Find optimal value for n
-      n <- powr[which.min(abs(powr$Power - (1 - alpha))),1]
+      if(is.null(cbo)){
+        # Find optimal value for n
+        n <- powr[which.min(abs(powr$Power - (1 - alpha))),1]
+      } else {
+        # Use the optimal value
+        n <- cbo[cbo$OptCost == TRUE, 1]
+      }
+
     } else {
       # Validating n provided by user
       if(ceiling(n) != floor(n)){stop("n must be integer")}
@@ -107,9 +122,13 @@ plot_power <- function(data, n = NULL, m = NULL,
 
   } else {                                 ### Double-factor-model validation ----
     if(is.null(m)){
-      # Find optimal value for m
-      m <- powr[which.min(abs(powr$Power - (1 - alpha))),1]
-
+      if(is.null(cbo)){
+        # Find optimal value for m
+        m <- powr[which.min(abs(powr$Power - (1 - alpha))),1]
+      } else {
+        # Use the optimal m value
+        m <- cbo[cbo$OptCost == TRUE, 1]
+      }
     } else {
       # Validating m provided by user
       if(ceiling(m) != floor(m)){stop("m must be integer")}
@@ -118,10 +137,16 @@ plot_power <- function(data, n = NULL, m = NULL,
     }
 
     if(is.null(n)){
-      # Find optimal value for n
-      powm <- powr[powr$m == m,]
-      n <- powm[which.min(abs(powm$Power - (1 - alpha))),2]
-      remove(powm)
+      if(is.null(cbo)){
+        # Find optimal value for n
+        powm <- powr[powr$m == m,]
+        n <- powm[which.min(abs(powm$Power - (1 - alpha))),2]
+        remove(powm)
+      } else {
+        # Use the optimal n value
+        n <- cbo[cbo$OptCost == TRUE, 2]
+      }
+
     } else {
       # Validating n provided by user
       if(ceiling(n) != floor(n)){stop("n must be integer")}
