@@ -18,9 +18,9 @@
 #' Bootstrap "boot". By default, the "average" of the four estimates is used.
 #' @param cases Number of data sets to be simulated.
 #' @param N Total number of samples to be simulated in each site.
-#' @param M Total number of sites to be simulated in each data set.
+#' @param M Deprecated. Total number of sites to be simulated in each data set.
 #' @param n Maximum number of samples to consider.
-#' @param m Maximum number of replicates.
+#' @param m Deprecated. Maximum number of replicates.
 #' @param k Number of resamples the process will take. Defaults to 50.
 #' @param transformation Mathematical function to reduce the weight of very
 #' dominant species: 'square root', 'fourth root', 'Log (X+1)', 'P/A', 'none'
@@ -66,7 +66,7 @@
 #'
 
 prep_data_single <- function(data, type = "counts", Sest.method = "average",
-                      cases = 5, N = 100, M = 3,
+                      cases = 5, N = 100, M = NULL,
                       n, m = NULL, k = 50,
                       transformation = "none", method = "bray",
                       dummy = FALSE, useParallel = TRUE){
@@ -77,6 +77,7 @@ prep_data_single <- function(data, type = "counts", Sest.method = "average",
   datHa <- data
   datHa[,1] <- as.factor(data[,1])
   a <- nlevels(datHa[,1])
+  M <- a
 
   # calculate simulation parameters, then simulate communities ----
   parH0 <- SSP::assempar(data = datH0,
