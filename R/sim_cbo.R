@@ -51,8 +51,6 @@
 
 sim_cbo <- function(data, cn, cm = NULL, perm = 100){
   # Obtaining parameters from the ecocbo_beta object
-  # data <- beta2
-  # beta1 <- sim_beta(data = simResults, alpha = 0.05)
   powr <- subset(data$Power, select = -c(Beta, fCrit))
   objective <- 1 - data$alpha
   model <- data$model
@@ -72,6 +70,10 @@ sim_cbo <- function(data, cn, cm = NULL, perm = 100){
                                 m = powr$m, n = powr$n,
                                 perm)
 
+    # Filter out the cases when n = 2
+    powr[powr$n == 2, 5] <- FALSE
+
+    # Find the cases when power and permutations are valid
     ideal <- powr |>
       dplyr::filter(OptPower, OptPerm)
 
@@ -102,8 +104,12 @@ sim_cbo <- function(data, cn, cm = NULL, perm = 100){
     # Find the iterations that meet the desired power range
     powr$OptPower <- powr$Power >= objective
     powr$OptPerm <- minimum_cbo(model, a = a,
-                                n = powr$n)
+                                n = powr$n, perm = perm)
 
+    # Filter out n = 2
+    powr[powr$n == 2, 5] <- FALSE
+
+    # Find the cases when power and permutations are valid
     ideal <- powr |>
       dplyr::filter(OptPower, OptPerm)
 
