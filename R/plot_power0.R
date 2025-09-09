@@ -51,7 +51,11 @@
 ## Power curve ----
 power_curve <- function(powr, m = NULL, n, cVar, model){
 
-  labx <- max(powr$n) - 3
+  if(max(powr$n) <= 5){
+    labx <- max(powr$n) - 1
+  } else {
+    labx <- max(powr$n) - 3
+  }
 
   if(model == "single.factor"){
     nn <- n
@@ -65,8 +69,7 @@ power_curve <- function(powr, m = NULL, n, cVar, model){
       geom_point(data = powrPl[powrPl$n == nn,],
                  shape = 21, size = 2, stroke = 1.5, fill = "white")+
       annotate("label", x = labx, y = 0.1,
-               label = paste0("n = ", nn,
-                              "\nCV_R = ", as.numeric(cVar[1])))
+               label = paste0("n = ", nn))
   } else {
     mTot <- c(2:max(powr$m))
     mm <- m
@@ -178,8 +181,7 @@ density_plot <- function(results, powr, m = NULL, n, method, cVar, model,
     resultsPl <- results[results$n == n, 4:5]
 
     # Label for the plot
-    cVarLabel <- paste0("n = ", n,
-                        "\nCV_R = ", as.numeric(cVar[1]))
+    cVarLabel <- paste0("n = ", n)
   } else {
     # intersection point (Fcrit)
     xIntersect <- powr[powr$m == m & powr$n == n,][,5]
