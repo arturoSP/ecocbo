@@ -44,11 +44,13 @@ first order jackknife ("jack1"), second order jackknife ("jack2") and Bootstrap
 
 \item{N}{Integer. Total number of samples simulated per site.}
 
-\item{M}{Integer. Total number of replicates simulated per dataset.}
+\item{M}{Integer. Total number of replicates simulated per dataset. Not needed
+for single factor experiments.}
 
 \item{n}{Integer. Maximum number of samples to consider (must be \verb{<= N}).}
 
-\item{m}{Integer. Number of replicates to consider. (must be \verb{<=M})}
+\item{m}{Integer. Number of replicates to consider. (must be \verb{<=M}). Not needed
+for single factor experiments.}
 
 \item{k}{Integer. Number of resampling iterations. Defaults to 50.}
 
