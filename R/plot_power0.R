@@ -51,7 +51,7 @@
 ## Power curve ----
 power_curve <- function(powr, m = NULL, n, cVar, model){
 
-  labx <- max(powr$n) - 1
+  labx <- max(powr$n) - 3
 
   if(model == "single.factor"){
     nn <- n
@@ -66,7 +66,7 @@ power_curve <- function(powr, m = NULL, n, cVar, model){
                  shape = 21, size = 2, stroke = 1.5, fill = "white")+
       annotate("label", x = labx, y = 0.1,
                label = paste0("n = ", nn,
-                              "\nCV_B(A) = ", as.numeric(cVar[1])))
+                              "\nCV_R = ", as.numeric(cVar[1])))
   } else {
     mTot <- c(2:max(powr$m))
     mm <- m
@@ -87,9 +87,15 @@ power_curve <- function(powr, m = NULL, n, cVar, model){
                               "\nCV_B(A) = ", as.numeric(cVar[1])))
   }
 
+  brks <- if(max(powr$n) <= 15){
+    c(1:max(powr$n))
+  } else {
+    seq(0,max(powr$n),5)
+  }
+
   p1 <- p1 +
     scale_linetype_manual(values = c(2,1))+
-    scale_x_continuous(breaks = c(1:max(powr$n)))+
+    scale_x_continuous(breaks = brks)+
     scale_y_continuous(name = "Power", limits = c(0, 1), breaks = seq(0, 1, 0.1),
                        minor_breaks=seq(0,1,0.05))+
     theme_bw()+
@@ -173,7 +179,7 @@ density_plot <- function(results, powr, m = NULL, n, method, cVar, model,
 
     # Label for the plot
     cVarLabel <- paste0("n = ", n,
-                        "\\nCV_B(A) = ", as.numeric(cVar[1]))
+                        "\nCV_R = ", as.numeric(cVar[1]))
   } else {
     # intersection point (Fcrit)
     xIntersect <- powr[powr$m == m & powr$n == n,][,5]
@@ -184,7 +190,7 @@ density_plot <- function(results, powr, m = NULL, n, method, cVar, model,
     # Label for the plot
     cVarLabel <- paste0("m = ", m,
                         "\nn = ", n,
-                        "\\nCV_B(A) = ", as.numeric(cVar[1]))
+                        "\nCV_B(A) = ", as.numeric(cVar[1]))
   }
 
   # helper values for the histogram
