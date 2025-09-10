@@ -178,7 +178,7 @@ density_plot <- function(results, powr, m = NULL, n, method, cVar, model,
     xIntersect <- powr[powr$n == n, 4]
 
     # Subset of results to get only the values with required n
-    resultsPl <- results[results$n == n, 4:5]
+    resultsPl <- results[results$n == n, 5:6]
 
     # Label for the plot
     cVarLabel <- paste0("n = ", n)
