@@ -34,7 +34,7 @@ Duration: 3m 32.6s
 It has also been successfully checked on:
 
 * `win-builder` (R-devel)
-* `R-hub` (covering various Linux distributions and macOS)
+* `github actions` (covering various distributions, including Linux and macOS)
 
 No new issues were reported in these checks. There are no reverse dependencies for this package.
 
