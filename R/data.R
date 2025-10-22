@@ -187,4 +187,25 @@
 
 "betaNested"
 
+#' Data set containing results from the PRCRMP.
+#'
+#' The dataset contains biomass data from monitoring fish individuals in coral reefs
+#' in Puerto Rico, through the Puerto Rico Coral Reef Monitoring Program.
+#'
+#' This dataset can be used to test the functions in the nested.symmetric model, and
+#' using the cover/biomass version of the algorithms.
+#'
+#' @format A dataframe.
+#' The data is formed by:
+#' \describe{
+#'   \item{$REGION}{A list of regions in which the observations were made.}
+#'   \item{$LOCATION}{A list of locations in which the observations were made.}
+#'   \item{$Acanthurus tractus (bahianus)}{A series of observations.}
+#'   \item{...}{}
+#'   \item{Trachinotus falcatus}{A series of observations.}
+#' }
+#'
+#' @source Data available from the PRCRMP.
+#'
 
+"dataFish"
