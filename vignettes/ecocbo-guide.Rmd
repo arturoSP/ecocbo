@@ -75,6 +75,7 @@ The provided data `epiDat` is a subset of the original `epibionts` (Guerra-Castr
 | dummy | Logical. It is recommended to use TRUE in cases where there are observations that are empty.|
 | useParallel | Logical. Should R call to several cores to work on parallel computing? This is done to speed up the processing time.|
 | model | What type of model is the function implementing? Options are "single.factor" and "nested.symmetric". |
+| jitter.base    | Standard deviation multiplier used to add Gaussian \#' jitter to \code{fs} and \code{fw}. Defaults to 0.                                                                                                                                                                            |
 
 The first steps in the function are the simulation of two different communities: `simH0` in which the data is treated as if it came from the same site thus accepting the null hypothesis, and `simHa` in which the opposite is true, so that the samples come from different sites and portray different characteristics. 
 
@@ -92,7 +93,7 @@ simResults <- prep_data(data = epiDat, type = "counts", Sest.method = "average",
                         n = 5, k = 30,
                         transformation = "none", method = "bray",
                         dummy = FALSE, useParallel = TRUE,
-                        model = "single.factor")
+                        model = "single.factor", jitter.base = 0)
 ```
 
 ### 1. scompvar()
@@ -153,6 +154,7 @@ cboCost
 | Argument | Description |
 |:---------|:------------|
 | data | Object of class "ecocbo_beta" that results from **sim_beta()**. |
+| cbo  | Optional. Object of class \code{"cbo_result"} obtained from \code{\link[=sim_cbo]{sim_cbo()}}. If this is included, \code{plot_power()} uses the optimal values that have been already calculated.  |
 | n | Defaults to NULL, and then the function computes the number of samples (n) that results in a sampling effort close to 95% in power. If provided, said number of samples will be used. |
 | m | Site label to be used as basis for the plot. |
 | method | The desired plot. Options are "power", "density" or "both". |
@@ -162,7 +164,7 @@ The power curve plot shows that the power of the study increases as the sample s
 The argument `n` is set to NULL by default, if it is left like that, the the function looks for a number of samples that allows for a power that is close to $(1-alpha)$, otherwise it uses the value stated by the user. In either case, the computed or provided value will be marked in red in the power curve plot.
 
 ```{r step4}
-plot_power(data = betaResult, n = NULL, method = "power")
+plot_power(data = betaResult, cbo = cboCost, n = NULL, method = "power")
 
 ```
 

@@ -1,4 +1,15 @@
-# ecocbo 0.13.1
+# ecocbo 1.0.0
+
+## Major update
+
+- PERMANOVA refactor: The implementation used by `prep_data()` now uses a distance-based MANOVA (`dbManova...()`) pipeline using Gower-centered distance matrices. This replaces the previous SS calculations based on Huygens' theorem
+  - The new approach is numerically more stable, especially with non-Euclidean distances (e.g., Bray–Curtis), where negative eigenvalues can invalidate naive SS partitions.
+  - Sums of squares are obtained from projection matrices in the PCoA space (SSCP traces), with correct handling of negative eigenvalues (sign weighting), avoiding drift due to rounding/centering errors.
+  - Results are therefore more robust and interpretable across a wider range of ecological distances.
+
+### Notes on compatibility
+
+The user API of `prep_data()` remains the same. Small numerical differences may occur due to more correct SS partitioning. 
 
 # ecocbo 0.13.0
 
