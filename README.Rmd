@@ -97,13 +97,13 @@ cboCost
 
 ```{r}
 # This plot will look different in every simulation
-plot_power(data = betaResult, n = NULL, method = "power")
+plot_power(data = betaResult, cbo = cboCost, n = NULL, method = "power")
 
 ```
 
 ## R packages required for running ecocbo
 
--   Required: SSP, ggplot2, ggpubr, sampling, stats, rlang, foreach, parallel, doParallel, doSNOW, vegan, plotly
+-   Required: SSP, ggplot2, ggpubr, stats, rlang, foreach, parallel, doParallel, doSNOW, vegan, plotly, tibble
 
 -   Suggested: knitr, rmarkdown, testthat
 
