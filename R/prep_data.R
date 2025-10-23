@@ -34,8 +34,10 @@
 #' @param dummy Logical. If `TRUE`, adds a small constant to empty observations.
 #' @param useParallel Logical.  If `TRUE`, enables parallel computation. Defaults
 #' to `TRUE`.
-#' @param model Character. Select the model to use. Options, so far, are
-#' `"single.factor"` and `"nested.symmetric"`.
+#' @param model Character. Select the model to use. Options are `"single.factor"`
+#' and `"nested.symmetric"`.
+#' @param jitter.base Numeric. Standard deviation multiplier used to add Gaussian
+#' jitter to \code{fs} and \code{fw}. Defaults to 0.
 #'
 #' @details
 #' The input dataset should have:
@@ -84,38 +86,89 @@
 #'                         n = 5, m = 5, k = 30,
 #'                         transformation = "none", method = "bray",
 #'                         dummy = FALSE, useParallel = FALSE,
-#'                         model = "single.factor")
+#'                         model = "single.factor",
+#'                         jitter.base = 0)
 #' }
 #' simResults
 #'
 
-prep_data <- function(data, type = "counts", Sest.method = "average",
-                      cases = 5, N = 100, M = NULL,
-                      n, m = NULL, k = 50,
-                      transformation = "none", method = "bray",
-                      dummy = FALSE, useParallel = TRUE,
-                      model = "single.factor"){
+prep_data <- function(
+  data,
+  type = "counts",
+  Sest.method = "average",
+  cases = 5,
+  N = 100,
+  M = NULL,
+  n,
+  m = NULL,
+  k = 50,
+  transformation = "none",
+  method = "bray",
+  dummy = FALSE,
+  useParallel = TRUE,
+  model = "single.factor",
+  jitter.base = 0
+) {
   # Check the inputs ----
 
-  if (n > N){stop("'n' must be equal or less than 'N' on simulated data")}
-  if(ceiling(n) != floor(n)){stop("n must be integer")}
-  if(n <= 1){stop("n must be larger than 1")}
+  if (n > N) {
+    stop("'n' must be equal or less than 'N' on simulated data")
+  }
+  if (ceiling(n) != floor(n)) {
+    stop("n must be integer")
+  }
+  if (n <= 1) {
+    stop("n must be larger than 1")
+  }
 
-  if(model != "single.factor"){
-    if (m > M){stop("'m' must be equal or less than 'M' on simulated data")}
-    if(ceiling(m) != floor(m)){stop("m must be integer")}
-    if(m <= 1){stop("m must be larger than 1")}
+  if (model != "single.factor") {
+    if (m > M) {
+      stop("'m' must be equal or less than 'M' on simulated data")
+    }
+    if (ceiling(m) != floor(m)) {
+      stop("m must be integer")
+    }
+    if (m <= 1) {
+      stop("m must be larger than 1")
+    }
   }
 
   # The function to work with depends on the selected model
-  Results <- if(model == "single.factor"){
-    prep_data_single(data, type, Sest.method, cases, N,
-                     M, n, m, k, transformation, method,
-                     dummy, useParallel)
-  } else if(model == "nested.symmetric"){
-    prep_data_nestedsymmetric(data, type, Sest.method, cases, N,
-               M, n, m, k, transformation, method,
-               dummy, useParallel, model)
+  Results <- if (model == "single.factor") {
+    prep_data_single(
+      data,
+      type,
+      Sest.method,
+      cases,
+      N,
+      M,
+      n,
+      m,
+      k,
+      transformation,
+      method,
+      dummy,
+      useParallel,
+      jitter.base
+    )
+  } else if (model == "nested.symmetric") {
+    prep_data_nestedsymmetric(
+      data,
+      type,
+      Sest.method,
+      cases,
+      N,
+      M,
+      n,
+      m,
+      k,
+      transformation,
+      method,
+      dummy,
+      useParallel,
+      model,
+      jitter.base
+    )
   }
 
   return(Results)
