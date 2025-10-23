@@ -19,7 +19,8 @@ prep_data(
   method = "bray",
   dummy = FALSE,
   useParallel = TRUE,
-  model = "single.factor"
+  model = "single.factor",
+  jitter.base = 0
 )
 }
 \arguments{
@@ -65,8 +66,11 @@ options include: "Gower", "Bray–Curtis", "Jaccard", etc.}
 \item{useParallel}{Logical.  If \code{TRUE}, enables parallel computation. Defaults
 to \code{TRUE}.}
 
-\item{model}{Character. Select the model to use. Options, so far, are
-\code{"single.factor"} and \code{"nested.symmetric"}.}
+\item{model}{Character. Select the model to use. Options are \code{"single.factor"}
+and \code{"nested.symmetric"}.}
+
+\item{jitter.base}{Numeric. Standard deviation multiplier used to add Gaussian
+jitter to \code{fs} and \code{fw}. Defaults to 0.}
 }
 \value{
 \code{prep_data()} returns an object of class "ecocbo_data".
@@ -107,7 +111,8 @@ simResults <- prep_data(data = epiDat, type = "counts", Sest.method = "average",
                         n = 5, m = 5, k = 30,
                         transformation = "none", method = "bray",
                         dummy = FALSE, useParallel = FALSE,
-                        model = "single.factor")
+                        model = "single.factor",
+                        jitter.base = 0)
 }
 simResults
 
