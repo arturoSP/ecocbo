@@ -95,8 +95,8 @@ prep_data_single <- function(
   parH0 <- SSP::assempar(data = datH0, type = type, Sest.method = Sest.method)
   parHa <- SSP::assempar(data = datHa, type = type, Sest.method = Sest.method)
 
-  simH0 <- SSP::simdata(parH0, cases = cases, N = (N * M), sites = 1)
-  simHa <- SSP::simdata(parHa, cases = cases, N = N, sites = M)
+  simH0 <- SSP::simdata(parH0, cases = cases, N = (N * M), sites = 1, jitter.base = jitter.base)
+  simHa <- SSP::simdata(parHa, cases = cases, N = N, sites = M, jitter.base= jitter.base)
 
   # Simulation arguments ---
   xH0 <- dim(simHa[[1]])[1]

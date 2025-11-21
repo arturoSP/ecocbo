@@ -37,7 +37,7 @@
 #' @param model Character. Select the model to use. Options are `"single.factor"`
 #' and `"nested.symmetric"`.
 #' @param jitter.base Numeric. Standard deviation multiplier used to add Gaussian
-#' jitter to \code{fs} and \code{fw}. Defaults to 0.
+#' jitter to \code{fs} and \code{fw}. Defaults to 0.5.
 #'
 #' @details
 #' The input dataset should have:
@@ -107,7 +107,7 @@ prep_data <- function(
   dummy = FALSE,
   useParallel = TRUE,
   model = "single.factor",
-  jitter.base = 0
+  jitter.base = 0.5
 ) {
   # Check the inputs ----
 
