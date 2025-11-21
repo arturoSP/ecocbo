@@ -20,7 +20,7 @@ prep_data(
   dummy = FALSE,
   useParallel = TRUE,
   model = "single.factor",
-  jitter.base = 0
+  jitter.base = 0.5
 )
 }
 \arguments{
@@ -70,7 +70,7 @@ to \code{TRUE}.}
 and \code{"nested.symmetric"}.}
 
 \item{jitter.base}{Numeric. Standard deviation multiplier used to add Gaussian
-jitter to \code{fs} and \code{fw}. Defaults to 0.}
+jitter to \code{fs} and \code{fw}. Defaults to 0.5.}
 }
 \value{
 \code{prep_data()} returns an object of class "ecocbo_data".
