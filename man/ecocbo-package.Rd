@@ -41,10 +41,10 @@ The \pkg{ecocbo} development team is Edlin Guerra-Castro and Arturo Sanchez-Porr
 data(epiDat)
 
 simResults <- prep_data(data = epiDat, type = "counts", Sest.method = "average",
-                        cases = 5, N = 100, sites = 10,
-                        n = 5, m = 5, k = 30,
+                        cases = 5, N = 100, M = 10,
+                        n = 5, m = 6, k = 20,
                         transformation = "none", method = "bray",
-                        dummy = FALSE, useParallel = FALSE,
+                        dummy = TRUE, useParallel = FALSE,
                         model = "single.factor")
 }
 simResults
@@ -53,16 +53,17 @@ simResults
 compVar <- scompvar(data = simResults)
 compVar
 
-# Cost-benefit optimization
-cboResult <- sim_cbo(comp.var = compVar, ct = 20000, ck = 100, cj = 2500)
-cboResult
 
 # Determination of statistical power
 epiBetaR <- sim_beta(simResults, alpha = 0.05)
 epiBetaR
 
+# Cost-benefit optimization
+cboResult <- sim_cbo(epiBetaR, cn = 75)
+cboResult
+
 # Visualization of statistical power
-plot_power(data = epiBetaR, n = NULL, m = 3, method = "both")
+plot_power(data = epiBetaR, method = "power")
 
 }
 

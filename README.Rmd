@@ -57,7 +57,7 @@ data(epiDat)
 
 simResults <- prep_data(data = epiDat, 
                         type = "counts", Sest.method = "average",
-                        cases = 5, N = 100, sites = 10,
+                        cases = 5, N = 100, M = 10,
                         n = 5, m = 5, k = 30,
                         transformation = "none", method = "bray",
                         dummy = FALSE, useParallel = FALSE,
@@ -76,22 +76,6 @@ compVar
 
 ```
 
-### Determine optimal sampling effort
-
-The sampling effort can be evaluated depending on an economic budget (ct) or desired precision level (multSE), depending on the proposed parameter, the function will calculate optimal values for number of treatments (bOpt) and replicates (nOpt).
-
-```{r step4}
-cboCost <- sim_cbo(comp.var = compVar, ct = 20000, ck = 100, cj = 2500)
-cboCost
-```
-
-```{r step5}
-cboPrecision <- sim_cbo(comp.var = compVar, multSE = 0.10, ck = 100, cj = 2500)
-cboPrecision
-
-```
-
-## Additionally... 
 ### Calculate statistical power
 
 ```{r step1}
@@ -99,17 +83,27 @@ betaResult <- sim_beta(simResults, alpha = 0.05)
 betaResult
 ```
 
+### Determine optimal sampling effort
+
+The sampling effort can be evaluated depending on an economic budget (ct) or desired precision level (multSE), depending on the proposed parameter, the function will calculate optimal values for number of treatments (bOpt) and replicates (nOpt).
+
+```{r step4}
+cboCost <- sim_cbo(betaResult, cn = 75)
+cboCost
+```
+
+## Additionally... 
 ### Plot the power progression as sampling increases.
 
 ```{r}
 # This plot will look different in every simulation
-plot_power(data = betaResult, n = NULL, m = 3, method = "power")
+plot_power(data = betaResult, cbo = cboCost, n = NULL, method = "power")
 
 ```
 
 ## R packages required for running ecocbo
 
--   Required: SSP, ggplot2, ggpubr, sampling, stats, rlang, foreach, parallel, doParallel, doSNOW, vegan
+-   Required: SSP, ggplot2, ggpubr, stats, rlang, foreach, parallel, doParallel, doSNOW, vegan, plotly, tibble
 
 -   Suggested: knitr, rmarkdown, testthat
 

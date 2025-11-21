@@ -1,33 +1,38 @@
 Package: ecocbo
 Title: Calculating Optimum Sampling Effort in Community Ecology
-Version: 0.12.0
-Authors@R: c(person(given = "Edlin", family = "Guerra-Castro", 
-                    role = c("aut", "cph"), email = "edlinguerra@gmail.com",
-                    comment = c(ORCID = "0000-0003-3529-4507")),
-             person(given = "Arturo", family = "Sanchez-Porras", 
-                    role = c("aut", "cre"), email = "sp.arturo@gmail.com",
-                    comment = c(ORCID = "0000-0002-1691-286X")))
+Version: 1.0.0
+Authors@R: c(
+    person("Edlin", "Guerra-Castro", , "edlinguerra@gmail.com", role = c("aut", "cph"),
+           comment = c(ORCID = "0000-0003-3529-4507")),
+    person("Arturo", "Sanchez-Porras", , "sp.arturo@gmail.com", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-1691-286X"))
+  )
 Description: A system for calculating the optimal sampling effort, based on the ideas of 
     "Ecological cost-benefit optimization" as developed by A. Underwood (1997, 
     ISBN 0 521 55696 1). Data is obtained from simulated ecological communities with
     prep_data() which formats and arranges the initial data, and then the 
-    optimization follows the following procedure of four functions: (1) scompvar() 
-    calculates the variation components necessary for (2) sim_cbo() to calculate
+    optimization follows the following procedure of four functions: (1) prep_data()
+    takes the original dataset and creates simulated sets that can be used as a 
+    basis for estimating statistical power and type II error. (2) sim_beta() is used
+    to estimate the statistical power for the different sampling efforts specified
+    by the user. (3) sim_cbo() calculates then the optimal sampling effort, based
+    on the statistical power and the sampling costs. Additionally, (4) scompvar() 
+    calculates the variation components necessary for (5) Underwood_cbo() to calculate
     the optimal combination of number of sites and samples depending on either 
-    an economic budget or on a desired statistical accuracy. Additionally, (3) 
-    sim_beta() estimates statistical power and type 2 error by using Permutational 
-    Multivariate Analysis of Variance, and (6) plot_power() represents the 
-    results of the previous function.
+    an economic budget or on a desired statistical accuracy. Lastly, (6) plot_power() 
+    helps the user visualize the results of sim_beta().
 License: GPL (>= 3)
+URL: https://github.com/arturoSP/ecocbo
+BugReports: https://github.com/arturoSP/ecocbo/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.1
+RoxygenNote: 7.3.2
 Imports: 
     ggplot2, ggpubr, stats, rlang, tibble,
     dplyr, tidyr, tidyselect, parabar, parallelly,
-    vegan, SSP (>= 1.1.0), plotly
+    vegan, SSP, plotly
 Depends: 
-    R (>= 2.10)
+    R (>= 4.1.0)
 LazyData: true
 Suggests: 
     knitr,rmarkdown, testthat (>= 3.0.0)

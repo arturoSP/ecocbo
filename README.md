@@ -60,7 +60,7 @@ data(epiDat)
 
 simResults <- prep_data(data = epiDat, 
                         type = "counts", Sest.method = "average",
-                        cases = 5, N = 100, sites = 10,
+                        cases = 5, N = 100, M = 10,
                         n = 5, m = 5, k = 30,
                         transformation = "none", method = "bray",
                         dummy = FALSE, useParallel = FALSE,
@@ -73,8 +73,20 @@ simResults <- prep_data(data = epiDat,
 compVar <- scompvar(data = simResults)
 compVar
 #>     Source Est.var.comp
-#> 1        A   0.07320045
-#> 2 Residual   0.32940570
+#> 1 Residual     0.331926
+```
+
+### Calculate statistical power
+
+``` r
+betaResult <- sim_beta(simResults, alpha = 0.05)
+betaResult
+#> Power at different sampling efforts (n):
+#>       Power
+#> n = 2  0.44
+#> n = 3  0.70
+#> n = 4  0.93
+#> n = 5  0.97
 ```
 
 ### Determine optimal sampling effort
@@ -85,39 +97,25 @@ parameter, the function will calculate optimal values for number of
 treatments (bOpt) and replicates (nOpt).
 
 ``` r
-cboCost <- sim_cbo(comp.var = compVar, ct = 20000, ck = 100, cj = 2500)
+cboCost <- sim_cbo(betaResult, cn = 75)
 cboCost
-#>   nOpt
-#> 1  200
-```
-
-``` r
-cboPrecision <- sim_cbo(comp.var = compVar, multSE = 0.10, ck = 100, cj = 2500)
-cboPrecision
-#>   nOpt
-#> 1   32
+#> Sampling designs that meet the required power:
+#>  n     Power Cost Suggested
+#>  2 0.4366667  150          
+#>  3 0.7033333  225          
+#>  4 0.9266667  300          
+#>  5 0.9716194  375       ***
+#> 
+#> The listed cost is per treatment.
 ```
 
 ## Additionally…
-
-### Calculate statistical power
-
-``` r
-betaResult <- sim_beta(simResults, alpha = 0.05)
-betaResult
-#> Power at different sampling efforts (m x n):
-#>       n = 2 n = 3 n = 4 n = 5
-#> m = 2  0.25  0.41  0.76  0.89
-#> m = 3  0.53  0.72  0.95  0.94
-#> m = 4  0.39  0.85  0.95  0.99
-#> m = 5  0.61  0.93  1.00  1.00
-```
 
 ### Plot the power progression as sampling increases.
 
 ``` r
 # This plot will look different in every simulation
-plot_power(data = betaResult, n = NULL, m = 3, method = "power")
+plot_power(data = betaResult, n = NULL, method = "power")
 ```
 
 <img src="man/figures/README-unnamed-chunk-3-1.png" width="100%" />
@@ -125,7 +123,7 @@ plot_power(data = betaResult, n = NULL, m = 3, method = "power")
 ## R packages required for running ecocbo
 
 - Required: SSP, ggplot2, ggpubr, sampling, stats, rlang, foreach,
-  parallel, doParallel, doSNOW, vegan
+  parallel, doParallel, doSNOW, vegan, plotly
 
 - Suggested: knitr, rmarkdown, testthat
 

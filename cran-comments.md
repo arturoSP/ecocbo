@@ -1,53 +1,66 @@
-## Update to ecocbo 0.12.0
+## Resubmission v1.0.0
 
-- 'ecocbo' now can work with either single-factor and nested-symmetric experiments. 
+This release refactors the PERMANOVA internals used by prep_data() from a Huygens-based SS decomposition to a db-MANOVA approach using Gower-centered distance matrices (PCoA). This change:
 
-- A new function, `prep_data()`, is added. This allows the user to select which model to use and then prepares the data for using with the rest of the functions. 
+- Improves numerical stability and correctness of SS partitions,
+- Properly handles negative eigenvalues that arise with non-Euclidean distances,
+- Produces more robust and consistent results without changing the user-facing API.
 
-- `plot_power()` was updated. Readability of the power curve is improved by differentiating the optimal, or user selected, experimental design. 
+### Test environments
 
-### R CMD check results 
+Checked with devtools::check(args = "--as-cran"):
 
-Duration: 4m 3.5s
+- Platform: x86_64-pc-linux-gnu
+- R version: 4.5.1 (2025-06-13)
+
+Additional checks:
+
+- win-builder (R-devel)
+- GitHub Actions (Linux and macOS)
+
+── R CMD check results ────────────────────────────── ecocbo 1.0.0 ────
+Duration: 1m 44.7s
 
 0 errors ✔ | 0 warnings ✔ | 0 notes ✔
 
-## Resubmission
+## Resubmission v0.13.0
 
-This is a resubmission, in this version we have:
+This is a resubmission of `ecocbo`, updating it to version 0.13.0.
 
-- corrected the presentation for function names in the description texts by removing single quotes and adding () after each name.
+### Summary of Changes
 
-- added ISBN to the reference for Underwood (1997) in the DESCRIPTION, as well as in the manual files and vignette.
+This update includes one major change, several bug fixes, and internal improvements. The key changes are:
 
-- changed \dontrun{} to \donttest{} for examples involving 'sim_beta()' as it takes more than 5 seconds to run them as they are. Changing the parameter values to make the function run faster would not be instructional to the final user, as it would not demonstrate the function's actual runtime and functionality. The example code will not be run automatically, but it can still be run manually if desired.
+1.  **Updated Feature**: `sim_cbo()` is redesigned as a new function that evaluates for the sampling designs that best approximate to $(1-\alpha)$ and then finds the cost for each one of the selected sampling efforts. Lastly, the function marks the best options. `underwood_cbo()`, has been added to keep the possibility of performing Underwood's optimization.
+2.  **Bug Fixes**: Addressed a `NOTE` present in previous checks concerning undefined global variables.
+3.  **Documentation**: Updated the package vignette to demonstrate the new functionality.
 
-### R CMD check results
+The `NEWS.md` file provides a more detailed list of changes.
 
-0 errors ✔ | 0 warnings ✔ | 1 notes ✖
+### Addressing a Previous `NOTE`
 
-- This is a new release
+The previous version of the package generated a `NOTE` during `R CMD check` regarding "no visible binding for global variables". This issue has been fully resolved in this version by:
 
-  > checking CRAN incoming feasibility ... [164s] NOTE <br/>
-  > - Maintainer: 'Arturo Sanchez-Porras <sp.arturo@gmail.com>'
-  
-  > Possibly mis-spelled words in DESCRIPTION: <br/>
-  > -  Permutational (14:70)
-  
-  - New submission
-  - The term "PERMANOVA" was coined by [Anderson (2017)](https://doi.org/10.1002/9781118445112.stat07841) to refer to Permutational Multivariate Analysis of Variance. This is part of the statistical theory that underlies the calculations performed in the function sim_beta(). As you can see, the word "permutational" is used correctly in the title of the paper.
+* Explicitly importing functions from other packages (e.g., `stats::rchisq`) using the `NAMESPACE` file via `roxygen2` tags (`@importFrom`).
+* Declaring variables used in non-standard evaluation with `utils::globalVariables()`.
 
+### Test Environments
 
-## Test environments
+This package has been checked locally using `devtools::check(args = "--as-cran")` on:
 
-- Local:
-  - Linux (PopOS), R 4.1.2(x86_64-pc-linux-gnu)
-  - Windows 10, R 4.3.0(x86_64-w64-mingw32/x64 (64-bit))
-- win-builder:
-  - Windows Server 2022 x64 (build 20348)
-- R-hub builder (https://builder.r-hub.io):
-  - Fedora Linux, R-devel, clang, gfortran
-  - Windows Server 2022, R-devel, 64 bit
-  - Ubuntu Linux 20.04.1 LTS, R-release, GCC
-- macOS builder (https://mac-r-project.org/macbuilder/submit.html):
-  - aarch64-apple-darwin20 (64-bit)
+* Platform: x86_64-pc-linux-gnu
+* R version: 4.5.1 (2025-06-13)
+
+── R CMD check results ─────────────────────────────────────────── ecocbo 0.13.0 ────
+Duration: 3m 32.6s
+
+0 errors ✔ | 0 warnings ✔ | 0 notes ✔
+
+It has also been successfully checked on:
+
+* `win-builder` (R-devel)
+* `github actions` (covering various distributions, including Linux and macOS)
+
+No new issues were reported in these checks. There are no reverse dependencies for this package.
+
+Thank you for your time and for maintaining CRAN.

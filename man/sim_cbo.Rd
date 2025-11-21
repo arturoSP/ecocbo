@@ -3,50 +3,59 @@
 \name{sim_cbo}
 \alias{sim_cbo}
 \alias{simcbo}
-\title{Simulated cost-benefit optimization}
+\title{Cost-Benefit Optimization for Sampling Effort}
 \usage{
-sim_cbo(comp.var, multSE = NULL, ct = NULL, ck, cj = NULL)
+sim_cbo(data, cn, cm = NULL, perm = 100)
 }
 \arguments{
-\item{comp.var}{Data frame as obtained from \code{\link[=scompvar]{scompvar()}}.}
+\item{data}{Object of class \code{"ecocbo_beta"}, as returned by
+\code{\link{sim_beta}}.}
 
-\item{multSE}{Optional. Required multivariate standard error for the
-sampling experiment.}
+\item{cn}{Numeric. Cost per sampling unit.}
 
-\item{ct}{Optional. Total cost for the sampling experiment.}
+\item{cm}{Numeric. Fixed cost per replicate.}
 
-\item{ck}{Cost per replicate.}
-
-\item{cj}{Cost per unit.}
+\item{perm}{Integer. Minimum number of permutations needed to reject the null
+hypothesis. Defaults to 100, as it would allow for rejecting with alpha = 0.05,
+the user can change this value to make the testing more strict (e.g. 200 for
+testing alpha = 0.01 or 5000 for testing alpha = 0.001).}
 }
 \value{
-A data frame containing the optimized values for \code{m} number of
-sites and \code{n} number of samples to consider.
+A data frame with one row per candidate design. In the single factor
+case, the results include the available \code{n} values, their statistical
+power and cost. For the nested symmetric experiments, the results include all
+the available values for \code{m}, the optimal \code{n}, according to the
+power, and the associated cost. The results also mark a suggested sampling
+effort, based on the cost and power range as selected by the user.
 }
 \description{
-\code{sim_cbo()} can be used to apply a cost-benefit optimization model that
-depends either on a desired level of precision or on a budgeted total cost,
-as proposed by Underwood (1997).
+Given a table of statistical power estimates produced by \code{\link{sim_beta}},
+\code{sim_cbo} finds the sampling design (number of replicates/site and sites)
+that minimizes total cost while achieving a user‐specified power threshold.
 }
 \examples{
-compVar <- scompvar(data = simResults)
+# Optimization of single factor experiment
+sim_cbo(data = epiBetaR, cn = 80)
 
-sim_cbo(comp.var = compVar, multSE = NULL, ct = 20000, ck = 100, cj = 2500)
-sim_cbo(comp.var = compVar, multSE = 0.15, ct = NULL, ck = 100, cj = 2500)
+# Optimization of a nested factor experiment
+sim_cbo(data = betaNested, cn = 80, cm = 180)
+
 }
 \references{
-Underwood, A. J. (1997). Experiments in ecology: their logical
+\itemize{
+\item Underwood, A. J. (1997). Experiments in ecology: their logical
 design and interpretation using analysis of variance. Cambridge university
 press.
-
-Underwood, A. J., & Chapman, M. G. (2003). Power, precaution,
+\item Underwood, A. J., & Chapman, M. G. (2003). Power, precaution,
 Type II error and sampling design in assessment of environmental impacts.
 Journal of Experimental Marine Biology and Ecology, 296(1), 49-70.
+}
 }
 \seealso{
 \code{\link[=sim_beta]{sim_beta()}}
 \code{\link[=plot_power]{plot_power()}}
 \code{\link[=scompvar]{scompvar()}}
+\code{\link[=Underwood_cbo]{Underwood_cbo()}}
 }
 \author{
 Edlin Guerra-Castro (\email{edlinguerra@gmail.com}), Arturo Sanchez-Porras

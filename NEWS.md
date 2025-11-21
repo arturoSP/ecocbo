@@ -1,3 +1,35 @@
+# ecocbo 1.0.0
+
+## Major update
+
+- PERMANOVA refactor: The implementation used by `prep_data()` now uses a distance-based MANOVA (`dbManova...()`) pipeline using Gower-centered distance matrices. This replaces the previous SS calculations based on Huygens' theorem
+  - The new approach is numerically more stable, especially with non-Euclidean distances (e.g., Bray–Curtis), where negative eigenvalues can invalidate naive SS partitions.
+  - Sums of squares are obtained from projection matrices in the PCoA space (SSCP traces), with correct handling of negative eigenvalues (sign weighting), avoiding drift due to rounding/centering errors.
+  - Results are therefore more robust and interpretable across a wider range of ecological distances.
+
+### Notes on compatibility
+
+The user API of `prep_data()` remains the same. Small numerical differences may occur due to more correct SS partitioning. 
+
+# ecocbo 0.13.0
+
+This is a maintenance and feature-update release, preparing the package for resubmission to CRAN.
+
+## NEW FEATURES
+
+- Updated the function `sim_cbo()` by changing the structure to an empirical optimization based on precision and then cost. The function evaluates for the sampling designs that best approximate to $(1-\alpha)$ and then finds the cost for each one of the selected sampling efforts. Lastly, the function marks the best options. The function is documented and includes examples.
+- Added the function `underwood_cbo()` to keep the possibility of using Underwood's optimization that was used in previous versions of the package.  The function is documented and includes examples.
+
+## BUG FIXES
+
+- Resolved `NOTE`s related to "no visible binding for global variable" and "no visible global function definition". This was addressed by explicitly importing functions with `@importFrom` and declaring global variables with `utils::globalVariables()`, making the package more robust and compliant with CRAN policies.
+- Corrected potential miscalculations in internal simulation functions by ensuring all variable scopes are handled correctly.
+
+## IMPROVEMENTS
+
+- The main vignette has been updated to include a detailed example and workflow for the new `permanova_twoway()` function.
+- Internal code has been refactored to reduce dependencies and improve clarity, for instance, by favoring base R functions where appropriate.
+
 # ecocbo 0.12.0
 
 - 'ecocbo' now can work with either single-factor and nested-symmetric experiments. 

@@ -1,25 +1,32 @@
-#' Simulated cost-benefit optimization
+#' Cost-Benefit Optimization for Sampling Effort
 #'
-#'\code{sim_cbo()} can be used to apply a cost-benefit optimization model that
-#' depends either on a desired level of precision or on a budgeted total cost,
-#' as proposed by Underwood (1997).
+#' Given a table of statistical power estimates produced by \code{\link{sim_beta}},
+#' \code{sim_cbo} finds the sampling design (number of replicates/site and sites)
+#' that minimizes total cost while achieving a user‐specified power threshold.
 #'
-#' @param comp.var Data frame as obtained from [scompvar()].
-#' @param multSE Optional. Required multivariate standard error for the
-#' sampling experiment.
-#' @param ct Optional. Total cost for the sampling experiment.
-#' @param ck Cost per replicate.
-#' @param cj Cost per unit.
+#' @param data Object of class \code{"ecocbo_beta"}, as returned by
+#' \code{\link{sim_beta}}.
+#' @param cm Numeric. Fixed cost per replicate.
+#' @param cn Numeric. Cost per sampling unit.
+#' @param perm Integer. Minimum number of permutations needed to reject the null
+#' hypothesis. Defaults to 100, as it would allow for rejecting with alpha = 0.05,
+#' the user can change this value to make the testing more strict (e.g. 200 for
+#' testing alpha = 0.01 or 5000 for testing alpha = 0.001).
 #'
-#' @return A data frame containing the optimized values for \code{m} number of
-#' sites and \code{n} number of samples to consider.
+#' @return A data frame with one row per candidate design. In the single factor
+#' case, the results include the available \code{n} values, their statistical
+#' power and cost. For the nested symmetric experiments, the results include all
+#' the available values for \code{m}, the optimal \code{n}, according to the
+#' power, and the associated cost. The results also mark a suggested sampling
+#' effort, based on the cost and power range as selected by the user.
 #'
 #' @author Edlin Guerra-Castro (\email{edlinguerra@@gmail.com}), Arturo Sanchez-Porras
 #'
-#' @references Underwood, A. J. (1997). Experiments in ecology: their logical
+#' @references
+#' - Underwood, A. J. (1997). Experiments in ecology: their logical
 #' design and interpretation using analysis of variance. Cambridge university
 #' press.
-#' @references Underwood, A. J., & Chapman, M. G. (2003). Power, precaution,
+#' - Underwood, A. J., & Chapman, M. G. (2003). Power, precaution,
 #' Type II error and sampling design in assessment of environmental impacts.
 #' Journal of Experimental Marine Biology and Ecology, 296(1), 49-70.
 #'
@@ -27,77 +34,151 @@
 #' [sim_beta()]
 #' [plot_power()]
 #' [scompvar()]
+#' [Underwood_cbo()]
 #'
 #' @aliases simcbo
 #'
 #' @export
+#' @importFrom dplyr filter group_by arrange slice mutate
 #'
 #' @examples
-#' compVar <- scompvar(data = simResults)
+#' # Optimization of single factor experiment
+#' sim_cbo(data = epiBetaR, cn = 80)
 #'
-#' sim_cbo(comp.var = compVar, multSE = NULL, ct = 20000, ck = 100, cj = 2500)
-#' sim_cbo(comp.var = compVar, multSE = 0.15, ct = NULL, ck = 100, cj = 2500)
+#' # Optimization of a nested factor experiment
+#' sim_cbo(data = betaNested, cn = 80, cm = 180)
+#'
 
-sim_cbo <- function(comp.var, multSE = NULL, ct = NULL, ck, cj = NULL){
-# Optimal cost-benefit model
+sim_cbo <- function(data, cn, cm = NULL, perm = 100){
+  # Obtaining parameters from the ecocbo_beta object
+  powr <- subset(data$Power, select = -c(Beta, fCrit))
+  objective <- 1 - data$alpha
+  model <- data$model
+  a <- data$a
 
-# Helper functions ----
-# Function to determine optimal m by setting costs.
-cost_n <- function(n, ct, ck, cj){
-  m <- data.frame(nOpt = n, mOpt = NA)
-
-  # Using equation 9.19 (Underwood, 1997)
-  m[,2] <- floor(ct / (n * ck + cj))
-
-  return(m)
-  }
-
-# Function to determine optimal m by setting desired variability.
-cost_v <- function(n, comp.var, multSE){
-  m <- data.frame(nOpt = n, mOpt = NA)
-
-  # Using equation 9.18 (Underwood, 1997)
-  m[,2] <- floor((comp.var[3,2] + n * comp.var[2,2]) /
-                   (multSE * multSE * n))
-
-  return(m)
-  }
-
-# Main function ----
-  ## Validating data ----
-  if(is.null(multSE) & is.null(ct)){
-    stop("It is necessary to provide either multSE or ct")
-  }
-
-  # if(dim(comp.var)[1] != 3 | dim(comp.var)[2] != 2){
-  #   stop("Variation components must be in a 3x2 matrix")
-  # }
-
-  if(dim(comp.var)[1] == 3 & is.null(cj)){
-    stop("Cost per unit is required for a multivariate model")
-  }
-
-  ## Calculate optimal n ----
-  if(dim(comp.var)[1] == 2){
-    if(is.null(multSE)){
-      # when working for total cost, the optimal n will be what can be
-      # done with the available economic resources
-      nOpt <- floor(ct / ck)
-    } else {
-      # when working with SE, the optimal n comes from solving Var=MSR/n for n
-      nOpt <- floor(comp.var[2,2] / (multSE * multSE))
+  if(model == "nested.symmetric"){
+    if(is.null(cm)){
+      stop("Cost for sites is missing.")
     }
-    m <- data.frame(nOpt)
-  } else if(dim(comp.var)[1] == 3){
-    nOpt <- floor(sqrt((cj * comp.var[3,2]) / (ck * comp.var[2,2])))
 
-    ## Calculate optimal m ----
-    if(is.null(multSE)) {
-      m <- cost_n(nOpt, ct, ck, cj)
-    } else {
-      m <- cost_v(nOpt, comp.var, multSE)
+    # Calculates total cost
+    powr$Cost <- powr$m * cm + powr$m * powr$n * cn
+
+    # Find the combinations that achieve the criteria
+    powr$OptPower <- powr$Power >= objective
+    powr$OptPerm <- minimum_cbo(model, a = a,
+                                m = powr$m, n = powr$n,
+                                perm)
+
+    # Filter out the cases when n = 2
+    powr[powr$n == 2, 5] <- FALSE
+
+    # Find the cases when power and permutations are valid
+    ideal <- powr |>
+      dplyr::filter(OptPower, OptPerm)
+
+    if(nrow(ideal) == 0){
+      warning("No power values above the specified precision.")
+      ideal <- powr |>
+        group_by(m) |>
+        arrange(desc(Power)) |>
+        slice(1) |>
+        mutate(OptPower = TRUE) |>
+        filter(OptPerm)
+
+      powr <- merge(powr[,-c(5)], ideal[,c(1,2,5)],
+            all.x=TRUE) |>
+        mutate(OptPower = ifelse(is.na(OptPower), FALSE, TRUE))
     }
+
+    idCost <- which.min(ideal$Cost)
+    idBest <- ideal[idCost,]
+
+    powr$OptCost <- FALSE
+    powr[powr$m == idBest$m & powr$n == idBest$n, "OptCost"] <- TRUE
+
+  } else {
+    # Calculating the cost
+    powr$Cost <- powr$n * cn
+
+    # Find the iterations that meet the desired power range
+    powr$OptPower <- powr$Power >= objective
+    powr$OptPerm <- minimum_cbo(model, a = a,
+                                n = powr$n, perm = perm)
+
+    # Filter out n = 2
+    powr[powr$n == 2, 5] <- FALSE
+
+    # Find the cases when power and permutations are valid
+    ideal <- powr |>
+      dplyr::filter(OptPower, OptPerm)
+
+    if(nrow(ideal) == 0){
+      warning("No power values above the specified precision.")
+    }
+
+    idCost <- which.min(ideal$Cost)
+    idBest <- ideal[idCost,]
+
+    powr$OptCost <- FALSE
+    powr[powr$n == idBest$n, "OptCost"] <- TRUE
+
   }
-  return(m)
+
+  class(powr) <- c("cbo_result", class(powr))
+  return(powr)
 }
 
+
+#-------------------------------------------
+## S3Methods print()
+#-------------------------------------------
+
+#' S3Methods for Printing
+#'
+#' @name print.cbo_result
+#'
+#' @method print cbo_result
+#'
+#' @usage
+#' \method{print}{cbo_result}(x, ...)
+#'
+#' @description prints for \code{ecocbo::sim_cbo()} objects.
+#'
+#' @param x Object from \code{ecocbo::sim_cbo()} function.
+#'
+#' @param ... Additional arguments
+#'
+#' @return Prints a summary for the results of \code{ecocbo::sim_cbo()} function,
+#' showing in an ordered matrix the suggested experimental design, according to
+#' cost and estimated power.
+#'
+#' @importFrom dplyr mutate group_by ungroup arrange slice filter select desc
+#'
+#' @export
+#' @keywords internal
+
+print.cbo_result <- function(x, ...){
+  # Create the subset of suggested options
+  if(length(x) == 6){
+    x1 <- x |>
+      mutate(Suggested = ifelse(OptCost, "***", "")) |>
+      select(n, Power, Cost, Suggested)
+  } else {
+    x1 <- x |>
+      filter(OptPower) |>
+      group_by(m) |>
+      arrange(n, Cost) |>
+      slice(1) |>
+      ungroup() |>
+      mutate(Suggested = ifelse(OptCost, "***", "")) |>
+      select(m, n, Power, Cost, Suggested)
+  }
+
+  # Print
+  cat("Sampling designs that meet the required power:\n")
+  print.data.frame(x1, row.names=FALSE, right=TRUE)
+  cat("\nThe listed cost is per treatment.")
+  invisible(x1)
+
+}
