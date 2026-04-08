@@ -95,8 +95,20 @@ prep_data_single <- function(
   parH0 <- SSP::assempar(data = datH0, type = type, Sest.method = Sest.method)
   parHa <- SSP::assempar(data = datHa, type = type, Sest.method = Sest.method)
 
-  simH0 <- SSP::simdata(parH0, cases = cases, N = (N * M), sites = 1, jitter.base = jitter.base)
-  simHa <- SSP::simdata(parHa, cases = cases, N = N, sites = M, jitter.base= jitter.base)
+  simH0 <- SSP::simdata(
+    parH0,
+    cases = cases,
+    N = (N * M),
+    sites = 1,
+    jitter.base = jitter.base
+  )
+  simHa <- SSP::simdata(
+    parHa,
+    cases = cases,
+    N = N,
+    sites = M,
+    jitter.base = jitter.base
+  )
 
   # Simulation arguments ---
   xH0 <- dim(simHa[[1]])[1]
@@ -157,7 +169,7 @@ prep_data_single <- function(
 
   if (useParallel) {
     # Registering the cluster of workers with parabar
-    parabar::configure_bar(type = "modern", format = "[:bar] :percent")
+    parabar::configure_bar(type = "basic", style = 3)
     cl <- parabar::start_backend(
       cores = parallelly::availableCores() / 2,
       cluster_type = "psock",
@@ -170,7 +182,6 @@ prep_data_single <- function(
       variables = c("balanced_sampling", "dbmanova_oneway", "SS"),
       environment = asNamespace("ecocbo")
     )
-    # parabar::export(cl, c("balanced_sampling", "permanova_twoway", "SS"))
 
     # Executing the loop in parallel
     result1 <- parabar::par_lapply(
@@ -188,11 +199,24 @@ prep_data_single <- function(
       method
     ) |>
       unlist() |>
-      matrix(ncol = 4, byrow = TRUE)
-    colnames(result1) <- c("FobsH0", "FobsHa", "MSBA", "MSR")
+      matrix(ncol = 7, byrow = TRUE)
+    colnames(result1) <- c(
+      "FobsH0",
+      "FobsHa",
+      "MSA",
+      "MSR",
+      "SSf",
+      "SSr",
+      "SSt"
+    )
 
     # Assigning the results to the outcome matrix
-    resultsHa[, 5:7] <- result1[, c(1, 2, 4)]
+    # resultsHa[, 5:7] <- result1[, c(1, 2, 4)]
+    resultsHa[, c("pseudoFH0", "pseudoFHa", "MSR")] <- result1[, c(
+      "FobsH0",
+      "FobsHa",
+      "MSR"
+    )]
 
     parabar::stop_backend(cl)
     rm(result1)
@@ -214,9 +238,14 @@ prep_data_single <- function(
         method
       )
       # Assigning results to the results matrix
-      resultsHa[i, 5] <- result1[, 1]
-      resultsHa[i, 6] <- result1[, 2]
-      resultsHa[i, 7] <- result1[, 4]
+      # resultsHa[i, 5] <- result1[, 1]
+      # resultsHa[i, 6] <- result1[, 2]
+      # resultsHa[i, 7] <- result1[, 4]
+      resultsHa[i, c("pseudoFH0", "pseudoFHa", "MSR")] <- result1[, c(
+        "FobsH0",
+        "FobsHa",
+        "MSR"
+      )]
 
       # Updating the progress bar
       setTxtProgressBar(pb, i)
@@ -528,7 +557,7 @@ prep_data_nestedsymmetric <- function(
 
   if (useParallel) {
     # Registering the cluster of workers with parabar
-    parabar::configure_bar(type = "modern", format = "[:bar] :percent")
+    parabar::configure_bar(type = "basic", style = 3)
     cl <- parabar::start_backend(
       cores = parallelly::availableCores() - 1,
       cluster_type = "psock",
@@ -566,7 +595,13 @@ prep_data_nestedsymmetric <- function(
     colnames(result1) <- c("FobsH0", "FobsHa", "MSBA", "MSR")
 
     # Assigning the results to the outcome matrix
-    resultsHa[, 5:8] <- result1[, c(1, 2, 3, 4)]
+    # resultsHa[, 5:8] <- result1[, c(1, 2, 3, 4)]
+    resultsHa[, c("pseudoFH0", "pseudoFHa", "MSB(A)", "MSR")] <- result1[, c(
+      "FobsH0",
+      "FobsHa",
+      "MSBA",
+      "MSR"
+    )]
     parabar::stop_backend(cl)
     rm(result1)
   } else {
@@ -590,10 +625,17 @@ prep_data_nestedsymmetric <- function(
         method,
         model
       )
-      resultsHa[i, 5] <- result1[1]
-      resultsHa[i, 6] <- result1[2]
-      resultsHa[i, 7] <- result1[3]
-      resultsHa[i, 8] <- result1[4]
+      # resultsHa[i, 5] <- result1[1]
+      # resultsHa[i, 6] <- result1[2]
+      # resultsHa[i, 7] <- result1[3]
+      # resultsHa[i, 8] <- result1[4]
+      resultsHa[i, c("pseudoFH0", "pseudoFHa", "MSB(A)", "MSR")] <- result1[, c(
+        "FobsH0",
+        "FobsHa",
+        "MSBA",
+        "MSR"
+      )]
+
       setTxtProgressBar(pb, i)
     }
     rm(result1)

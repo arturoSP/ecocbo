@@ -173,3 +173,96 @@ prep_data <- function(
 
   return(Results)
 }
+
+
+#-------------------------------------------
+## S3Methods print()
+#-------------------------------------------
+
+#' Coerce ecocbo_data to data.frame
+#'
+#' @name as.data.frame.ecocbo_data
+#' @method as.data.frame ecocbo_data
+#'
+#' @param x An object of class \code{ecocbo_data}.
+#' @param row.names Passed to \code{as.data.frame()}.
+#' @param optional Passed to \code{as.data.frame()}.
+#' @param ... Additional arguments, ignored.
+#'
+#' @return A data.frame representation of the \code{Results} component.
+#' @export
+#' @keywords internal
+as.data.frame.ecocbo_data <- function(
+  x,
+  row.names = NULL,
+  optional = FALSE,
+  ...
+) {
+  if (is.null(x$Results)) {
+    stop("`x` does not contain a `Results` component.")
+  }
+
+  as.data.frame(x$Results, row.names = row.names, optional = optional)
+}
+
+#' Print method for ecocbo_data
+#'
+#' @name print.ecocbo_data
+#' @method print ecocbo_data
+#'
+#' @param x An object of class \code{ecocbo_data}.
+#' @param ... Additional arguments, ignored.
+#'
+#' @return The input object, invisibly.
+#' @export
+#' @keywords internal
+print.ecocbo_data <- function(x, ...) {
+  dims <- if (!is.null(x$Results)) {
+    dim(x$Results)
+  } else {
+    c(NA_integer_, NA_integer_)
+  }
+
+  cat("<ecocbo_data>\n")
+  cat("  model :", x$model, "\n")
+  cat("  a     :", x$a, "\n")
+  cat("  Results:", dims[1], "rows x", dims[2], "columns\n")
+
+  invisible(x)
+}
+
+#' Summary method for ecocbo_data
+#'
+#' @name summary.ecocbo_data
+#' @method summary ecocbo_data
+#'
+#' @param object An object of class \code{ecocbo_data}.
+#' @param ... Additional arguments, ignored.
+#'
+#' @return A summary list of the main object components.
+#' @export
+#' @keywords internal
+summary.ecocbo_data <- function(object, ...) {
+  out <- list(
+    model = object$model,
+    a = object$a,
+    dimensions = if (!is.null(object$Results)) dim(object$Results) else NULL,
+    colnames = if (!is.null(object$Results)) colnames(object$Results) else NULL
+  )
+  class(out) <- "summary.ecocbo_data"
+  out
+}
+
+#' @export
+print.summary.ecocbo_data <- function(x, ...) {
+  cat("Summary of <ecocbo_data>\n")
+  cat("  model      :", x$model, "\n")
+  cat("  a          :", x$a, "\n")
+  if (!is.null(x$dimensions)) {
+    cat("  dimensions :", x$dimensions[1], "x", x$dimensions[2], "\n")
+  }
+  if (!is.null(x$colnames)) {
+    cat("  variables   :", paste(x$colnames, collapse = ", "), "\n")
+  }
+  invisible(x)
+}
