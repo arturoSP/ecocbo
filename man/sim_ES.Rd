@@ -7,7 +7,7 @@
 \usage{
 sim_ES(
   data,
-  steps = 14,
+  steps = 10,
   type = "counts",
   Sest.method = "average",
   cases = 5,
@@ -102,7 +102,7 @@ order.
 }
 \examples{
 \donttest{
-simResults <- sim_es(data = epiDat, type = "counts", Sest.method = "average",
+ES1 <- sim_es(data = epiDat, steps = 10, type = "counts", Sest.method = "average",
                         cases = 5, N = 100, M = 10,
                         n = 5, m = 5, k = 30,
                         transformation = "none", method = "bray",
@@ -110,7 +110,7 @@ simResults <- sim_es(data = epiDat, type = "counts", Sest.method = "average",
                         model = "single.factor",
                         jitter.base = 0)
 }
-simResults
+ES1
 
 }
 \references{

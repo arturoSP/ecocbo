@@ -8,6 +8,7 @@
 #'   to which the sample belongs.
 #'   - For `"nested.symmetric"` analysis: The first column should indicate the
 #'   treatment, and the second column should indicate the replicate.
+#' @param steps =====PENDING====
 #' @param type Character. Nature of the data to be processed. It may be presence
 #'  / absence ("P/A"), counts of individuals ("counts"), or coverage ("cover").
 #' @param Sest.method Character Method for estimating species richness using
@@ -75,7 +76,7 @@
 #'
 #' @examples
 #' \donttest{
-#' simResults <- sim_es(data = epiDat, type = "counts", Sest.method = "average",
+#' ES1 <- sim_es(data = epiDat, steps = 10, type = "counts", Sest.method = "average",
 #'                         cases = 5, N = 100, M = 10,
 #'                         n = 5, m = 5, k = 30,
 #'                         transformation = "none", method = "bray",
@@ -83,12 +84,12 @@
 #'                         model = "single.factor",
 #'                         jitter.base = 0)
 #' }
-#' simResults
+#' ES1
 #'
 
 sim_ES <- function(
   data,
-  steps = 14,
+  steps = 10,
   type = "counts",
   Sest.method = "average",
   cases = 5,
@@ -113,7 +114,7 @@ sim_ES <- function(
   M <- a
 
   ## Helper matrix to store labels ----
-  NN <- casesHa * k * (n - 1)
+  NN <- cases * k * (n - 1)
   resultsHa <- matrix(NA_real_, nrow = NN, ncol = 6)
   colnames(resultsHa) <- c(
     "dat.sim",
@@ -121,11 +122,11 @@ sim_ES <- function(
     "m",
     "n",
     "FobsHa",
-    "SSa"
+    "FobsH0"
   )
 
-  resultsHa[, 1] <- rep(seq(casesHa), times = 1, each = (k * (n - 1)))
-  resultsHa[, 2] <- rep(1:k, times = (n - 1) * casesHa)
+  resultsHa[, 1] <- rep(seq(cases), times = 1, each = (k * (n - 1)))
+  resultsHa[, 2] <- rep(1:k, times = (n - 1) * cases)
   resultsHa[, 3] <- M
   resultsHa[, 4] <- rep(seq(2, n), times = 1, each = k)
 
@@ -142,8 +143,34 @@ sim_ES <- function(
   sppContribution <- use_simper(datHa)
 
   ## Output matrix ----
-  resultOut <- matrix(NA_real_, nrow = NN * (steps + 1), ncol = 4)
-  colnames(resultOut) <- c("step", "m", "n", "SSa")
+  resultOut <- matrix(NA_real_, nrow = NN * (steps + 1), ncol = 5)
+  colnames(resultOut) <- c("step", "m", "n", "FobsH0", "FobsHa")
+
+  simH0 <- SSP::simdata(
+    parH0,
+    cases = cases,
+    N = N,
+    sites = M,
+    jitter.base = jitter.base
+  )
+
+  xH0 <- dim(simH0[[1]])[1]
+  yH0 <- dim(simH0[[1]])[2]
+  casesHa <- length(simH0)
+
+  H0Sim <- simH0
+
+  if (dummy == TRUE) {
+    yH0 <- yH0 + 1
+    for (i in seq_len(casesHa)) {
+      H0Sim[[i]] <- cbind(simH0[[i]], dummy = 1)
+      H0Sim[[i]] <- H0Sim[[i]][, c(1:(yH0 - 3), (yH0), (yH0 - 2):(yH0 - 1))]
+    }
+  }
+
+  rm(simH0)
+
+  H0Sim <- array(unlist(H0Sim), dim = c(xH0, yH0, casesHa))
 
   # Here we start the loop for species contribution attenuation ----
   n_spp <- dim(sppContribution)[1]
@@ -231,7 +258,7 @@ sim_ES <- function(
         mm,
         nn,
         YPU,
-        HaSim,
+        H0Sim,
         HaSim,
         resultsHa,
         transformation,
@@ -250,7 +277,7 @@ sim_ES <- function(
       )
 
       # Assigning the results to the outcome matrix
-      resultsHa[, c("FobsHa", "SSa")] <- result1[, c("FobsHa", "SSf")]
+      resultsHa[, c("FobsHa", "FobsH0")] <- result1[, c("FobsHa", "FobsH0")]
 
       parabar::stop_backend(cl)
       rm(result1)
@@ -265,14 +292,14 @@ sim_ES <- function(
           mm,
           nn,
           YPU,
-          HaSim,
+          H0Sim,
           HaSim,
           resultsHa,
           transformation,
           method
         )
         # Assigning results to the results matrix
-        resultsHa[i, c("FobsHa", "SSa")] <- result1[, c("FobsHa", "SSf")]
+        resultsHa[i, c("FobsHa", "FobsH0")] <- result1[, c("FobsHa", "FobsH0")]
 
         # Updating the progress bar
         setTxtProgressBar(pb, i)
@@ -284,7 +311,7 @@ sim_ES <- function(
     idx <- (st * NN + 1):((st + 1) * NN)
 
     resultOut[idx, 1] <- st
-    resultOut[idx, 2:4] <- resultsHa[, c("m", "n", "SSa")]
+    resultOut[idx, 2:5] <- resultsHa[, c("m", "n", "FobsH0", "FobsHa")]
 
     cat("Step ", st, ": Done! - ", steps - st, " remaining")
   }
@@ -311,21 +338,21 @@ sim_ES <- function(
 plot.effect_size_data <- function(x, ...) {
   p1 <- x |>
     as.data.frame() |>
-    dplyr::mutate(removed = step / max(step)) |>
+    dplyr::mutate(removed = step / max(step), ES = FobsHa - FobsH0) |>
     dplyr::group_by(removed) |>
     dplyr::summarise(
-      media = mean(SSa, na.rm = TRUE),
-      mediana = median(SSa, na.rm = TRUE),
-      q25 = quantile(SSa, 0.25, na.rm = TRUE),
-      q75 = quantile(SSa, 0.75, na.rm = TRUE),
+      media = mean(ES, na.rm = TRUE),
+      mediana = median(ES, na.rm = TRUE),
+      q25 = quantile(ES, 0.25, na.rm = TRUE),
+      q75 = quantile(ES, 0.75, na.rm = TRUE),
       .groups = "drop"
     ) |>
-    ggplot2::ggplot(ggplot2::aes(x = removed, y = mediana)) +
+    ggplot2::ggplot(ggplot2::aes(x = removed, y = media)) +
     ggplot2::geom_ribbon(ggplot2::aes(ymin = q25, ymax = q75), alpha = 0.3) +
     ggplot2::geom_line() +
     ggplot2::geom_point() +
     ggplot2::scale_x_continuous(name = "% removed SIMPER contribution") +
-    ggplot2::scale_y_continuous(name = "SSa") +
+    ggplot2::scale_y_continuous(name = "FHa - FH0") +
     ggplot2::theme_bw() +
     ggplot2::theme(
       panel.grid.minor.x = ggplot2::element_blank(),

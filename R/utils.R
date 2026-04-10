@@ -287,14 +287,17 @@ balanced_sampling <- function(
   )
 
   # Create result matrix
-  result0 <- matrix(nrow = 1, ncol = 4)
-  colnames(result0) <- c("FobsH0", "FobsHa", "MSA", "MSR")
+  result0 <- matrix(nrow = 1, ncol = 7)
+  colnames(result0) <- c("FobsH0", "FobsHa", "MSA", "MSR", "SSf", "SSr", "SSt")
 
   # Gather the results and return
   result0[, 1] <- result1[1, 5]
   result0[, 2] <- result2[1, 5]
   result0[, 3] <- result2[1, 4]
   result0[, 4] <- result2[2, 4]
+  result0[, 5] <- result2[1, 3]
+  result0[, 6] <- result2[2, 3]
+  result0[, 7] <- result2[3, 3]
   return(result0)
 }
 
@@ -347,7 +350,7 @@ dbmanova_nested <- function(
   }
 
   if (nrow(Xcomm) != nrow(factEnv)) {
-    stop("`x` y `factEnv` must have the same number of rows (muestras).")
+    stop("`x` y `factEnv` must have the same number of rows (samples).")
   }
 
   # Coerce factors
@@ -585,7 +588,7 @@ balanced_sampling2 <- function(
   return(result1)
 }
 
-## Other helper functions
+## Other helper functions ====
 
 #' mimimun permutations
 #'
@@ -650,6 +653,8 @@ minimum_cbo <- function(model, a, n, m = NULL, perm) {
 #' @param k Integer. Number of resampling iterations. Defaults to 50.
 #'
 #' @return PERMANOVA table
+#'
+#' @importFrom vegan vegdist betadisper
 #'
 #' @author Edlin Guerra-Castro (\email{edlinguerra@@gmail.com}), Arturo Sanchez-Porras
 #'
@@ -856,4 +861,56 @@ label_permanova <- function(
 
   # If this were full PERMANOVA, it's necessary to change the return to permList
   return(permList)
+}
+
+#' Weighted average of Similarity Percentages
+#'
+#' simper() from 'vegan' is adapted so that the between-group dissimilarities are condensed
+#' into a single number that represents the per-species/per-site contribution.
+#'
+#' @param datHa Data frame where columns represent species names and rows correspond
+#' to samples.
+#'
+#' @return Weighted average of species contribution to average between-group dissimilarity.
+#'
+#' @author Edlin Guerra-Castro (\email{edlinguerra@@gmail.com}), Arturo Sanchez-Porras
+#'
+#' @importFrom vegan simper
+#' @importFrom dplyr arrange mutate
+#' @importFrom stats aggregate
+#'
+#' @keywords internal
+#' @noRd
+#'
+
+use_simper <- function(datHa) {
+  # Se llama a simper para evaluar contribución de las diferentes especies
+  weight_spp <- vegan::simper(
+    comm = datHa[, c(2:(ncol(datHa)))],
+    group = datHa[, 1],
+    permutations = 99
+  )
+
+  # Se guardan datos de apoyo
+  pares <- names(weight_spp)
+  flat_weight <- vector("list", length = length(weight_spp))
+  names(flat_weight) <- pares
+
+  # Se calcula promedio de contribución ponderado por par de sitios
+  for (i in pares) {
+    flat_weight[[i]] <- data.frame(
+      spp = weight_spp[[i]]["species"],
+      average = weight_spp[[i]]["average"]
+    ) |>
+      dplyr::mutate(
+        norm = average / sum(average)
+      )
+  }
+
+  # Se identifica especes con mayor contribución promedio
+  relevant_spp <- do.call(rbind, flat_weight) |>
+    stats::aggregate(norm ~ species, FUN = mean) |>
+    dplyr::arrange(desc(norm))
+
+  return(relevant_spp)
 }
