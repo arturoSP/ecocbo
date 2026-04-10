@@ -914,3 +914,41 @@ use_simper <- function(datHa) {
 
   return(relevant_spp)
 }
+
+#' Calculate distances to estimate ecological effect size
+#'
+#' Auxiliary function that calculates distances matrix for a simulated community.
+#'
+#' @param datHa Data frame where columns represent species names and rows correspond
+#' to samples.
+#'
+#' @return A distance matrix for the groups in the ecological simulated community.
+#'
+#' @author Edlin Guerra-Castro (\email{edlinguerra@@gmail.com}), Arturo Sanchez-Porras
+#'
+#' @importFrom vegan vegdist wcmdscale
+#' @importFrom dplyr arrange mutate
+#' @importFrom stats aggregate dist
+#'
+#' @keywords internal
+#' @noRd
+#'
+
+calc_dist <- function(datHa) {
+  datHa_site <- datHa[, 1]
+  datHa_ <- datHa[, c(2:(ncol(datHa)))]
+  # Calculates global Bray-Curtis
+  DistBC <- vegan::vegdist(datHa_)
+  # PCoA and corrected cmdscale
+  ord <- vegan::wcmdscale(DistBC, eig = TRUE, add = "lingoes")
+  # Samples coordinates
+  coords <- as.data.frame(ord$points)
+  coords$site <- datHa_site
+  # Group centroids
+  centroides <- aggregate(. ~ site, data = coords, FUN = mean)
+  # Distances between centroids
+  dist_centroides <- dist(centroides[, -1]) |>
+    as.matrix()
+
+  return(dist_centroides)
+}
