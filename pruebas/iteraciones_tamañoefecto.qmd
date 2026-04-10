@@ -1,0 +1,328 @@
+---
+title: "Iterando para bajar el tamaño de efecto"
+format: pdf
+---
+
+```{r}
+#| label: setup
+#| include: false
+#| 
+library(ecocbo)
+library(vegan)
+library(dplyr)
+library(SSP)
+library(tidyr)
+
+
+data <- epiDat
+type = "counts"
+Sest.method = "average"
+cases = 5
+N = 100
+M = NULL
+n = 20
+m = NULL
+k = 50
+transformation = "none"
+method = "bray"
+dummy = FALSE
+useParallel = TRUE
+jitter.base = 0.4
+
+data(dune)
+data(dune.env)
+
+atreides <- bind_cols(site = dune.env$Management, dune, dummy = 1)
+
+# Cálculo de distancias para estimar tamaño de efecto
+# se crea una función auxiliar para este propósito
+calc_dist <- function(arrakis) {
+  arrakis_site <- arrakis[, ncol(arrakis)]
+  arrakis_ <- arrakis[, c(1:(ncol(arrakis) - 2))]
+  # Cálculo de Bray-Curtis global
+  DistBC <- vegdist(arrakis_)
+  # PCoA y cmdscale corregido
+  ord <- wcmdscale(DistBC, eig = TRUE, add = "lingoes")
+  # Coordenadas de las muestras
+  coords <- as.data.frame(ord$points)
+  coords$site <- arrakis_site
+  # Centroides por grupo
+  centroides <- aggregate(. ~ site, data = coords, FUN = mean)
+  # Distancia entre centroides
+  dist_centroides <- dist(centroides[, -1]) |>
+    as.matrix()
+
+  # Cálculo de distancia al centroide global
+  centroide_global <- colMeans(coords[, setdiff(names(coords), "site")])
+  # Distancia euclidiana de cada grupo al centroide global
+  dist_global <- sqrt(
+    rowSums(
+      (centroides[, -1] -
+        matrix(
+          centroide_global,
+          nrow = nrow(centroides[, -1]),
+          ncol = ncol(centroides[, -1]),
+          byrow = TRUE
+        ))^2
+    )
+  )
+  # Se guarda la distancia global
+  dist_global <- data.frame(
+    site = as.factor(centroides$site),
+    dist_al_global = dist_global
+  )
+
+  return(list(DistGlobal = dist_global, DistSitios = dist_centroides))
+}
+
+usa_simper <- function(arrakis) {
+  # Se llama a simper para evaluar contribución de las diferentes especies
+  pesos_spp <- simper(
+    comm = arrakis[, c(1:(ncol(arrakis) - 2))],
+    group = arrakis[, ncol(arrakis)],
+    permutations = 99
+  )
+
+  # Se guardan datos de apoyo
+  pares <- names(pesos_spp)
+  flat_pesos <- vector("list", length = length(pesos_spp))
+  names(flat_pesos) <- pares
+
+  # Se calcula promedio de contribución ponderado por par de sitios
+  for (i in pares) {
+    flat_pesos[[i]] <- data.frame(
+      spp = pesos_spp[[i]]["species"],
+      average = pesos_spp[[i]]["average"]
+    ) |>
+      mutate(
+        normalizado = average / sum(average)
+      )
+  }
+
+  # Se identifica especes con mayor contribución promedio
+  especies_relevantes <- do.call(rbind, flat_pesos) |>
+    aggregate(normalizado ~ species, FUN = mean) |>
+    arrange(desc(normalizado))
+
+  return(especies_relevantes)
+}
+```
+
+## Primera ronda
+
+pipeline completo:
+assempar |> simdata |> distancias |> simper |> ajuste assempar |> simdata |> distancias |> simper |> ajuste assempar |> simdata |> ...
+
+```{r}
+#| label: first
+#| warning: false
+#| 
+# Cálculo de parámetros y simulación
+atreides_nulo <- cbind(site = "zero", atreides[, -1])
+atreides_nulo <- epiDat |> mutate(site = "zero")
+atreides <- epiDat
+parH0 <- assempar(atreides_nulo, type = "counts", Sest.method = "average")
+parHa <- assempar(atreides, type = "counts", Sest.method = "average")
+atreides_mayor <- simdata(parHa, cases = 3, N = 20, sites = 4, jitter.base = 0)
+
+# Se juntan las comunidadse simuladas
+arrakis <- do.call(rbind, atreides_mayor)
+
+salida1 <- calc_dist(arrakis)
+
+especies_relevantes <- usa_simper(arrakis)
+
+salida1$DistGlobal
+salida1$DistSitios
+especies_relevantes
+```
+
+## Segunda ronda
+
+```{r}
+#| label: second
+#| warning: false
+#| 
+# Se ajustan los parámetros de simulación al 5% superior de las especies
+a_ajustar <- ceiling(nrow(especies_relevantes) * 0.05)
+a_ajustar <- especies_relevantes[1:a_ajustar,1]
+
+parametro_temporal_0 <- parH0$par
+parametro_temporal_0 <- parametro_temporal_0[parametro_temporal_0$Species %in% a_ajustar,c(1,3)]
+
+parametro_temporal_a <- parHa$par
+parametro_temporal_a[parametro_temporal_a$Species %in% a_ajustar, 3] <- parametro_temporal_0[,2]
+
+parHa$par <- parametro_temporal_a
+
+# Se vuelve a hacer simulación
+atreides_2 <- simdata(parHa, cases = 3, N = 20, sites = 4, jitter.base = 0)
+arrakis2 <- do.call(rbind, atreides_2)
+
+salida2 <- calc_dist(arrakis2)
+
+especies_relevantes2 <- usa_simper(arrakis)
+
+bind_cols(spp1 = especies_relevantes[,1], contribucion1 = especies_relevantes[,2],
+spp2 = especies_relevantes2[,1], contribucion2 = especies_relevantes2[,2])
+
+# Distancia promedio al centroide global
+bind_cols(sitio = salida1$DistGlobal[,1], distGlobal1 = salida1$DistGlobal[,2], distGlobal2 = salida2$DistGlobal[,2])
+
+# Distancia promedio entre sitios
+avg1 <- mean(salida1$DistSitios)
+avg2 <- mean(salida2$DistSitios)
+
+data.frame(Ronda1 = avg1, Ronda2 = avg2)
+```
+
+## Tercera ronda
+
+```{r}
+#| label: third
+#| warning: false
+# Se ajustan los parámetros de simulación al 10% superior de las especies
+a_ajustar <- ceiling(nrow(especies_relevantes2) * 0.10)
+a_ajustar <- especies_relevantes2[1:a_ajustar,1]
+
+parametro_temporal_0 <- parH0$par
+parametro_temporal_0 <- parametro_temporal_0[parametro_temporal_0$Species %in% a_ajustar,c(1,3)]
+
+parametro_temporal_a <- parHa$par
+parametro_temporal_a[parametro_temporal_a$Species %in% a_ajustar, 3] <- parametro_temporal_0[,2]
+
+parHa$par <- parametro_temporal_a
+
+# Se vuelve a hacer simulación
+atreides_3 <- simdata(parHa, cases = 3, N = 20, sites = 4, jitter.base = 0)
+arrakis3 <- do.call(rbind, atreides_3)
+
+salida3 <- calc_dist(arrakis3)
+
+especies_relevantes3 <- usa_simper(arrakis3)
+
+bind_cols(spp1 = especies_relevantes[,1], contribucion1 = especies_relevantes[,2],
+spp3 = especies_relevantes3[,1], contribucion3 = especies_relevantes3[,2])
+
+# Distancia promedio al centroide global
+bind_cols(sitio = salida1$DistGlobal[,1], distGlobal1 = salida1$DistGlobal[,2],
+ distGlobal2 = salida2$DistGlobal[,2], distGlobal3 = salida3$DistGlobal[,2])
+
+# Distancia promedio entre sitios
+avg3 <- mean(salida3$DistSitios)
+
+data.frame(Ronda1 = avg1, Ronda2 = avg2, Ronda3 = avg3)
+```
+
+## Cuarta ronda
+
+```{r}
+# Se ajustan los parámetros de simulación al 15% superior de las especies
+a_ajustar <- ceiling(nrow(especies_relevantes3) * 0.15)
+a_ajustar <- especies_relevantes3[1:a_ajustar,1]
+
+parametro_temporal_0 <- parH0$par
+parametro_temporal_0 <- parametro_temporal_0[parametro_temporal_0$Species %in% a_ajustar,c(1,3)]
+
+parametro_temporal_a <- parHa$par
+parametro_temporal_a[parametro_temporal_a$Species %in% a_ajustar, 3] <- parametro_temporal_0[,2]
+
+parHa$par <- parametro_temporal_a
+
+# Se vuelve a hacer simulación
+atreides_4 <- simdata(parHa, cases = 3, N = 20, sites = 4, jitter.base = 0)
+arrakis4 <- do.call(rbind, atreides_4)
+
+salida4 <- calc_dist(arrakis4)
+
+especies_relevantes4 <- usa_simper(arrakis4)
+
+bind_cols(spp1 = especies_relevantes[,1], contribucion1 = especies_relevantes[,2],
+spp4 = especies_relevantes4[,1], contribucion4 = especies_relevantes4[,2])
+
+# Distancia promedio al centroide global
+bind_cols(sitio = salida1$DistGlobal[,1], distGlobal1 = salida1$DistGlobal[,2], 
+ distGlobal2 = salida2$DistGlobal[,2], distGlobal3 = salida3$DistGlobal[,2],
+distGlobal4 = salida4$DistGlobal[,2])
+
+# Distancia promedio entre sitios
+avg4 <- mean(salida4$DistSitios)
+
+data.frame(Ronda1 = avg1, Ronda2 = avg2, Ronda3 = avg3, Ronda4 = avg4)
+```
+
+## Quinta ronda
+
+```{r}
+# Se ajustan los parámetros de simulación al 20% superior de las especies
+a_ajustar <- ceiling(nrow(especies_relevantes4) * 0.20)
+a_ajustar <- especies_relevantes4[1:a_ajustar,1]
+
+parametro_temporal_0 <- parH0$par
+parametro_temporal_0 <- parametro_temporal_0[parametro_temporal_0$Species %in% a_ajustar,c(1,3)]
+
+parametro_temporal_a <- parHa$par
+parametro_temporal_a[parametro_temporal_a$Species %in% a_ajustar, 3] <- parametro_temporal_0[,2]
+
+parHa$par <- parametro_temporal_a
+
+# Se vuelve a hacer simulación
+atreides_5 <- simdata(parHa, cases = 3, N = 20, sites = 4, jitter.base = 0)
+arrakis5 <- do.call(rbind, atreides_5)
+
+salida5 <- calc_dist(arrakis5)
+
+especies_relevantes5 <- usa_simper(arrakis5)
+
+bind_cols(spp1 = especies_relevantes[,1], contribucion1 = especies_relevantes[,2],
+spp5 = especies_relevantes5[,1], contribucion5 = especies_relevantes5[,2])
+
+# Distancia promedio al centroide global
+bind_cols(sitio = salida1$DistGlobal[,1], distGlobal1 = salida1$DistGlobal[,2],
+distGlobal2 = salida2$DistGlobal[,2], distGlobal3 = salida3$DistGlobal[,2],
+distGlobal4 = salida4$DistGlobal[,2],
+distGlobal5 = salida5$DistGlobal[,2])
+
+# Distancia promedio entre sitios
+avg5 <- mean(salida5$DistSitios)
+
+data.frame(Ronda1 = avg1, Ronda2 = avg2, Ronda3 = avg3, Ronda4 = avg4, Ronda5 = avg5)
+```
+
+## Sexta ronda
+
+```{r}
+# Se ajustan los parámetros de simulación al 25% superior de las especies
+a_ajustar <- ceiling(nrow(especies_relevantes5) * 0.25)
+a_ajustar <- especies_relevantes5[1:a_ajustar,1]
+
+parametro_temporal_0 <- parH0$par
+parametro_temporal_0 <- parametro_temporal_0[parametro_temporal_0$Species %in% a_ajustar,c(1,3)]
+
+parametro_temporal_a <- parHa$par
+parametro_temporal_a[parametro_temporal_a$Species %in% a_ajustar, 3] <- parametro_temporal_0[,2]
+
+parHa$par <- parametro_temporal_a
+
+# Se vuelve a hacer simulación
+atreides_6 <- simdata(parHa, cases = 3, N = 20, sites = 4, jitter.base = 0)
+arrakis6 <- do.call(rbind, atreides_6)
+
+salida6 <- calc_dist(arrakis6)
+
+especies_relevantes6 <- usa_simper(arrakis6)
+
+bind_cols(spp1 = especies_relevantes[,1], contribucion1 = especies_relevantes[,2],
+spp6 = especies_relevantes6[,1], contribucion6 = especies_relevantes6[,2])
+
+# Distancia promedio al centroide global
+bind_cols(sitio = salida1$DistGlobal[,1], distGlobal1 = salida1$DistGlobal[,2],
+distGlobal2 = salida2$DistGlobal[,2], distGlobal3 = salida3$DistGlobal[,2],
+distGlobal4 = salida4$DistGlobal[,2],
+distGlobal5 = salida5$DistGlobal[,2], distGlobal6 = salida6$DistGlobal[,2])
+
+# Distancia promedio entre sitios
+avg6 <- mean(salida6$DistSitios)
+
+data.frame(Ronda1 = avg1, Ronda2 = avg2, Ronda3 = avg3, Ronda4 = avg4, Ronda5 = avg5, Ronda6 = avg6)
+```
