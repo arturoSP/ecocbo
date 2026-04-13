@@ -1044,6 +1044,27 @@ calc_dist <- function(datHa, method = "bray", return = c("matrix", "both")) {
   coords <- as.data.frame(ord$points[, eig_pos, drop = FALSE])
   coords$site <- datHa_site
 
+  # 2-axis view used for ordination plotting (analytical ES still uses all + axes)
+  if (ncol(coords) == 0) {
+    pcoa_points <- data.frame(
+      group = datHa_site,
+      Axis1 = rep(0, nrow(datHa_)),
+      Axis2 = rep(0, nrow(datHa_))
+    )
+  } else if (ncol(coords) == 1) {
+    pcoa_points <- data.frame(
+      group = datHa_site,
+      Axis1 = coords[[1]],
+      Axis2 = rep(0, nrow(coords))
+    )
+  } else {
+    pcoa_points <- data.frame(
+      group = datHa_site,
+      Axis1 = coords[[1]],
+      Axis2 = coords[[2]]
+    )
+  }
+
   centroides <- stats::aggregate(. ~ site, data = coords, FUN = mean)
   centroid_dist <- stats::dist(centroides[, -1, drop = FALSE]) |>
     as.matrix()
@@ -1070,6 +1091,22 @@ calc_dist <- function(datHa, method = "bray", return = c("matrix", "both")) {
     sqrt(sum(group_size * sq_dist) / sum(group_size))
   }
 
+  ecological_effect <- if (n_groups == 2) {
+    as.numeric(centroid_dist[1, 2])
+  } else {
+    c_bar <- colMeans(centroid_mat)
+    sq_dist <- rowSums(
+      (centroid_mat -
+        matrix(
+          c_bar,
+          nrow = nrow(centroid_mat),
+          ncol = ncol(centroid_mat),
+          byrow = TRUE
+        ))^2
+    )
+    sqrt(sum(group_size * sq_dist) / sum(group_size))
+  }
+
   if (return == "matrix") {
     return(centroid_dist)
   }
@@ -1079,6 +1116,7 @@ calc_dist <- function(datHa, method = "bray", return = c("matrix", "both")) {
     centroid_dist_matrix = centroid_dist,
     centroids = centroides,
     n_groups = n_groups,
-    positive_axes = eig_pos
+    positive_axes = eig_pos,
+    pcoa_points = pcoa_points
   )
 }

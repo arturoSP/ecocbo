@@ -330,7 +330,7 @@ sim_ES <- function(
 
   resultOut <- dplyr::bind_rows(resultOut)
   # class(resultOut) <- c("effect_size_data", class(resultOut))
-  new_effect_size_data(resultOut)
+  class(resultOut) <- new_effect_size_data(resultOut)
 
   return(resultOut)
 }
@@ -495,13 +495,10 @@ print.effect_size_data <- function(
     error = function(e) NULL
   )
 
-  has_pcoa <- !is.null(attr(x, "pcoa"))
-
   cat("<effect_size_data>\n")
   cat("Rows:", n_rows, "\n")
   cat("Columns:", n_cols, "\n")
   cat("Reduction levels:", reduction_n, "\n")
-  cat("PCoA data available:", if (has_pcoa) "yes" else "no", "\n")
 
   if (!is.null(reduction_range) && length(reduction_range) == 2) {
     cat(
@@ -855,23 +852,16 @@ print.effect_size_data <- function(
 #' @export
 plot.effect_size_data <- function(
   x,
-  type = c("stacked", "scatter", "ordination"),
+  type = c("stacked", "scatter"),
   inferential_var = c("omega2", "R2", "pseudoF"),
   summary_stat = c("median", "mean"),
   interval = c("iqr", "sd"),
   colour_by = c("reduction_level", "none"),
   scatter_data = c("summary", "raw"),
-  reduction_levels = NULL,
-  selection = c("median", "first", "min", "max"),
-  show_centroids = TRUE,
-  label_centroids = TRUE,
-  show_hulls = FALSE,
   ribbon_alpha = 0.25,
   point_alpha = 0.7,
   line_size = 0.4,
   point_size = 1.8,
-  centroid_size = 2.8,
-  facet_ncol = NULL,
   add_smooth = FALSE,
   ...
 ) {
@@ -883,9 +873,8 @@ plot.effect_size_data <- function(
   interval <- match.arg(interval)
   colour_by <- match.arg(colour_by)
   scatter_data <- match.arg(scatter_data)
-  selection <- match.arg(selection)
 
-  if (type %in% c("stacked", "scatter") && !inferential_var %in% names(x)) {
+  if (!inferential_var %in% names(x)) {
     stop(
       "Column `",
       inferential_var,
@@ -914,307 +903,6 @@ plot.effect_size_data <- function(
       point_alpha = point_alpha,
       point_size = point_size,
       add_smooth = add_smooth
-    ),
-    ordination = .plot_effect_size_ordination(
-      x = x,
-      reduction_levels = reduction_levels,
-      selection = selection,
-      show_centroids = show_centroids,
-      label_centroids = label_centroids,
-      show_hulls = show_hulls,
-      point_alpha = point_alpha,
-      point_size = point_size,
-      centroid_size = centroid_size,
-      facet_ncol = facet_ncol
     )
   )
-}
-
-# =========================================================
-# PCoA helpers
-# =========================================================
-
-#' @keywords internal
-.extract_pcoa_data <- function(x) {
-  pcoa <- attr(x, "pcoa")
-
-  if (is.null(pcoa)) {
-    stop(
-      "This effect_size_data object does not contain PCoA data in `attr(x, 'pcoa')`.",
-      call. = FALSE
-    )
-  }
-
-  if (is.list(pcoa) && !is.data.frame(pcoa)) {
-    if (!all(vapply(pcoa, is.data.frame, logical(1)))) {
-      stop(
-        "If `attr(x, 'pcoa')` is a list, all elements must be data.frames.",
-        call. = FALSE
-      )
-    }
-    pcoa <- dplyr::bind_rows(pcoa)
-  }
-
-  if (!is.data.frame(pcoa)) {
-    stop(
-      "`attr(x, 'pcoa')` must be a data.frame or a list of data.frames.",
-      call. = FALSE
-    )
-  }
-
-  # Flexible detection of axis names
-  axis1_candidates <- c("Axis1", "PCoA1", "Dim1", "MDS1")
-  axis2_candidates <- c("Axis2", "PCoA2", "Dim2", "MDS2")
-  group_candidates <- c("group", "Group", "grp")
-
-  axis1_col <- intersect(axis1_candidates, names(pcoa))[1]
-  axis2_col <- intersect(axis2_candidates, names(pcoa))[1]
-  group_col <- intersect(group_candidates, names(pcoa))[1]
-
-  if (is.na(axis1_col) || is.na(axis2_col)) {
-    stop(
-      "PCoA data must contain axis columns such as `Axis1`/`Axis2` or `PCoA1`/`PCoA2`.",
-      call. = FALSE
-    )
-  }
-
-  if (is.na(group_col)) {
-    stop(
-      "PCoA data must contain a grouping column, preferably named `group`.",
-      call. = FALSE
-    )
-  }
-
-  names(pcoa)[names(pcoa) == axis1_col] <- "Axis1"
-  names(pcoa)[names(pcoa) == axis2_col] <- "Axis2"
-  names(pcoa)[names(pcoa) == group_col] <- "group"
-
-  required_cols <- c("reduction_level", "Axis1", "Axis2", "group")
-  missing_cols <- setdiff(required_cols, names(pcoa))
-
-  if (length(missing_cols) > 0) {
-    stop(
-      "Missing required PCoA columns: ",
-      paste(missing_cols, collapse = ", "),
-      call. = FALSE
-    )
-  }
-
-  pcoa
-}
-
-#' @keywords internal
-.select_representative_pcoa <- function(
-  x,
-  pcoa_df,
-  reduction_levels = NULL,
-  selection = c("median", "first", "min", "max")
-) {
-  selection <- match.arg(selection)
-
-  df <- as.data.frame(x)
-
-  if (!is.null(reduction_levels)) {
-    df <- df[df$reduction_level %in% reduction_levels, , drop = FALSE]
-    pcoa_df <- pcoa_df[
-      pcoa_df$reduction_level %in% reduction_levels,
-      ,
-      drop = FALSE
-    ]
-  }
-
-  id_candidates <- c("reduction_level", "k", "m", "n")
-  join_cols <- intersect(id_candidates, intersect(names(df), names(pcoa_df)))
-
-  if (!"reduction_level" %in% join_cols) {
-    stop(
-      "`reduction_level` must exist in both the main object and PCoA data.",
-      call. = FALSE
-    )
-  }
-
-  extra_id_cols <- setdiff(join_cols, "reduction_level")
-
-  if (length(extra_id_cols) == 0 && any(duplicated(df$reduction_level))) {
-    stop(
-      "Cannot select a representative simulation per reduction_level because no simulation identifiers ",
-      "(such as `k`, `m`, or `n`) are shared between the main table and the PCoA data.",
-      call. = FALSE
-    )
-  }
-
-  selected <- switch(
-    selection,
-    median = {
-      targets <- df |>
-        dplyr::group_by(reduction_level) |>
-        dplyr::summarise(
-          target_eco = stats::median(ecological_effect, na.rm = TRUE),
-          .groups = "drop"
-        )
-
-      df |>
-        dplyr::inner_join(targets, by = "reduction_level") |>
-        dplyr::mutate(.dist_to_target = abs(ecological_effect - target_eco)) |>
-        dplyr::group_by(reduction_level) |>
-        dplyr::slice_min(
-          order_by = .dist_to_target,
-          n = 1,
-          with_ties = FALSE
-        ) |>
-        dplyr::ungroup() |>
-        dplyr::select(dplyr::all_of(join_cols))
-    },
-    first = {
-      df |>
-        dplyr::group_by(reduction_level) |>
-        dplyr::slice_head(n = 1) |>
-        dplyr::ungroup() |>
-        dplyr::select(dplyr::all_of(join_cols))
-    },
-    min = {
-      df |>
-        dplyr::group_by(reduction_level) |>
-        dplyr::slice_min(
-          order_by = ecological_effect,
-          n = 1,
-          with_ties = FALSE
-        ) |>
-        dplyr::ungroup() |>
-        dplyr::select(dplyr::all_of(join_cols))
-    },
-    max = {
-      df |>
-        dplyr::group_by(reduction_level) |>
-        dplyr::slice_max(
-          order_by = ecological_effect,
-          n = 1,
-          with_ties = FALSE
-        ) |>
-        dplyr::ungroup() |>
-        dplyr::select(dplyr::all_of(join_cols))
-    }
-  )
-
-  out <- dplyr::inner_join(pcoa_df, selected, by = join_cols)
-
-  reduction_order <- selected |>
-    dplyr::distinct(reduction_level) |>
-    dplyr::arrange(reduction_level) |>
-    dplyr::pull(reduction_level)
-
-  out$panel_label <- factor(
-    paste0("Reduction = ", out$reduction_level),
-    levels = paste0("Reduction = ", reduction_order)
-  )
-
-  out
-}
-
-#' @keywords internal
-.compute_pcoa_centroids <- function(df) {
-  df |>
-    dplyr::group_by(panel_label, reduction_level, group) |>
-    dplyr::summarise(
-      Axis1 = mean(Axis1, na.rm = TRUE),
-      Axis2 = mean(Axis2, na.rm = TRUE),
-      .groups = "drop"
-    )
-}
-
-#' @keywords internal
-.compute_pcoa_hulls <- function(df) {
-  df |>
-    dplyr::group_by(panel_label, reduction_level, group) |>
-    dplyr::filter(dplyr::n() >= 3) |>
-    dplyr::slice(chull(Axis1, Axis2)) |>
-    dplyr::ungroup()
-}
-
-#' @keywords internal
-.plot_effect_size_ordination <- function(
-  x,
-  reduction_levels = NULL,
-  selection = c("median", "first", "min", "max"),
-  show_centroids = TRUE,
-  label_centroids = TRUE,
-  show_hulls = FALSE,
-  point_alpha = 0.7,
-  point_size = 1.6,
-  centroid_size = 2.8,
-  facet_ncol = NULL
-) {
-  selection <- match.arg(selection)
-
-  pcoa_df <- .extract_pcoa_data(x)
-
-  plot_df <- .select_representative_pcoa(
-    x = x,
-    pcoa_df = pcoa_df,
-    reduction_levels = reduction_levels,
-    selection = selection
-  )
-
-  centroids <- .compute_pcoa_centroids(plot_df)
-
-  p <- ggplot2::ggplot(
-    plot_df,
-    ggplot2::aes(x = Axis1, y = Axis2, colour = group)
-  )
-
-  if (show_hulls) {
-    hulls <- .compute_pcoa_hulls(plot_df)
-
-    if (nrow(hulls) > 0) {
-      p <- p +
-        ggplot2::geom_polygon(
-          data = hulls,
-          ggplot2::aes(fill = group, group = interaction(panel_label, group)),
-          alpha = 0.12,
-          colour = NA,
-          inherit.aes = FALSE
-        )
-    }
-  }
-
-  p <- p +
-    ggplot2::geom_point(alpha = point_alpha, size = point_size)
-
-  if (show_centroids) {
-    p <- p +
-      ggplot2::geom_point(
-        data = centroids,
-        ggplot2::aes(x = Axis1, y = Axis2, colour = group),
-        inherit.aes = FALSE,
-        size = centroid_size,
-        shape = 4
-      )
-  }
-
-  if (label_centroids) {
-    p <- p +
-      ggplot2::geom_text(
-        data = centroids,
-        ggplot2::aes(x = Axis1, y = Axis2, label = group, colour = group),
-        inherit.aes = FALSE,
-        vjust = -0.7,
-        show.legend = FALSE
-      )
-  }
-
-  p +
-    ggplot2::facet_wrap(~panel_label, ncol = facet_ncol) +
-    ggplot2::coord_equal() +
-    ggplot2::labs(
-      x = "PCoA 1",
-      y = "PCoA 2",
-      colour = "Group",
-      fill = "Group"
-    ) +
-    ggplot2::theme_bw() +
-    ggplot2::theme(
-      panel.grid.minor = ggplot2::element_blank(),
-      panel.border = ggplot2::element_rect(linewidth = 0.4),
-      axis.ticks = ggplot2::element_line(linewidth = 0.2)
-    )
 }
