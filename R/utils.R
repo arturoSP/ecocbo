@@ -170,6 +170,13 @@ dbmanova_oneway <- function(
     df = c(dfA = dfA, dfR = dfR, dfT = dfT),
     MS = c(MS_A = MS_A, MS_R = MS_R),
     F = c(F_A = F_A),
+    SS_between = SSA,
+    SS_total = SST,
+    df_between = dfA,
+    MS_residual = MS_R,
+    pseudoF = F_A,
+    R2 = SSA / SST,
+    omega2 = (SSA - dfA * MS_R) / (SST + MS_R),
     method = method,
     transformation = transformation,
     model = model
@@ -180,6 +187,96 @@ dbmanova_oneway <- function(
     table = anova_tbl,
     list = out_list,
     both = list(table = anova_tbl, stats = out_list)
+  )
+}
+
+#' Balanced sampling for effect size simulations
+#'
+#' Builds one balanced sample and computes ecological and inferential effect sizes.
+#'
+#' @param i Integer. Iteration index.
+#' @param Y Integer vector/matrix with row indices to sample from.
+#' @param mm Integer vector with number of groups in each iteration.
+#' @param nn Integer vector with total sample size in each iteration.
+#' @param YPU Integer vector labeling PSUs for balanced sampling.
+#' @param HaSim 3D array of simulated Ha communities.
+#' @param resultsHa Helper matrix with labels (at least dat.sim, k, m, n).
+#' @param transformation Character. Data transformation.
+#' @param method Character. Dissimilarity metric.
+#'
+#' @return A named list with one-row metrics for the selected simulation/sample.
+#'
+#' @keywords internal
+#' @noRd
+balanced_sampling_es <- function(
+  i,
+  Y,
+  mm,
+  nn,
+  YPU,
+  HaSim,
+  resultsHa,
+  transformation,
+  method
+) {
+  m <- mm[i]
+  n <- nn[i]
+
+  df_idx <- tibble::tibble(
+    idx = seq_along(Y),
+    PU = YPU
+  )
+
+  psu_sel <- df_idx |>
+    dplyr::distinct(PU) |>
+    dplyr::slice_sample(n = m) |>
+    dplyr::pull(PU)
+
+  sel_rows <- df_idx |>
+    dplyr::filter(PU %in% psu_sel) |>
+    dplyr::group_by(PU) |>
+    dplyr::slice_sample(n = n / m) |>
+    dplyr::ungroup() |>
+    dplyr::pull(idx)
+
+  sel <- matrix(0L, nrow = nrow(df_idx), ncol = 1)
+  sel[sel_rows, 1] <- 1L
+  ones <- which(sel[, 1] %in% 1)
+
+  ya <- HaSim[ones, , resultsHa[i, 1]]
+  yHa <- dim(ya)[2] - 2
+
+  infer_out <- dbmanova_oneway(
+    x = ya[, 1:yHa],
+    factEnv = ya[, yHa + 2],
+    transformation = transformation,
+    method = method,
+    return = "table"
+  )
+
+  eco <- calc_dist(
+    datHa = cbind(group = ya[, yHa + 2], ya[, 1:yHa, drop = FALSE]),
+    method = method,
+    return = "both"
+  )
+
+  # pseudoF = infer_out$table[1, "pseudoF"]
+  R2 = infer_out[1, "SS"] / infer_out[3, "SS"]
+  omega2 = (infer_out[1, "SS"] - infer_out[1, "df"] * infer_out[2, "MS"]) /
+    (infer_out[3, "SS"] + infer_out[2, "MS"])
+
+  list(
+    pseudoF = infer_out[1, "pseudoF"],
+    omega2 = omega2,
+    R2 = R2,
+    SS_between = infer_out[1, "SS"],
+    SS_total = infer_out[3, "SS"],
+    df_between = infer_out[1, "df"],
+    MS_residual = infer_out[2, "MS"],
+    ecological_effect = eco$ecological_effect,
+    centroid_dist_matrix = eco$centroid_dist_matrix,
+    n_groups = eco$n_groups,
+    infer_table = infer_out
   )
 }
 
@@ -934,21 +1031,54 @@ use_simper <- function(datHa) {
 #' @noRd
 #'
 
-calc_dist <- function(datHa) {
-  datHa_site <- datHa[, 1]
-  datHa_ <- datHa[, c(2:(ncol(datHa)))]
-  # Calculates global Bray-Curtis
-  DistBC <- vegan::vegdist(datHa_)
-  # PCoA and corrected cmdscale
-  ord <- vegan::wcmdscale(DistBC, eig = TRUE, add = "lingoes")
-  # Samples coordinates
-  coords <- as.data.frame(ord$points)
-  coords$site <- datHa_site
-  # Group centroids
-  centroides <- aggregate(. ~ site, data = coords, FUN = mean)
-  # Distances between centroids
-  dist_centroides <- dist(centroides[, -1]) |>
-    as.matrix()
+calc_dist <- function(datHa, method = "bray", return = c("matrix", "both")) {
+  return <- match.arg(return)
+  datHa_site <- as.factor(datHa[, 1])
+  datHa_ <- datHa[, c(2:(ncol(datHa))), drop = FALSE]
 
-  return(dist_centroides)
+  DistBC <- vegan::vegdist(datHa_, method = method)
+  ord <- vegan::wcmdscale(DistBC, eig = TRUE, add = "lingoes")
+
+  eig <- ord$eig
+  eig_pos <- which(eig > 0)
+  coords <- as.data.frame(ord$points[, eig_pos, drop = FALSE])
+  coords$site <- datHa_site
+
+  centroides <- stats::aggregate(. ~ site, data = coords, FUN = mean)
+  centroid_dist <- stats::dist(centroides[, -1, drop = FALSE]) |>
+    as.matrix()
+  rownames(centroid_dist) <- centroides$site
+  colnames(centroid_dist) <- centroides$site
+
+  n_groups <- nlevels(datHa_site)
+  group_size <- as.numeric(table(datHa_site))
+  centroid_mat <- as.matrix(centroides[, -1, drop = FALSE])
+
+  ecological_effect <- if (n_groups == 2) {
+    as.numeric(centroid_dist[1, 2])
+  } else {
+    c_bar <- colMeans(centroid_mat)
+    sq_dist <- rowSums(
+      (centroid_mat -
+        matrix(
+          c_bar,
+          nrow = nrow(centroid_mat),
+          ncol = ncol(centroid_mat),
+          byrow = TRUE
+        ))^2
+    )
+    sqrt(sum(group_size * sq_dist) / sum(group_size))
+  }
+
+  if (return == "matrix") {
+    return(centroid_dist)
+  }
+
+  list(
+    ecological_effect = ecological_effect,
+    centroid_dist_matrix = centroid_dist,
+    centroids = centroides,
+    n_groups = n_groups,
+    positive_axes = eig_pos
+  )
 }
