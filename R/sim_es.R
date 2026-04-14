@@ -8,7 +8,7 @@
 #'   to which the sample belongs.
 #'   - For `"nested.symmetric"` analysis: The first column should indicate the
 #'   treatment, and the second column should indicate the replicate.
-#' @param steps =====PENDING====
+#' @param steps Number of steps needed to calculate the relevance depletion.
 #' @param type Character. Nature of the data to be processed. It may be presence
 #'  / absence ("P/A"), counts of individuals ("counts"), or coverage ("cover").
 #' @param Sest.method Character Method for estimating species richness using
@@ -150,6 +150,7 @@ sim_ES <- function(
 
   ## Output container ----
   resultOut <- vector("list", length = NN * (steps + 1))
+  pcoaOut <- vector("list", length = NN * (steps + 1))
 
   simH0 <- SSP::simdata(
     parH0,
@@ -174,37 +175,32 @@ sim_ES <- function(
   }
 
   rm(simH0)
-
   H0Sim <- array(unlist(H0Sim), dim = c(xH0, yH0, casesHa))
 
-  # Here we start the loop for species contribution attenuation ----
+  # Loop for species contribution attenuation ----
   n_spp <- dim(sppContribution)[1]
   propSpp <- 1 / steps
 
   for (st in 0:steps) {
     # Calculate number of species to alter
     removing <- st * propSpp
-
     adjustN <- ceiling(nrow(sppContribution) * removing)
 
     if (adjustN != 0) {
       adjusting <- sppContribution[1:adjustN, 1]
 
       # Obtain H0 parameters from null hypothesis
-      zeroParameter <- parH0$par
-      zeroParameter <- zeroParameter[
-        zeroParameter$Species %in% adjusting,
+      zeroParameter <- parH0$par[
+        parH0$par$Species %in% adjusting,
         c(1, 3)
-      ] # CONFIRMAR CON EDLIN QUE SE USA fw
+      ]
 
       # Alter the Ha parameters with the corresponding null hypothesis version
       parHaTemp <- parHa
       parHaTemp$par[
         parHaTemp$par$Species %in% adjusting,
         c(3)
-      ] <- zeroParameter[,
-        2
-      ]
+      ] <- zeroParameter[, 2]
     } else {
       parHaTemp <- parHa
     }
@@ -299,6 +295,7 @@ sim_ES <- function(
     }
 
     idx <- (st * NN + 1):((st + 1) * NN)
+
     resultOut[idx] <- lapply(seq_len(NN), function(i) {
       cur <- result1[[i]]
       data.frame(
@@ -318,70 +315,31 @@ sim_ES <- function(
         MS_residual = cur$MS_residual,
         n_groups = cur$n_groups,
         stringsAsFactors = FALSE
-      ) #|>
-      # dplyr::mutate(
-      #   centroid_dist_matrix = list(cur$centroid_dist_matrix),
-      #   infer_table = list(cur$infer_table)
-      # )
+      )
+    })
+
+    pcoaOut[idx] <- lapply(seq_len(NN), function(i) {
+      cur <- result1[[i]]
+      pts <- cur$pcoa_points
+      pts$reduction_level <- st / steps
+      pts$step <- st
+      pts
     })
 
     cat("Step ", st, ": Done! - ", steps - st, " remaining")
   }
 
   resultOut <- dplyr::bind_rows(resultOut)
-  # class(resultOut) <- c("effect_size_data", class(resultOut))
-  class(resultOut) <- new_effect_size_data(resultOut)
+  pcoaOut <- dplyr::bind_rows(pcoaOut)
 
-  return(resultOut)
+  es_obj <- new_effect_size_data(
+    data = resultOut,
+    pcoa = pcoaOut,
+    call = match.call()
+  )
+
+  return(es_obj)
 }
-
-
-# #-------------------------------------------
-# ## S3Methods plot()
-# #-------------------------------------------
-# #' Plot effect_size_data
-# #'
-# #' @method plot effect_size_data
-# #'
-# #' @param x An object of class \code{effect_size_data}.
-# #' @param ... Additional arguments, ignored.
-# #'
-# #' @return A ggplot representation of the \code{effect_size_data} object.
-# #' @export
-
-# plot.effect_size_data <- function(x, type = c("stacked", "scatter"), ...) {
-#   if (!all(c("reduction_level", "ecological_effect") %in% colnames(x))) {
-#     stop("`plot.effect_size_data()` expects redesigned output from `sim_ES()`.")
-#   }
-
-#   p1 <- x |>
-#     as.data.frame() |>
-#     dplyr::group_by(reduction_level) |>
-#     dplyr::summarise(
-#       media = mean(ecological_effect, na.rm = TRUE),
-#       mediana = median(ecological_effect, na.rm = TRUE),
-#       q25 = quantile(ecological_effect, 0.25, na.rm = TRUE),
-#       q75 = quantile(ecological_effect, 0.75, na.rm = TRUE),
-#       .groups = "drop"
-#     ) |>
-#     ggplot2::ggplot(ggplot2::aes(x = reduction_level, y = mediana)) +
-#     ggplot2::geom_ribbon(ggplot2::aes(ymin = q25, ymax = q75), alpha = 0.3) +
-#     ggplot2::geom_line() +
-#     ggplot2::geom_point() +
-#     ggplot2::scale_x_continuous(name = "% removed SIMPER contribution") +
-#     ggplot2::scale_y_continuous(name = "Ecological effect size") +
-#     ggplot2::theme_bw() +
-#     ggplot2::theme(
-#       panel.grid.minor.x = ggplot2::element_blank(),
-#       panel.border = ggplot2::element_rect(linewidth = 0.4),
-#       axis.ticks = ggplot2::element_line(linewidth = 0.2)
-#     )
-
-#   print(p1)
-#   invisible(p1)
-# }
-
-# ==============
 
 # =========================================================
 # effect_size_data S3 class
@@ -495,10 +453,13 @@ print.effect_size_data <- function(
     error = function(e) NULL
   )
 
+  has_pcoa <- !is.null(attr(x, "pcoa"))
+
   cat("<effect_size_data>\n")
   cat("Rows:", n_rows, "\n")
   cat("Columns:", n_cols, "\n")
   cat("Reduction levels:", reduction_n, "\n")
+  cat("PCoA data available:", if (has_pcoa) "yes" else "no", "\n")
 
   if (!is.null(reduction_range) && length(reduction_range) == 2) {
     cat(
@@ -822,6 +783,75 @@ print.effect_size_data <- function(
   p
 }
 
+#' @keywords internal
+.plot_effect_size_ordination <- function(
+  x,
+  reduction_levels = NULL,
+  selection = c("median", "first", "min", "max"),
+  show_centroids = TRUE,
+  label_centroids = TRUE,
+  point_alpha = 0.7,
+  point_size = 1.8,
+  centroid_size = 2.8,
+  facet_ncol = NULL
+) {
+  selection <- match.arg(selection)
+
+  pcoa_df <- .extract_pcoa_data(x)
+
+  plot_df <- .select_representative_pcoa(
+    x = x,
+    pcoa_df = pcoa_df,
+    reduction_levels = reduction_levels,
+    selection = selection
+  )
+
+  centroids <- .compute_pcoa_centroids(plot_df)
+
+  p <- ggplot2::ggplot(
+    plot_df,
+    ggplot2::aes(x = Axis1, y = Axis2, colour = group)
+  ) +
+    ggplot2::geom_point(alpha = point_alpha, size = point_size)
+
+  if (show_centroids) {
+    p <- p +
+      ggplot2::geom_point(
+        data = centroids,
+        ggplot2::aes(x = Axis1, y = Axis2, colour = group),
+        inherit.aes = FALSE,
+        size = centroid_size,
+        shape = 4
+      )
+  }
+
+  if (label_centroids) {
+    p <- p +
+      ggplot2::geom_text(
+        data = centroids,
+        ggplot2::aes(x = Axis1, y = Axis2, label = group, colour = group),
+        inherit.aes = FALSE,
+        vjust = -0.7,
+        show.legend = FALSE
+      )
+  }
+
+  p +
+    ggplot2::facet_wrap(~panel_label, ncol = facet_ncol) +
+    ggplot2::coord_equal() +
+    ggplot2::labs(
+      x = "PCoA 1",
+      y = "PCoA 2",
+      colour = "Group"
+    ) +
+    ggplot2::theme_bw() +
+    ggplot2::theme(
+      panel.grid.minor = ggplot2::element_blank(),
+      panel.border = ggplot2::element_rect(linewidth = 0.4),
+      axis.ticks = ggplot2::element_line(linewidth = 0.2)
+    )
+}
+
 # =========================================================
 # plot() method
 # =========================================================
@@ -852,16 +882,22 @@ print.effect_size_data <- function(
 #' @export
 plot.effect_size_data <- function(
   x,
-  type = c("stacked", "scatter"),
+  type = c("stacked", "scatter", "ordination"),
   inferential_var = c("omega2", "R2", "pseudoF"),
   summary_stat = c("median", "mean"),
   interval = c("iqr", "sd"),
   colour_by = c("reduction_level", "none"),
   scatter_data = c("summary", "raw"),
+  reduction_levels = NULL,
+  selection = c("median", "first", "min", "max"),
+  show_centroids = TRUE,
+  label_centroids = TRUE,
   ribbon_alpha = 0.25,
   point_alpha = 0.7,
   line_size = 0.4,
   point_size = 1.8,
+  centroid_size = 2.8,
+  facet_ncol = NULL,
   add_smooth = FALSE,
   ...
 ) {
@@ -873,8 +909,9 @@ plot.effect_size_data <- function(
   interval <- match.arg(interval)
   colour_by <- match.arg(colour_by)
   scatter_data <- match.arg(scatter_data)
+  selection <- match.arg(selection)
 
-  if (!inferential_var %in% names(x)) {
+  if (type %in% c("stacked", "scatter") && !inferential_var %in% names(x)) {
     stop(
       "Column `",
       inferential_var,
@@ -903,6 +940,410 @@ plot.effect_size_data <- function(
       point_alpha = point_alpha,
       point_size = point_size,
       add_smooth = add_smooth
+    ),
+    ordination = .plot_effect_size_ordination(
+      x = x,
+      reduction_levels = reduction_levels,
+      selection = selection,
+      show_centroids = show_centroids,
+      label_centroids = label_centroids,
+      point_alpha = point_alpha,
+      point_size = point_size,
+      centroid_size = centroid_size,
+      facet_ncol = facet_ncol
     )
   )
+}
+
+# =========================================================
+# summary() helpers
+# =========================================================
+
+#' @keywords internal
+.es_quantile_name <- function(p) {
+  paste0("q", formatC(100 * p, format = "fg", width = 1, digits = 0))
+}
+
+#' @keywords internal
+.summarise_vector <- function(
+  z,
+  center = c("median", "mean"),
+  probs = c(0.25, 0.5, 0.75)
+) {
+  center <- match.arg(center)
+
+  z <- z[!is.na(z)]
+  if (length(z) == 0) {
+    out <- c(
+      n = 0,
+      mean = NA_real_,
+      median = NA_real_,
+      sd = NA_real_,
+      min = NA_real_,
+      max = NA_real_
+    )
+    qs <- stats::setNames(
+      rep(NA_real_, length(probs)),
+      .es_quantile_name(probs)
+    )
+    return(c(out, qs))
+  }
+
+  out <- c(
+    n = length(z),
+    mean = mean(z),
+    median = stats::median(z),
+    sd = stats::sd(z),
+    min = min(z),
+    max = max(z)
+  )
+
+  qs <- stats::quantile(z, probs = probs, na.rm = TRUE, names = FALSE)
+  names(qs) <- .es_quantile_name(probs)
+
+  c(out, qs)
+}
+
+#' @keywords internal
+.summarise_by_reduction <- function(df, inferential_var, center, probs) {
+  dplyr::group_by(df, reduction_level) |>
+    dplyr::group_modify(function(.x, .y) {
+      eco <- .summarise_vector(
+        .x$ecological_effect,
+        center = center,
+        probs = probs
+      )
+      inf <- .summarise_vector(
+        .x[[inferential_var]],
+        center = center,
+        probs = probs
+      )
+
+      out <- data.frame(
+        n_obs = nrow(.x),
+        eco_mean = eco["mean"],
+        eco_median = eco["median"],
+        eco_sd = eco["sd"],
+        eco_min = eco["min"],
+        eco_max = eco["max"],
+        inf_mean = inf["mean"],
+        inf_median = inf["median"],
+        inf_sd = inf["sd"],
+        inf_min = inf["min"],
+        inf_max = inf["max"]
+      )
+
+      for (p in probs) {
+        nm <- .es_quantile_name(p)
+        out[[paste0("eco_", nm)]] <- eco[[nm]]
+        out[[paste0("inf_", nm)]] <- inf[[nm]]
+      }
+
+      out
+    }) |>
+    dplyr::ungroup()
+}
+
+# =========================================================
+# summary() method
+# =========================================================
+
+#' Summary method for effect_size_data objects
+#'
+#' @param object An object of class `effect_size_data`.
+#' @param inferential_var Which inferential metric to summarise.
+#'   One of `"omega2"`, `"R2"`, or `"pseudoF"`.
+#' @param by Whether to summarise by `reduction_level` or only globally.
+#' @param center Central tendency target. Currently informative only for printing.
+#' @param probs Probabilities for quantile summaries.
+#' @param association Association method between ecological and inferential effects.
+#'   One of `"spearman"`, `"pearson"`, or `"none"`.
+#' @param ... Unused, reserved for future extensions.
+#'
+#' @return An object of class `summary_effect_size_data`.
+#' @export
+summary.effect_size_data <- function(
+  object,
+  inferential_var = c("omega2", "R2", "pseudoF"),
+  by = c("reduction_level", "none"),
+  center = c("median", "mean"),
+  probs = c(0.25, 0.5, 0.75),
+  association = c("spearman", "pearson", "none"),
+  ...
+) {
+  validate_effect_size_data(object)
+
+  inferential_var <- match.arg(inferential_var)
+  by <- match.arg(by)
+  center <- match.arg(center)
+  association <- match.arg(association)
+
+  df <- as.data.frame(object)
+
+  if (!inferential_var %in% names(df)) {
+    stop(
+      "Column `",
+      inferential_var,
+      "` is not available in the object.",
+      call. = FALSE
+    )
+  }
+
+  meta <- list(
+    n_rows = nrow(df),
+    n_cols = ncol(df),
+    reduction_levels = sort(unique(df$reduction_level)),
+    n_reduction_levels = length(unique(df$reduction_level)),
+    inferential_var = inferential_var,
+    available_inferential = intersect(c("omega2", "R2", "pseudoF"), names(df)),
+    has_k = "k" %in% names(df),
+    has_m = "m" %in% names(df),
+    has_n = "n" %in% names(df)
+  )
+
+  missing <- data.frame(
+    variable = intersect(
+      c("ecological_effect", "omega2", "R2", "pseudoF"),
+      names(df)
+    ),
+    n_missing = vapply(
+      intersect(c("ecological_effect", "omega2", "R2", "pseudoF"), names(df)),
+      function(v) sum(is.na(df[[v]])),
+      numeric(1)
+    ),
+    row.names = NULL
+  )
+
+  overall <- data.frame(
+    metric = c("ecological_effect", inferential_var),
+    rbind(
+      .summarise_vector(df$ecological_effect, center = center, probs = probs),
+      .summarise_vector(df[[inferential_var]], center = center, probs = probs)
+    ),
+    row.names = NULL,
+    check.names = FALSE
+  )
+
+  by_reduction <- NULL
+  if (by == "reduction_level") {
+    by_reduction <- .summarise_by_reduction(
+      df = df,
+      inferential_var = inferential_var,
+      center = center,
+      probs = probs
+    )
+  }
+
+  association_out <- NULL
+  if (association != "none") {
+    keep <- stats::complete.cases(df[, c("ecological_effect", inferential_var)])
+    if (sum(keep) >= 3) {
+      ct <- stats::cor.test(
+        x = df$ecological_effect[keep],
+        y = df[[inferential_var]][keep],
+        method = association
+      )
+
+      association_out <- data.frame(
+        method = association,
+        estimate = unname(ct$estimate),
+        p_value = ct$p.value,
+        n = sum(keep),
+        row.names = NULL
+      )
+    } else {
+      association_out <- data.frame(
+        method = association,
+        estimate = NA_real_,
+        p_value = NA_real_,
+        n = sum(keep),
+        row.names = NULL
+      )
+    }
+  }
+
+  out <- list(
+    meta = meta,
+    missing = missing,
+    overall = overall,
+    by_reduction = by_reduction,
+    association = association_out,
+    call = match.call()
+  )
+
+  class(out) <- c("summary_effect_size_data", "list")
+  out
+}
+
+# =========================================================
+# print.summary() method
+# =========================================================
+
+#' Print method for summary_effect_size_data objects
+#'
+#' @param x An object of class `summary_effect_size_data`.
+#' @param digits Number of digits to print.
+#' @param preview_n Number of rows to show for grouped summaries.
+#' @param ... Unused.
+#'
+#' @return Invisibly returns `x`.
+#' @export
+print.summary_effect_size_data <- function(
+  x,
+  digits = max(3L, getOption("digits") - 2L),
+  preview_n = 6L,
+  ...
+) {
+  cat("<summary_effect_size_data>\n\n")
+
+  cat("Inferential metric:", x$meta$inferential_var, "\n")
+  cat("Observations:", x$meta$n_rows, "\n")
+  cat("Reduction levels:", x$meta$n_reduction_levels, "\n")
+  cat(
+    "Available inferential metrics:",
+    paste(x$meta$available_inferential, collapse = ", "),
+    "\n"
+  )
+
+  cat("\nMissing values:\n")
+  print(x$missing, row.names = FALSE)
+
+  cat("\nOverall summary:\n")
+  print(x$overall, digits = digits, row.names = FALSE)
+
+  if (!is.null(x$association)) {
+    cat("\nAssociation between ecological and inferential effects:\n")
+    print(x$association, digits = digits, row.names = FALSE)
+  }
+
+  if (!is.null(x$by_reduction)) {
+    cat("\nBy reduction level (preview):\n")
+    print(
+      utils::head(x$by_reduction, n = preview_n),
+      digits = digits,
+      row.names = FALSE
+    )
+  }
+
+  invisible(x)
+}
+
+#' @keywords internal
+.extract_pcoa_data <- function(x) {
+  pcoa <- attr(x, "pcoa")
+
+  if (is.null(pcoa)) {
+    stop("This object does not contain stored PCoA data.", call. = FALSE)
+  }
+
+  if (!is.data.frame(pcoa)) {
+    stop("`attr(x, 'pcoa')` must be a data.frame.", call. = FALSE)
+  }
+
+  required_cols <- c(
+    "reduction_level",
+    "step",
+    "dat_sim",
+    "k",
+    "m",
+    "n",
+    "group",
+    "Axis1",
+    "Axis2"
+  )
+
+  missing_cols <- setdiff(required_cols, names(pcoa))
+  if (length(missing_cols) > 0) {
+    stop(
+      "Missing required columns in stored PCoA data: ",
+      paste(missing_cols, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  pcoa
+}
+
+#' @keywords internal
+.select_representative_pcoa <- function(
+  x,
+  pcoa_df,
+  reduction_levels = NULL,
+  selection = c("median", "first", "min", "max")
+) {
+  selection <- match.arg(selection)
+
+  df <- as.data.frame(x)
+
+  if (!is.null(reduction_levels)) {
+    df <- df[df$reduction_level %in% reduction_levels, , drop = FALSE]
+    pcoa_df <- pcoa_df[
+      pcoa_df$reduction_level %in% reduction_levels,
+      ,
+      drop = FALSE
+    ]
+  }
+
+  id_cols <- c("reduction_level", "step", "dat_sim", "k", "m", "n")
+
+  selected <- switch(
+    selection,
+    median = {
+      targets <- df |>
+        dplyr::group_by(reduction_level) |>
+        dplyr::summarise(
+          target_eco = stats::median(ecological_effect, na.rm = TRUE),
+          .groups = "drop"
+        )
+
+      df |>
+        dplyr::inner_join(targets, by = "reduction_level") |>
+        dplyr::mutate(.dist_to_target = abs(ecological_effect - target_eco)) |>
+        dplyr::group_by(reduction_level) |>
+        dplyr::slice_min(.dist_to_target, n = 1, with_ties = FALSE) |>
+        dplyr::ungroup() |>
+        dplyr::select(dplyr::all_of(id_cols))
+    },
+    first = {
+      df |>
+        dplyr::group_by(reduction_level) |>
+        dplyr::slice_head(n = 1) |>
+        dplyr::ungroup() |>
+        dplyr::select(dplyr::all_of(id_cols))
+    },
+    min = {
+      df |>
+        dplyr::group_by(reduction_level) |>
+        dplyr::slice_min(ecological_effect, n = 1, with_ties = FALSE) |>
+        dplyr::ungroup() |>
+        dplyr::select(dplyr::all_of(id_cols))
+    },
+    max = {
+      df |>
+        dplyr::group_by(reduction_level) |>
+        dplyr::slice_max(ecological_effect, n = 1, with_ties = FALSE) |>
+        dplyr::ungroup() |>
+        dplyr::select(dplyr::all_of(id_cols))
+    }
+  )
+
+  out <- dplyr::inner_join(pcoa_df, selected, by = id_cols)
+
+  out$panel_label <- factor(
+    paste0("Reduction = ", out$reduction_level),
+    levels = unique(paste0("Reduction = ", selected$reduction_level))
+  )
+
+  out
+}
+
+#' @keywords internal
+.compute_pcoa_centroids <- function(df) {
+  df |>
+    dplyr::group_by(panel_label, reduction_level, group) |>
+    dplyr::summarise(
+      Axis1 = mean(Axis1, na.rm = TRUE),
+      Axis2 = mean(Axis2, na.rm = TRUE),
+      .groups = "drop"
+    )
 }

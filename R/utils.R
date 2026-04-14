@@ -265,6 +265,12 @@ balanced_sampling_es <- function(
   omega2 = (infer_out[1, "SS"] - infer_out[1, "df"] * infer_out[2, "MS"]) /
     (infer_out[3, "SS"] + infer_out[2, "MS"])
 
+  pcoa_points <- eco$pcoa_points
+  pcoa_points$dat_sim <- resultsHa[i, "dat.sim"]
+  pcoa_points$k <- resultsHa[i, "k"]
+  pcoa_points$m <- resultsHa[i, "m"]
+  pcoa_points$n <- resultsHa[i, "n"]
+
   list(
     pseudoF = infer_out[1, "pseudoF"],
     omega2 = omega2,
@@ -276,7 +282,8 @@ balanced_sampling_es <- function(
     ecological_effect = eco$ecological_effect,
     centroid_dist_matrix = eco$centroid_dist_matrix,
     n_groups = eco$n_groups,
-    infer_table = infer_out
+    infer_table = infer_out,
+    pcoa_points = pcoa_points
   )
 }
 
@@ -1044,24 +1051,35 @@ calc_dist <- function(datHa, method = "bray", return = c("matrix", "both")) {
   coords <- as.data.frame(ord$points[, eig_pos, drop = FALSE])
   coords$site <- datHa_site
 
+  if (ncol(coords) == 1) {
+    centroides <- data.frame(site = datHa_site) |>
+      dplyr::mutate(Axis1 = coords[[1]])
+  }
+
   # 2-axis view used for ordination plotting (analytical ES still uses all + axes)
   if (ncol(coords) == 0) {
     pcoa_points <- data.frame(
+      sample_id = seq_len(nrow(datHa_)),
       group = datHa_site,
       Axis1 = rep(0, nrow(datHa_)),
-      Axis2 = rep(0, nrow(datHa_))
+      Axis2 = rep(0, nrow(datHa_)),
+      stringsAsFactors = FALSE
     )
   } else if (ncol(coords) == 1) {
     pcoa_points <- data.frame(
+      sample_id = seq_len(nrow(datHa_)),
       group = datHa_site,
       Axis1 = coords[[1]],
-      Axis2 = rep(0, nrow(coords))
+      Axis2 = rep(0, nrow(coords)),
+      stringsAsFactors = FALSE
     )
   } else {
     pcoa_points <- data.frame(
+      sample_id = seq_len(nrow(datHa_)),
       group = datHa_site,
       Axis1 = coords[[1]],
-      Axis2 = coords[[2]]
+      Axis2 = coords[[2]],
+      stringsAsFactors = FALSE
     )
   }
 
@@ -1074,22 +1092,6 @@ calc_dist <- function(datHa, method = "bray", return = c("matrix", "both")) {
   n_groups <- nlevels(datHa_site)
   group_size <- as.numeric(table(datHa_site))
   centroid_mat <- as.matrix(centroides[, -1, drop = FALSE])
-
-  ecological_effect <- if (n_groups == 2) {
-    as.numeric(centroid_dist[1, 2])
-  } else {
-    c_bar <- colMeans(centroid_mat)
-    sq_dist <- rowSums(
-      (centroid_mat -
-        matrix(
-          c_bar,
-          nrow = nrow(centroid_mat),
-          ncol = ncol(centroid_mat),
-          byrow = TRUE
-        ))^2
-    )
-    sqrt(sum(group_size * sq_dist) / sum(group_size))
-  }
 
   ecological_effect <- if (n_groups == 2) {
     as.numeric(centroid_dist[1, 2])
