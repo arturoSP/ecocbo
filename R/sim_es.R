@@ -87,201 +87,6 @@
 #' ES1
 #'
 
-.nested_ecological_effect <- function(
-  comm,
-  main_factor,
-  nested_factor,
-  method = "bray"
-) {
-  DistBC <- vegan::vegdist(comm, method = method)
-  ord <- vegan::wcmdscale(DistBC, eig = TRUE, add = "lingoes")
-
-  eig <- ord$eig
-  eig_pos <- which(eig > 0)
-  coords <- as.data.frame(ord$points[, eig_pos, drop = FALSE])
-  main_factor <- as.factor(main_factor)
-  nested_factor <- as.factor(nested_factor)
-
-  n_obs <- nrow(comm)
-  if (ncol(coords) == 0) {
-    pcoa_points <- data.frame(
-      sample_id = seq_len(n_obs),
-      group = main_factor,
-      nested = nested_factor,
-      Axis1 = rep(0, n_obs),
-      Axis2 = rep(0, n_obs),
-      stringsAsFactors = FALSE
-    )
-  } else if (ncol(coords) == 1) {
-    pcoa_points <- data.frame(
-      sample_id = seq_len(n_obs),
-      group = main_factor,
-      nested = nested_factor,
-      Axis1 = coords[[1]],
-      Axis2 = rep(0, n_obs),
-      stringsAsFactors = FALSE
-    )
-  } else {
-    pcoa_points <- data.frame(
-      sample_id = seq_len(n_obs),
-      group = main_factor,
-      nested = nested_factor,
-      Axis1 = coords[[1]],
-      Axis2 = coords[[2]],
-      stringsAsFactors = FALSE
-    )
-  }
-
-  coords_nested <- cbind(
-    data.frame(main = main_factor, nested = nested_factor),
-    coords
-  )
-
-  centroids_nested <- stats::aggregate(. ~ main + nested, data = coords_nested, FUN = mean)
-  centroids_main <- stats::aggregate(. ~ main, data = centroids_nested, FUN = mean)
-
-  centroid_main_mat <- as.matrix(centroids_main[, -(1), drop = FALSE])
-  dist_main_pairwise <- stats::dist(centroid_main_mat) |> as.matrix()
-  rownames(dist_main_pairwise) <- centroids_main$main
-  colnames(dist_main_pairwise) <- centroids_main$main
-
-  A <- nrow(centroids_main)
-  if (A >= 2) {
-    upper <- dist_main_pairwise[upper.tri(dist_main_pairwise)]
-    effect_ecol_main <- sqrt(mean(upper^2))
-  } else {
-    effect_ecol_main <- 0
-  }
-
-  centroids_with_main <- merge(
-    centroids_nested,
-    centroids_main,
-    by = "main",
-    suffixes = c("_nested", "_main")
-  )
-
-  axis_nested <- grep("_nested$", names(centroids_with_main), value = TRUE)
-  axis_main <- sub("_nested$", "_main", axis_nested)
-
-  d_to_main <- sqrt(rowSums(
-    (as.matrix(centroids_with_main[, axis_nested, drop = FALSE]) -
-      as.matrix(centroids_with_main[, axis_main, drop = FALSE]))^2
-  ))
-
-  disp_nested <- data.frame(
-    main = centroids_with_main$main,
-    nested = centroids_with_main$nested,
-    dist_to_main = d_to_main,
-    stringsAsFactors = FALSE
-  )
-
-  disp_nested_within_main <- stats::aggregate(
-    dist_to_main ~ main,
-    data = disp_nested,
-    FUN = mean
-  )
-
-  list(
-    ecological_effect = effect_ecol_main,
-    effect_ecol_main = effect_ecol_main,
-    centroids_nested = centroids_nested,
-    centroids_main_factor = centroids_main,
-    dist_main_pairwise = dist_main_pairwise,
-    disp_nested_within_main = disp_nested_within_main,
-    disp_nested_global = mean(disp_nested$dist_to_main),
-    pcoa_points = pcoa_points,
-    positive_axes = eig_pos
-  )
-}
-
-.balanced_sampling_es_nested <- function(
-  i,
-  Y,
-  mm,
-  nn,
-  YPU,
-  HaSim,
-  resultsHa,
-  factEnv,
-  n_species,
-  transformation,
-  method
-) {
-  m <- mm[i]
-  n <- nn[i]
-
-  df_idx <- tibble::tibble(
-    idx = seq_along(Y),
-    PU = YPU
-  )
-
-  psu_sel <- df_idx |>
-    dplyr::distinct(PU) |>
-    dplyr::slice_sample(n = m) |>
-    dplyr::pull(PU)
-
-  sel_rows <- df_idx |>
-    dplyr::filter(PU %in% psu_sel) |>
-    dplyr::group_by(PU) |>
-    dplyr::slice_sample(n = n / m) |>
-    dplyr::ungroup() |>
-    dplyr::pull(idx)
-
-  sel <- matrix(0L, nrow = nrow(df_idx), ncol = 1)
-  sel[sel_rows, 1] <- 1L
-  ones <- which(sel[, 1] %in% 1)
-
-  ya <- HaSim[ones, , resultsHa[i, 1]]
-  ya_comm <- as.matrix(ya[, seq_len(n_species), drop = FALSE])
-  fact_x <- factEnv[ones, , drop = FALSE]
-
-  infer_out <- dbmanova_nested(
-    x = ya_comm,
-    factEnv = fact_x,
-    transformation = transformation,
-    method = method,
-    model = "nested.symmetric",
-    return = "table"
-  )
-
-  eco <- .nested_ecological_effect(
-    comm = ya_comm,
-    main_factor = fact_x[, 1],
-    nested_factor = interaction(fact_x[, 1], fact_x[, 2], drop = TRUE),
-    method = method
-  )
-
-  R2 <- infer_out[1, "SS"] / infer_out[4, "SS"]
-  omega2 <- (infer_out[1, "SS"] - infer_out[1, "df"] * infer_out[2, "MS"]) /
-    (infer_out[4, "SS"] + infer_out[2, "MS"])
-
-  pcoa_points <- eco$pcoa_points
-  pcoa_points$dat_sim <- resultsHa[i, "dat.sim"]
-  pcoa_points$k <- resultsHa[i, "k"]
-  pcoa_points$m <- resultsHa[i, "m"]
-  pcoa_points$n <- resultsHa[i, "n"]
-
-  list(
-    pseudoF = infer_out[1, "pseudoF"],
-    omega2 = omega2,
-    R2 = R2,
-    SS_between = infer_out[1, "SS"],
-    SS_total = infer_out[4, "SS"],
-    df_between = infer_out[1, "df"],
-    MS_residual = infer_out[3, "MS"],
-    ecological_effect = eco$ecological_effect,
-    effect_ecol_main = eco$effect_ecol_main,
-    centroids_nested = eco$centroids_nested,
-    centroids_main_factor = eco$centroids_main_factor,
-    dist_main_pairwise = eco$dist_main_pairwise,
-    disp_nested_within_main = eco$disp_nested_within_main,
-    disp_nested_global = eco$disp_nested_global,
-    n_groups = nrow(eco$centroids_main_factor),
-    infer_table = infer_out,
-    pcoa_points = pcoa_points
-  )
-}
-
 sim_ES <- function(
   data,
   steps = 10,
@@ -300,41 +105,19 @@ sim_ES <- function(
   model = "single.factor",
   jitter.base = 0.5
 ) {
-  if (!model %in% c("single.factor", "nested.symmetric")) {
+  if (model != "single.factor") {
     stop(
-      "`model` must be either `single.factor` or `nested.symmetric`."
+      "`sim_ES()` currently supports only `model = 'single.factor'`. Nested designs are not implemented yet."
     )
   }
 
   # read data and store it in two objects, one for H0 and one for Ha ----
   datH0 <- data
+  datH0[, 1] <- as.factor("zero")
   datHa <- data
-
-  if (model == "single.factor") {
-    datH0[, 1] <- as.factor("zero")
-    datHa[, 1] <- as.factor(data[, 1])
-    a <- nlevels(datHa[, 1])
-    M <- a
-    n_species <- ncol(data) - 1
-    factEnv <- NULL
-  } else {
-    datH0[, 1] <- as.factor("zero")
-    datH0[, 2] <- as.factor(data[, 2])
-    datHa[, 1] <- as.factor(data[, 1])
-    datHa[, 2] <- as.factor(data[, 2])
-    trt_nested <- unique(data.frame(
-      main = datHa[, 1],
-      nested = datHa[, 2]
-    ))
-    a <- nlevels(as.factor(datHa[, 1]))
-    M <- nrow(trt_nested)
-    n_species <- ncol(data) - 2
-    factEnv <- trt_nested[rep(seq_len(nrow(trt_nested)), each = N), , drop = FALSE]
-  }
-
-  if (!is.null(m) && m > M) {
-    stop("`m` must be <= total number of nested units available in simulation (`M`).")
-  }
+  datHa[, 1] <- as.factor(data[, 1])
+  a <- nlevels(datHa[, 1])
+  M <- a
 
   ## Helper matrix to store labels ----
   NN <- cases * k * (n - 1)
@@ -350,7 +133,7 @@ sim_ES <- function(
 
   resultsHa[, 1] <- rep(seq(cases), times = 1, each = (k * (n - 1)))
   resultsHa[, 2] <- rep(1:k, times = (n - 1) * cases)
-  resultsHa[, 3] <- if (model == "nested.symmetric" && !is.null(m)) m else M
+  resultsHa[, 3] <- M
   resultsHa[, 4] <- rep(seq(2, n), times = 1, each = k)
 
   Y <- cbind(1:(N * M))
@@ -363,17 +146,11 @@ sim_ES <- function(
   parHa <- SSP::assempar(data = datHa, type = type, Sest.method = Sest.method)
 
   ## Calculate species similarity percentage from Ha ----
-  simper_data <- if (model == "single.factor") {
-    datHa
-  } else {
-    cbind(datHa[, 1, drop = FALSE], datHa[, -(1:2), drop = FALSE])
-  }
-  sppContribution <- use_simper(simper_data)
+  sppContribution <- use_simper(datHa)
 
   ## Output container ----
   resultOut <- vector("list", length = NN * (steps + 1))
   pcoaOut <- vector("list", length = NN * (steps + 1))
-  nestedDetailOut <- vector("list", length = NN * (steps + 1))
 
   simH0 <- SSP::simdata(
     parH0,
@@ -470,47 +247,27 @@ sim_ES <- function(
       parabar::export(
         cl,
         variables = c(
-          if (model == "single.factor") "balanced_sampling_es" else ".balanced_sampling_es_nested",
+          "balanced_sampling_es",
           "dbmanova_oneway",
-          "dbmanova_nested",
-          ".nested_ecological_effect",
           "calc_dist"
         ),
         environment = asNamespace("ecocbo")
       )
 
       # Executing the loop in parallel
-      result1 <- if (model == "single.factor") {
-        parabar::par_lapply(
-          cl,
-          x = 1:NN,
-          fun = balanced_sampling_es,
-          Y,
-          mm,
-          nn,
-          YPU,
-          HaSim,
-          resultsHa,
-          transformation,
-          method
-        )
-      } else {
-        parabar::par_lapply(
-          cl,
-          x = 1:NN,
-          fun = .balanced_sampling_es_nested,
-          Y,
-          mm,
-          nn,
-          YPU,
-          HaSim,
-          resultsHa,
-          factEnv,
-          n_species,
-          transformation,
-          method
-        )
-      }
+      result1 <- parabar::par_lapply(
+        cl,
+        x = 1:NN,
+        fun = balanced_sampling_es,
+        Y,
+        mm,
+        nn,
+        YPU,
+        HaSim,
+        resultsHa,
+        transformation,
+        method
+      )
 
       parabar::stop_backend(cl)
     } else {
@@ -519,33 +276,17 @@ sim_ES <- function(
 
       for (i in seq_len(NN)) {
         # Performs the operation iteratively in a for loop
-        result1[[i]] <- if (model == "single.factor") {
-          balanced_sampling_es(
-            i,
-            Y,
-            mm,
-            nn,
-            YPU,
-            HaSim,
-            resultsHa,
-            transformation,
-            method
-          )
-        } else {
-          .balanced_sampling_es_nested(
-            i,
-            Y,
-            mm,
-            nn,
-            YPU,
-            HaSim,
-            resultsHa,
-            factEnv,
-            n_species,
-            transformation,
-            method
-          )
-        }
+        result1[[i]] <- balanced_sampling_es(
+          i,
+          Y,
+          mm,
+          nn,
+          YPU,
+          HaSim,
+          resultsHa,
+          transformation,
+          method
+        )
 
         # Updating the progress bar
         setTxtProgressBar(pb, i)
@@ -557,8 +298,7 @@ sim_ES <- function(
 
     resultOut[idx] <- lapply(seq_len(NN), function(i) {
       cur <- result1[[i]]
-
-      out <- data.frame(
+      data.frame(
         reduction_level = st / steps,
         step = st,
         dat_sim = resultsHa[i, "dat.sim"],
@@ -576,13 +316,6 @@ sim_ES <- function(
         n_groups = cur$n_groups,
         stringsAsFactors = FALSE
       )
-
-      if (model == "nested.symmetric") {
-        out$effect_ecol_main <- cur$effect_ecol_main
-        out$disp_nested_within_main <- cur$disp_nested_global
-      }
-
-      out
     })
 
     pcoaOut[idx] <- lapply(seq_len(NN), function(i) {
@@ -592,24 +325,6 @@ sim_ES <- function(
       pts$step <- st
       pts
     })
-
-    if (model == "nested.symmetric") {
-      nestedDetailOut[idx] <- lapply(seq_len(NN), function(i) {
-        cur <- result1[[i]]
-        list(
-          step = st,
-          reduction_level = st / steps,
-          dat_sim = resultsHa[i, "dat.sim"],
-          k = resultsHa[i, "k"],
-          m = resultsHa[i, "m"],
-          n = resultsHa[i, "n"],
-          centroids_nested = cur$centroids_nested,
-          centroids_main_factor = cur$centroids_main_factor,
-          dist_main_pairwise = cur$dist_main_pairwise,
-          disp_nested_within_main = cur$disp_nested_within_main
-        )
-      })
-    }
 
     cat("Step ", st, ": Done! - ", steps - st, " remaining")
   }
@@ -622,10 +337,6 @@ sim_ES <- function(
     pcoa = pcoaOut,
     call = match.call()
   )
-
-  if (model == "nested.symmetric") {
-    attr(es_obj, "nested_ecology") <- nestedDetailOut
-  }
 
   return(es_obj)
 }
@@ -785,8 +496,6 @@ print.effect_size_data <- function(
       "m",
       "n",
       "ecological_effect",
-      "effect_ecol_main",
-      "disp_nested_within_main",
       "omega2",
       "R2",
       "pseudoF"
