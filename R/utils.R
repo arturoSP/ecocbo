@@ -246,19 +246,45 @@ balanced_sampling_es <- function(
   ya <- HaSim[ones, , resultsHa[i, 1]]
   yHa <- dim(ya)[2] - 2
 
+  comm <- ya[, 1:yHa, drop = FALSE]
+  grp <- ya[, yHa + 2]
+
   infer_out <- dbmanova_oneway(
-    x = ya[, 1:yHa],
-    factEnv = ya[, yHa + 2],
+    x = comm,
+    factEnv = grp,
     transformation = transformation,
     method = method,
     return = "table"
   )
 
-  eco <- calc_dist(
-    datHa = cbind(group = ya[, yHa + 2], ya[, 1:yHa, drop = FALSE]),
-    method = method,
-    return = "both"
-  )
+  rs <- rowSums(comm)
+
+  if (any(rs == 0, na.rm = TRUE)) {
+    warning(
+      "If you see this message several times, it is suggested you change dummy to TRUE",
+      call. = FALSE
+    )
+
+    levs <- unique(grp)
+    n_groups <- length(levs)
+
+    eco <- list(
+      ecological_effect = NA_real_,
+      centroid_dist_matrix = matrix(
+        NA_real_,
+        nrow = n_groups,
+        ncol = n_groups,
+        dimnames = list(as.character(levs), as.character(levs))
+      ),
+      n_groups = n_groups
+    )
+  } else {
+    eco <- calc_dist(
+      datHa = cbind(group = grp, comm),
+      method = method,
+      return = "both"
+    )
+  }
 
   # pseudoF = infer_out$table[1, "pseudoF"]
   R2 = infer_out[1, "SS"] / infer_out[3, "SS"]
@@ -570,6 +596,184 @@ dbmanova_nested <- function(
     table = anova_tbl,
     list = out_list,
     both = list(table = anova_tbl, stats = out_list)
+  )
+}
+
+
+#' balanced_sampling_es_nested
+#'
+#' @param i
+#' @param Y1
+#' @param mn
+#' @param nSect
+#' @param M
+#' @param N
+#' @param HaSim
+#' @param resultsHa
+#' @param factEnv
+#' @param transformation
+#' @param method
+#' @param model
+#'
+#' @returns
+#'
+#' @keywords internal
+#' @noRd
+
+balanced_sampling_es_nested <- function(
+  i,
+  Y1,
+  mn,
+  nSect,
+  M,
+  N,
+  HaSim,
+  resultsHa,
+  factEnv,
+  transformation,
+  method,
+  model
+) {
+  # Determine index for sampling units
+  m_psu <- mn[i, 1] # número de PSUs a seleccionar
+  n_ssu <- mn[i, 2] / m_psu # número de SSUs por PSU seleccionada
+
+  Y1_df <- as.data.frame(Y1)
+  row_id <- seq_len(nrow(Y1_df))
+  PU_vec <- Y1_df[[2]] # equivalente a 'PU = Y1[, 2]' en balancedtwostage()
+
+  # 1) Selección de PSUs
+  psu_sel <- tibble::tibble(PU = PU_vec) |>
+    dplyr::distinct(PU) |>
+    dplyr::slice_sample(n = m_psu) |>
+    dplyr::pull(PU)
+
+  # 2) Selección de SSUs dentro de cada PSU seleccionada
+  indice <- tibble::tibble(row_id = row_id, PU = PU_vec) |>
+    dplyr::filter(PU %in% psu_sel) |>
+    dplyr::group_by(PU) |>
+    dplyr::slice_sample(n = n_ssu) |>
+    dplyr::ungroup() |>
+    dplyr::arrange(row_id) |>
+    dplyr::pull(row_id)
+
+  ones_n <- rep(indice, nSect)
+  ones_s <- rep(c(0:(nSect - 1)) * M * N, each = length(indice))
+  ones <- ones_n + ones_s
+
+  rm(ones_n, ones_s, indice)
+
+  # Extract samples from the datasets and evaluate with PERMANOVA
+  ya <- HaSim[ones, , resultsHa[i, 1]]
+  rownames(ya) <- ones
+  factEnvX <- factEnv[ones, ]
+
+  infer_out <- dbmanova_nested(
+    x = ya,
+    factEnv = factEnvX,
+    transformation = transformation,
+    method = method,
+    model = model,
+    return = "table"
+  )
+
+  rs <- rowSums(ya)
+
+  if (any(rs == 0, na.rm = TRUE)) {
+    warning(
+      "If you see this message several times, it is suggested you change dummy to TRUE",
+      call. = FALSE
+    )
+
+    levs_A <- unique(as.character(factEnvX[, 1]))
+    levs_BA <- unique(interaction(factEnvX[, 1], factEnvX[, 2], drop = TRUE))
+
+    n_groups_A <- length(levs_A)
+    n_groups_BA <- length(levs_BA)
+
+    eco <- list(
+      ecological_effect_A = NA_real_,
+      ecological_effect_BA = NA_real_,
+      centroid_dist_matrix_A = matrix(
+        NA_real_,
+        nrow = n_groups_A,
+        ncol = n_groups_A,
+        dimnames = list(levs_A, levs_A)
+      ),
+      n_groups_A = n_groups_A,
+      n_groups_BA = n_groups_BA,
+      pcoa_points = data.frame(
+        sample_id = seq_len(nrow(ya)),
+        group = as.character(factEnvX[, 1]),
+        sector = as.character(factEnvX[, 1]),
+        site = as.character(factEnvX[, 2]),
+        sector_site = as.character(interaction(
+          factEnvX[, 1],
+          factEnvX[, 2],
+          drop = TRUE
+        )),
+        Axis1 = NA_real_,
+        Axis2 = NA_real_,
+        stringsAsFactors = FALSE
+      ),
+      site_sector_table = data.frame(
+        sector = as.character(factEnvX[, 1]),
+        site = as.character(factEnvX[, 2]),
+        sector_site = as.character(interaction(
+          factEnvX[, 1],
+          factEnvX[, 2],
+          drop = TRUE
+        )),
+        n_site = NA_real_,
+        dist_to_sector = NA_real_,
+        stringsAsFactors = FALSE
+      )
+    )
+  } else {
+    eco <- calc_dist_nested(
+      x = ya,
+      factEnv = factEnvX,
+      method = method,
+      return = "both"
+    )
+  }
+
+  # pseudoF = infer_out$table[1, "pseudoF"]
+  R2_A = infer_out[1, "SS"] / infer_out[4, "SS"]
+  R2_BA = infer_out[2, "SS"] / infer_out[4, "SS"]
+  omega2_A = (infer_out[1, "SS"] - infer_out[1, "df"] * infer_out[2, "MS"]) /
+    (infer_out[4, "SS"] + infer_out[2, "MS"])
+  omega2_BA = (infer_out[2, "SS"] - infer_out[2, "df"] * infer_out[3, "MS"]) /
+    (infer_out[4, "SS"] + infer_out[3, "MS"])
+
+  pcoa_points <- eco$pcoa_points
+  pcoa_points$dat_sim <- resultsHa[i, "dat.sim"]
+  pcoa_points$k <- resultsHa[i, "k"]
+  pcoa_points$m <- resultsHa[i, "m"]
+  pcoa_points$n <- resultsHa[i, "n"]
+
+  list(
+    pseudoF_A = infer_out[1, "pseudoF"],
+    pseudoF_BA = infer_out[2, "pseudoF"],
+    omega2_A = omega2_A,
+    omega2_BA = omega2_BA,
+    R2_A = R2_A,
+    R2_BA = R2_BA,
+    SS_A = infer_out[1, "SS"],
+    SS_BA = infer_out[2, "SS"],
+    SS_total = infer_out[4, "SS"],
+    df_A = infer_out[1, "df"],
+    df_BA = infer_out[2, "df"],
+    MS_BA = infer_out[2, "MS"],
+    MS_residual = infer_out[3, "MS"],
+    ecological_effect_A = eco$ecological_effect_A,
+    ecological_effect_BA = eco$ecological_effect_BA,
+    centroid_dist_matrix_A = eco$centroid_dist_matrix_A,
+    n_groups_A = eco$n_groups_A,
+    n_groups_BA = eco$n_groups_BA,
+    infer_table = infer_out,
+    pcoa_points = pcoa_points,
+    site_sector_table = eco$site_sector_table
   )
 }
 
@@ -1120,5 +1324,210 @@ calc_dist <- function(datHa, method = "bray", return = c("matrix", "both")) {
     n_groups = n_groups,
     positive_axes = eig_pos,
     pcoa_points = pcoa_points
+  )
+}
+
+#' Calculate distances to estimate ecological effect size for nested experiments
+#'
+#' Auxiliary function that calculates distances matrix for simulated communities.
+#'
+#' @param datHa Data frame where columns represent species names and rows correspond
+#' to samples.
+#'
+#' @return A distance matrix for the groups in the ecological simulated community.
+#'
+#' @author Edlin Guerra-Castro (\email{edlinguerra@@gmail.com}), Arturo Sanchez-Porras
+#'
+#' @importFrom vegan vegdist wcmdscale
+#' @importFrom dplyr arrange mutate
+#' @importFrom stats aggregate dist
+#'
+#' @keywords internal
+#' @noRd
+#'
+
+calc_dist_nested <- function(
+  x,
+  factEnv,
+  method = "bray",
+  return = c("matrix", "both")
+) {
+  return <- match.arg(return)
+  facA <- as.factor(factEnv[, 1])
+  facB <- as.factor(factEnv[, 2])
+  facBA <- interaction(facA, facB, drop = TRUE)
+
+  DistBC <- vegan::vegdist(x, method = method)
+  ord <- vegan::wcmdscale(DistBC, eig = TRUE, add = "lingoes")
+
+  eig <- ord$eig
+  eig_pos <- which(eig > 0)
+
+  # analytical coordinates
+  if (length(eig_pos) == 0) {
+    coords_num <- data.frame(Axis1 = rep(0, nrow(x)))
+    axis_cols <- "Axis1"
+  } else {
+    coords_num <- as.data.frame(ord$points[, eig_pos, drop = FALSE])
+    axis_cols <- names(coords_num)
+  }
+
+  coords <- coords_num
+  coords$sector <- facA
+  coords$site <- facB
+  coords$sector_site <- facBA
+
+  # 2-axis view used for ordination plotting (analytical ES still uses all + axes)
+  if (length(eig_pos) == 0) {
+    pcoa_points <- data.frame(
+      sample_id = seq_len(nrow(x)),
+      group = facA,
+      sector = facA,
+      site = facB,
+      sector_site = facBA,
+      Axis1 = rep(0, nrow(x)),
+      Axis2 = rep(0, nrow(x)),
+      stringsAsFactors = FALSE
+    )
+  } else if (length(eig_pos) == 1) {
+    pcoa_points <- data.frame(
+      sample_id = seq_len(nrow(x)),
+      group = facA,
+      sector = facA,
+      site = facB,
+      sector_site = facBA,
+      Axis1 = coords[[1]],
+      Axis2 = rep(0, nrow(coords)),
+      stringsAsFactors = FALSE
+    )
+  } else {
+    pcoa_points <- data.frame(
+      sample_id = seq_len(nrow(x)),
+      group = facA,
+      sector = facA,
+      site = facB,
+      sector_site = facBA,
+      Axis1 = coords[[1]],
+      Axis2 = coords[[2]],
+      stringsAsFactors = FALSE
+    )
+  }
+
+  # centroids for A
+  centroides_A <- stats::aggregate(
+    coords[, axis_cols, drop = FALSE],
+    by = list(sector = coords$sector),
+    FUN = mean
+  )
+
+  if (nrow(centroides_A) == 1) {
+    centroid_dist_A <- matrix(
+      0,
+      nrow = 1,
+      ncol = 1,
+      dimnames = list(
+        as.character(centroides_A$sector),
+        as.character(centroides_A$sector)
+      )
+    )
+  } else {
+    centroid_dist_A <- stats::dist(centroides_A[, -1, drop = FALSE]) |>
+      as.matrix()
+    rownames(centroid_dist_A) <- centroides_A$sector
+    colnames(centroid_dist_A) <- centroides_A$sector
+  }
+
+  n_groups_A <- nlevels(facA)
+  group_size_A <- as.numeric(table(facA))
+  centroid_mat_A <- as.matrix(centroides_A[, -1, drop = FALSE])
+
+  ecological_effect_A <- if (n_groups_A <= 1) {
+    0
+  } else if (n_groups_A == 2) {
+    as.numeric(centroid_dist_A[1, 2])
+  } else {
+    c_bar <- colMeans(centroid_mat_A)
+    sq_dist <- rowSums(
+      (centroid_mat_A -
+        matrix(
+          c_bar,
+          nrow = nrow(centroid_mat_A),
+          ncol = ncol(centroid_mat_A),
+          byrow = TRUE
+        ))^2
+    )
+    sqrt(sum(group_size_A * sq_dist) / sum(group_size_A))
+  }
+
+  # Centroids for B(A)
+  centroides_BA <- stats::aggregate(
+    coords[, axis_cols, drop = FALSE],
+    by = list(
+      sector = coords$sector,
+      site = coords$site,
+      sector_site = coords$sector_site
+    ),
+    FUN = mean
+  )
+
+  site_size <- as.data.frame(table(coords$sector_site))
+  names(site_size) <- c("sector_site", "n_site")
+
+  site_lookup <- unique(coords[, c("sector", "site", "sector_site")])
+  site_size <- dplyr::left_join(site_size, site_lookup, by = "sector_site")
+
+  # many-to-one join: each site centroid gets its sector centroid
+  centroides_BA_join <- dplyr::left_join(
+    centroides_BA,
+    centroides_A,
+    by = "sector",
+    suffix = c("_site", "_sector")
+  )
+
+  axis_cols_site <- paste0(axis_cols, "_site")
+  axis_cols_sector <- paste0(axis_cols, "_sector")
+
+  dist_to_sector <- sqrt(
+    rowSums(
+      (as.matrix(centroides_BA_join[, axis_cols_site, drop = FALSE]) -
+        as.matrix(centroides_BA_join[, axis_cols_sector], drop = FALSE))^2
+    )
+  )
+
+  site_sector_table <- dplyr::left_join(
+    centroides_BA_join[,
+      c("sector", "site", "sector_site", axis_cols_site, axis_cols_sector),
+      drop = FALSE
+    ],
+    site_size,
+    by = c("sector", "site", "sector_site")
+  )
+
+  site_sector_table$dist_to_sector <- dist_to_sector
+
+  ecological_effect_BA <- if (nrow(site_sector_table) == 0) {
+    0
+  } else {
+    sqrt(
+      sum(site_sector_table$n_site * site_sector_table$dist_to_sector^2) /
+        sum(site_sector_table$n_site)
+    )
+  }
+
+  if (return == "matrix") {
+    return(centroid_dist_A)
+  }
+
+  list(
+    ecological_effect_A = ecological_effect_A,
+    ecological_effect_BA = ecological_effect_BA,
+    centroid_dist_matrix_A = centroid_dist_A,
+    centroids_A = centroides_A,
+    centroids_BA = centroides_BA,
+    n_groups_A = n_groups_A,
+    n_groups_BA = nlevels(facBA),
+    positive_axes = eig_pos,
+    pcoa_points = pcoa_points,
+    site_sector_table = site_sector_table
   )
 }

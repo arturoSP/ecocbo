@@ -406,7 +406,7 @@ prep_data_nestedsymmetric <- function(
   for (i in nivel) {
     # Prepare data by setting replicates to just one value
     dataTrimmed0 <- data[, -1]
-    # dataTrimmed0[,1] <- "zero"
+    dataTrimmed0[, 1] <- "zero"
 
     # Calculate simulation parameters
     dataParameter0 <- assempar(
