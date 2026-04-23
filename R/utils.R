@@ -602,20 +602,7 @@ dbmanova_nested <- function(
 
 #' balanced_sampling_es_nested
 #'
-#' @param i
-#' @param Y1
-#' @param mn
-#' @param nSect
-#' @param M
-#' @param N
-#' @param HaSim
-#' @param resultsHa
-#' @param factEnv
-#' @param transformation
-#' @param method
-#' @param model
-#'
-#' @returns
+#' @returns a list
 #'
 #' @keywords internal
 #' @noRd
@@ -1223,6 +1210,113 @@ use_simper <- function(datHa) {
   return(relevant_spp)
 }
 
+#' Weighted average of Similarity Percentages for nested experiments
+#'
+#' simper() from 'vegan' is adapted so that the between-group dissimilarities are condensed
+#' into a single number that represents the per-species/per-site contribution.
+#'
+#' @param datHa Data frame where columns represent species names and rows correspond
+#' to samples.
+#'
+#' @return Weighted average of species contribution to average between-group dissimilarity.
+#'
+#' @author Edlin Guerra-Castro (\email{edlinguerra@@gmail.com}), Arturo Sanchez-Porras
+#'
+#' @importFrom vegan simper
+#' @importFrom dplyr arrange mutate
+#' @importFrom stats aggregate
+#'
+#' @keywords internal
+#' @noRd
+#'
+
+use_simper_nested <- function(datHa) {
+  # Se extraen los datos de diferentes comunidades
+  pooled <- dplyr::bind_rows(
+    lapply(datHa, function(x) {
+      as.data.frame(x, stringsAsFactors = FALSE)
+    }),
+    .id = ".case"
+  )
+
+  # Indexes for creating the comm and group dataframes
+  meta_cols <- c(".case", "sector", "sites", "N")
+  species_cols <- setdiff(names(pooled), meta_cols)
+
+  # Force community matrix to numeric
+  pooled[species_cols] <- lapply(
+    pooled[species_cols],
+    function(z) {
+      as.numeric(as.character(z))
+    }
+  )
+  pooled$sector <- as.factor(pooled$sector)
+  pooled$sites <- as.factor(pooled$sites)
+
+  # Collapse observations to site level
+  site_level <- pooled |>
+    dplyr::group_by(sector, sites) |>
+    dplyr::summarise(
+      dplyr::across(
+        dplyr::all_of(species_cols),
+        ~ mean(.x, na.rm = TRUE)
+      ),
+      .groups = "drop"
+    )
+
+  # Remove species with zero total abundance after collapse
+  keep_spp <- colSums(site_level[, species_cols, drop = FALSE], na.rm = TRUE) >
+    0
+  species_cols_use <- species_cols[keep_spp]
+
+  if (length(species_cols_use) == 0) {
+    stop("All community columns are zero after site-level collapse.")
+  }
+
+  if (nlevels(site_level$sector) < 2) {
+    stop("`sector` must have at least two levels for SIMPER.")
+  }
+
+  # Run simper at sector level
+  weight_spp <- vegan::simper(
+    comm = site_level[, species_cols_use, drop = FALSE],
+    group = site_level$sector,
+    permutations = 99
+  )
+
+  # Se guardan datos de apoyo
+  pares <- names(weight_spp)
+  flat_weight <- vector("list", length = length(weight_spp))
+  names(flat_weight) <- pares
+
+  # Se calcula promedio de contribución ponderado por par de sitios
+  for (i in pares) {
+    spp_i <- weight_spp[[i]][["species"]]
+    avg_i <- weight_spp[[i]][["average"]]
+
+    denom_i <- sum(avg_i, na.rm = TRUE)
+
+    norm_i <- if (is.finite(denom_i) && denom_i > 0) {
+      avg_i / denom_i
+    } else {
+      rep(0, length(avg_i))
+    }
+
+    flat_weight[[i]] <- data.frame(
+      species = spp_i,
+      norm = norm_i
+    )
+  }
+
+  # Se identifica especes con mayor contribución promedio
+  relevant_spp <- dplyr::bind_rows(flat_weight) |>
+    dplyr::group_by(species) |>
+    dplyr::summarise(norm = mean(norm, na.rm = TRUE), .groups = "drop") |>
+    dplyr::arrange(dplyr::desc(norm))
+
+  return(relevant_spp)
+}
+
 #' Calculate distances to estimate ecological effect size
 #'
 #' Auxiliary function that calculates distances matrix for a simulated community.
@@ -1529,5 +1623,176 @@ calc_dist_nested <- function(
     positive_axes = eig_pos,
     pcoa_points = pcoa_points,
     site_sector_table = site_sector_table
+  )
+}
+
+#' pooling fw between sectors
+#' @keywords internal
+#' @noRd
+#'
+
+pool_fw_across_sectors <- function(ListParam0, sector_weights = NULL) {
+  # Validate input
+  if (!is.list(ListParam0) || length(ListParam0) == 0) {
+    stop("`ListParam0` must be a non-empty list.")
+  }
+
+  if (is.null(names(ListParam0))) {
+    stop("`ListParam0` must be a named list, with sector labels as names.")
+  }
+
+  # Default weights: equal weights across sectors
+  if (is.null(sector_weights)) {
+    sector_weights <- rep(1, length(ListParam0))
+    names(sector_weights) <- names(ListParam0)
+  }
+
+  # Validate weights
+  if (is.null(names(sector_weights))) {
+    stop("`sector_weights` must be a named numeric vector.")
+  }
+
+  if (!all(names(ListParam0) %in% names(sector_weights))) {
+    stop(
+      "All sector names in `ListParam0` must be present in `sector_weights`."
+    )
+  }
+
+  sector_weights <- sector_weights[names(ListParam0)]
+
+  # 1. Bind all sector-specific parameter tables in long format
+  param_long <- purrr::imap_dfr(ListParam0, function(df, sec) {
+    df <- as.data.frame(df, stringsAsFactors = FALSE)
+
+    if (!all(c("Species", "fw") %in% names(df))) {
+      stop(
+        "Each element of `ListParam0` must contain columns `Species` and `fw`."
+      )
+    }
+
+    df$sector <- sec
+    df[, c("Species", "sector", "fw")]
+  })
+
+  # 2. Complete all Species x sector combinations
+  all_species <- sort(unique(param_long$Species))
+  all_sectors <- names(ListParam0)
+
+  param_long <- tidyr::complete(
+    param_long,
+    Species = all_species,
+    sector = all_sectors,
+    fill = list(fw = 0)
+  )
+
+  # 3. Add sector weights
+  weights_df <- data.frame(
+    sector = names(sector_weights),
+    weight = as.numeric(sector_weights),
+    stringsAsFactors = FALSE
+  )
+
+  param_long <- dplyr::left_join(param_long, weights_df, by = "sector")
+
+  # 4. Weighted average across sectors
+  param_pool <- param_long |>
+    dplyr::group_by(Species) |>
+    dplyr::summarise(
+      fw_pool = sum(fw * weight, na.rm = TRUE) / sum(weight, na.rm = TRUE),
+      n_sectors_present = sum(fw > 0, na.rm = TRUE),
+      .groups = "drop"
+    ) |>
+    dplyr::arrange(Species)
+
+  return(param_pool)
+}
+
+# helper para blindar balanced_sampling
+#' @keywords internal
+#' @noRd
+#'
+
+safe_balanced_sampling_es_nested <- function(
+  i,
+  Y1,
+  mn,
+  nSect,
+  M,
+  N,
+  HaSim,
+  resultsHa,
+  factEnv,
+  transformation,
+  method,
+  model
+) {
+  tryCatch(
+    {
+      out <- balanced_sampling_es_nested(
+        i = i,
+        Y1 = Y1,
+        mn = mn,
+        nSect = nSect,
+        M = M,
+        N = N,
+        HaSim = HaSim,
+        resultsHa = resultsHa,
+        factEnv = factEnv,
+        transformation = transformation,
+        method = method,
+        model = model
+      )
+
+      out$ok <- TRUE
+      out$error_message <- NA_character_
+
+      out
+    },
+    error = function(e) {
+      empty_pcoa <- data.frame(
+        sample_id = integer(0),
+        group = character(0),
+        sector = character(0),
+        site = character(0),
+        sector_site = character(0),
+        Axis1 = numeric(0),
+        Axis2 = numeric(0),
+        stringsAsFactors = FALSE
+      )
+
+      empty_site_sector <- data.frame(
+        sector = character(0),
+        site = character(0),
+        sector_site = character(0),
+        n_site = numeric(0),
+        dist_to_sector = numeric(0),
+        stringsAsFactors = FALSE
+      )
+
+      list(
+        pseudoF_A = NA_real_,
+        pseudoF_BA = NA_real_,
+        omega2_A = NA_real_,
+        omega2_BA = NA_real_,
+        R2_A = NA_real_,
+        R2_BA = NA_real_,
+        SS_A = NA_real_,
+        SS_BA = NA_real_,
+        SS_total = NA_real_,
+        df_A = NA_real_,
+        df_BA = NA_real_,
+        MS_residual = NA_real_,
+        ecological_effect_A = NA_real_,
+        ecological_effect_BA = NA_real_,
+        centroid_dist_matrix_A = matrix(NA_real_, nrow = 0, ncol = 0),
+        n_groups_A = NA_real_,
+        n_groups_BA = NA_real_,
+        infer_table = NULL,
+        pcoa_points = empty_pcoa,
+        site_sector_table = empty_site_sector,
+        ok = FALSE,
+        error_message = conditionMessage(e)
+      )
+    }
   )
 }

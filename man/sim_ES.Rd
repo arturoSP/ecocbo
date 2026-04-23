@@ -13,14 +13,14 @@ sim_ES(
   cases = 5,
   N = 100,
   M = NULL,
-  n,
+  n = 30,
   m = NULL,
   k = 50,
   transformation = "none",
   method = "bray",
-  dummy = FALSE,
+  dummy = TRUE,
   useParallel = TRUE,
-  model = "single.factor",
+  model = NULL,
   jitter.base = 0.5
 )
 }
@@ -33,6 +33,8 @@ to which the sample belongs.
 \item For \code{"nested.symmetric"} analysis: The first column should indicate the
 treatment, and the second column should indicate the replicate.
 }}
+
+\item{steps}{Number of steps needed to calculate the relevance depletion.}
 
 \item{type}{Character. Nature of the data to be processed. It may be presence
 / absence ("P/A"), counts of individuals ("counts"), or coverage ("cover").}
@@ -74,17 +76,12 @@ and \code{"nested.symmetric"}.}
 jitter to \code{fs} and \code{fw}. Defaults to 0.5.}
 }
 \value{
-\code{prep_data()} returns an object of class "ecocbo_data".
+\code{sim_es()} returns an object of class "effect_size_data".
 
-An object of class "ecocbo_data" is a list containing:
+An object of class "effect_size_data" is a list containing:
 \itemize{
-\item \code{$Results}, a data frame that lists the estimates of pseudoF for
-\code{simH0} and \code{simHa}, useful for statistical power analysis. It also
-includes mean squares for variance component estimation.
-\item \code{$model}, a label for keeping track of the model that is being used
-in the analysis.
-\item \code{$a}, an integer for the number of treatments recorded from the original
-data.
+\item \code{$resultOut}
+\item \code{$pcoaOut}
 }
 }
 \description{
@@ -102,7 +99,7 @@ order.
 }
 \examples{
 \donttest{
-ES1 <- sim_es(data = epiDat, steps = 10, type = "counts", Sest.method = "average",
+ES1 <- sim_ES(data = epiDat, steps = 10, type = "counts", Sest.method = "average",
                         cases = 5, N = 100, M = 10,
                         n = 5, m = 5, k = 30,
                         transformation = "none", method = "bray",

@@ -2,18 +2,66 @@
 % Please edit documentation in R/sim_es.R
 \name{plot.effect_size_data}
 \alias{plot.effect_size_data}
-\title{Plot effect_size_data}
+\title{Plot method for effect_size_data objects}
 \usage{
-\method{plot}{effect_size_data}(x, ...)
+\method{plot}{effect_size_data}(
+  x,
+  type = c("stacked", "scatter", "ordination"),
+  inferential_var = c("omega2", "R2", "pseudoF"),
+  summary_stat = c("median", "mean"),
+  interval = c("iqr", "sd"),
+  colour_by = c("reduction_level", "none"),
+  scatter_data = c("summary", "raw"),
+  reduction_levels = NULL,
+  selection = c("median", "first", "min", "max"),
+  show_centroids = TRUE,
+  label_centroids = TRUE,
+  ribbon_alpha = 0.25,
+  point_alpha = 0.7,
+  line_size = 0.4,
+  point_size = 1.8,
+  centroid_size = 2.8,
+  facet_ncol = NULL,
+  add_smooth = FALSE,
+  ...
+)
 }
 \arguments{
 \item{x}{An object of class \code{effect_size_data}.}
 
-\item{...}{Additional arguments, ignored.}
+\item{type}{Type of plot. \code{"stacked"} returns the two-panel
+summary plot; \code{"scatter"} returns the inferential vs ecological plot.}
+
+\item{inferential_var}{Which inferential metric to use.
+One of \code{"omega2"}, \code{"R2"}, or \code{"pseudoF"}.}
+
+\item{summary_stat}{Summary statistic used in grouped summaries.
+One of \code{"median"} or \code{"mean"}.}
+
+\item{interval}{Interval used in the stacked summary plot.
+One of \code{"iqr"} or \code{"sd"}.}
+
+\item{colour_by}{Whether to colour scatter points by
+\code{reduction_level} or not.}
+
+\item{scatter_data}{Whether scatter should show raw observations
+or summaries by \code{reduction_level}.}
+
+\item{ribbon_alpha}{Alpha transparency for ribbons in stacked plots.}
+
+\item{point_alpha}{Alpha transparency for points in scatter plots.}
+
+\item{line_size}{Line width in stacked plots.}
+
+\item{point_size}{Point size.}
+
+\item{add_smooth}{Logical; add linear smooth to scatter plot.}
+
+\item{...}{Unused, reserved for future extensions.}
 }
 \value{
-A ggplot representation of the \code{effect_size_data} object.
+A ggplot object or a patchwork object.
 }
 \description{
-Plot effect_size_data
+Plot method for effect_size_data objects
 }
