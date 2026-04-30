@@ -97,7 +97,7 @@ sim_ES <- function(
   method = "bray",
   dummy = TRUE,
   useParallel = TRUE,
-  model = match.arg(model, c("single.factor", "nested.symmetric")),
+  model = c("single.factor", "nested.symmetric"),
   jitter.base = 0.5
 ) {
   # Check the inputs ----
@@ -112,6 +112,7 @@ sim_ES <- function(
     stop("n must be larger than 1")
   }
 
+  model <- match.arg(model)
   if (model != "single.factor") {
     if (m > M) {
       stop("'m' must be equal or less than 'M' on simulated data")

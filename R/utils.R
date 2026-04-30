@@ -276,7 +276,14 @@ balanced_sampling_es <- function(
         ncol = n_groups,
         dimnames = list(as.character(levs), as.character(levs))
       ),
-      n_groups = n_groups
+      n_groups = n_groups,
+      pcoa_points = data.frame(
+        sample_id = seq_len(nrow(comm)),
+        group = as.character(grp),
+        Axis1 = NA_real_,
+        Axis2 = NA_real_,
+        stringsAsFactors = FALSE
+      )
     )
   } else {
     eco <- calc_dist(
@@ -1338,24 +1345,36 @@ use_simper_nested <- function(datHa) {
 
 calc_dist <- function(datHa, method = "bray", return = c("matrix", "both")) {
   return <- match.arg(return)
+
   datHa_site <- as.factor(datHa[, 1])
-  datHa_ <- datHa[, c(2:(ncol(datHa))), drop = FALSE]
+  datHa_ <- datHa[, c(2:ncol(datHa)), drop = FALSE]
 
   DistBC <- vegan::vegdist(datHa_, method = method)
   ord <- vegan::wcmdscale(DistBC, eig = TRUE, add = "lingoes")
 
   eig <- ord$eig
   eig_pos <- which(eig > 0)
-  coords <- as.data.frame(ord$points[, eig_pos, drop = FALSE])
-  coords$site <- datHa_site
+  n_axes <- length(eig_pos)
 
-  if (ncol(coords) == 1) {
-    centroides <- data.frame(site = datHa_site) |>
-      dplyr::mutate(Axis1 = coords[[1]])
+  # Analytical coordinates.
+  # Important: keep numeric PCoA coordinates separate from grouping metadata.
+  if (n_axes == 0) {
+    coords_num <- data.frame(
+      Axis1 = rep(0, nrow(datHa_))
+    )
+    axis_cols <- "Axis1"
+  } else {
+    coords_num <- as.data.frame(ord$points[, eig_pos, drop = FALSE])
+    names(coords_num) <- paste0("Axis", seq_len(ncol(coords_num)))
+    axis_cols <- names(coords_num)
   }
 
-  # 2-axis view used for ordination plotting (analytical ES still uses all + axes)
-  if (ncol(coords) == 0) {
+  coords <- coords_num
+  coords$site <- datHa_site
+
+  # 2-axis view used for ordination plotting.
+  # Analytical ES still uses all positive axes.
+  if (n_axes == 0) {
     pcoa_points <- data.frame(
       sample_id = seq_len(nrow(datHa_)),
       group = datHa_site,
@@ -1363,46 +1382,68 @@ calc_dist <- function(datHa, method = "bray", return = c("matrix", "both")) {
       Axis2 = rep(0, nrow(datHa_)),
       stringsAsFactors = FALSE
     )
-  } else if (ncol(coords) == 1) {
+  } else if (n_axes == 1) {
     pcoa_points <- data.frame(
       sample_id = seq_len(nrow(datHa_)),
       group = datHa_site,
-      Axis1 = coords[[1]],
-      Axis2 = rep(0, nrow(coords)),
+      Axis1 = coords_num[[1]],
+      Axis2 = rep(0, nrow(datHa_)),
       stringsAsFactors = FALSE
     )
   } else {
     pcoa_points <- data.frame(
       sample_id = seq_len(nrow(datHa_)),
       group = datHa_site,
-      Axis1 = coords[[1]],
-      Axis2 = coords[[2]],
+      Axis1 = coords_num[[1]],
+      Axis2 = coords_num[[2]],
       stringsAsFactors = FALSE
     )
   }
 
-  centroides <- stats::aggregate(. ~ site, data = coords, FUN = mean)
-  centroid_dist <- stats::dist(centroides[, -1, drop = FALSE]) |>
-    as.matrix()
-  rownames(centroid_dist) <- centroides$site
-  colnames(centroid_dist) <- centroides$site
+  pcoa_points$Axis1 <- as.numeric(pcoa_points$Axis1)
+  pcoa_points$Axis2 <- as.numeric(pcoa_points$Axis2)
 
-  n_groups <- nlevels(datHa_site)
-  group_size <- as.numeric(table(datHa_site))
+  centroides <- stats::aggregate(
+    coords[, axis_cols, drop = FALSE],
+    by = list(site = coords$site),
+    FUN = mean
+  )
+
+  if (nrow(centroides) <= 1) {
+    centroid_dist <- matrix(
+      0,
+      nrow = 1,
+      ncol = 1,
+      dimnames = list(
+        as.character(centroides$site),
+        as.character(centroides$site)
+      )
+    )
+  } else {
+    centroid_dist <- stats::dist(centroides[, -1, drop = FALSE]) |>
+      as.matrix()
+    rownames(centroid_dist) <- centroides$site
+    colnames(centroid_dist) <- centroides$site
+  }
+
+  n_groups <- nrow(centroides)
+  group_size <- as.numeric(table(datHa_site)[as.character(centroides$site)])
   centroid_mat <- as.matrix(centroides[, -1, drop = FALSE])
 
-  ecological_effect <- if (n_groups == 2) {
+  ecological_effect <- if (n_groups <= 1) {
+    0
+  } else if (n_groups == 2) {
     as.numeric(centroid_dist[1, 2])
   } else {
     c_bar <- colMeans(centroid_mat)
     sq_dist <- rowSums(
       (centroid_mat -
-        matrix(
-          c_bar,
-          nrow = nrow(centroid_mat),
-          ncol = ncol(centroid_mat),
-          byrow = TRUE
-        ))^2
+         matrix(
+           c_bar,
+           nrow = nrow(centroid_mat),
+           ncol = ncol(centroid_mat),
+           byrow = TRUE
+         ))^2
     )
     sqrt(sum(group_size * sq_dist) / sum(group_size))
   }
@@ -1441,12 +1482,13 @@ calc_dist <- function(datHa, method = "bray", return = c("matrix", "both")) {
 #'
 
 calc_dist_nested <- function(
-  x,
-  factEnv,
-  method = "bray",
-  return = c("matrix", "both")
+    x,
+    factEnv,
+    method = "bray",
+    return = c("matrix", "both")
 ) {
   return <- match.arg(return)
+
   facA <- as.factor(factEnv[, 1])
   facB <- as.factor(factEnv[, 2])
   facBA <- interaction(facA, facB, drop = TRUE)
@@ -1456,13 +1498,18 @@ calc_dist_nested <- function(
 
   eig <- ord$eig
   eig_pos <- which(eig > 0)
+  n_axes <- length(eig_pos)
 
-  # analytical coordinates
-  if (length(eig_pos) == 0) {
-    coords_num <- data.frame(Axis1 = rep(0, nrow(x)))
+  # Analytical coordinates.
+  # Keep PCoA axes separate from sector/site metadata.
+  if (n_axes == 0) {
+    coords_num <- data.frame(
+      Axis1 = rep(0, nrow(x))
+    )
     axis_cols <- "Axis1"
   } else {
     coords_num <- as.data.frame(ord$points[, eig_pos, drop = FALSE])
+    names(coords_num) <- paste0("Axis", seq_len(ncol(coords_num)))
     axis_cols <- names(coords_num)
   }
 
@@ -1471,8 +1518,9 @@ calc_dist_nested <- function(
   coords$site <- facB
   coords$sector_site <- facBA
 
-  # 2-axis view used for ordination plotting (analytical ES still uses all + axes)
-  if (length(eig_pos) == 0) {
+  # 2-axis view used for ordination plotting.
+  # Analytical ES still uses all positive axes.
+  if (n_axes == 0) {
     pcoa_points <- data.frame(
       sample_id = seq_len(nrow(x)),
       group = facA,
@@ -1483,15 +1531,15 @@ calc_dist_nested <- function(
       Axis2 = rep(0, nrow(x)),
       stringsAsFactors = FALSE
     )
-  } else if (length(eig_pos) == 1) {
+  } else if (n_axes == 1) {
     pcoa_points <- data.frame(
       sample_id = seq_len(nrow(x)),
       group = facA,
       sector = facA,
       site = facB,
       sector_site = facBA,
-      Axis1 = coords[[1]],
-      Axis2 = rep(0, nrow(coords)),
+      Axis1 = coords_num[[1]],
+      Axis2 = rep(0, nrow(x)),
       stringsAsFactors = FALSE
     )
   } else {
@@ -1501,20 +1549,23 @@ calc_dist_nested <- function(
       sector = facA,
       site = facB,
       sector_site = facBA,
-      Axis1 = coords[[1]],
-      Axis2 = coords[[2]],
+      Axis1 = coords_num[[1]],
+      Axis2 = coords_num[[2]],
       stringsAsFactors = FALSE
     )
   }
 
-  # centroids for A
+  pcoa_points$Axis1 <- as.numeric(pcoa_points$Axis1)
+  pcoa_points$Axis2 <- as.numeric(pcoa_points$Axis2)
+
+  # Centroids for A
   centroides_A <- stats::aggregate(
     coords[, axis_cols, drop = FALSE],
     by = list(sector = coords$sector),
     FUN = mean
   )
 
-  if (nrow(centroides_A) == 1) {
+  if (nrow(centroides_A) <= 1) {
     centroid_dist_A <- matrix(
       0,
       nrow = 1,
@@ -1531,8 +1582,8 @@ calc_dist_nested <- function(
     colnames(centroid_dist_A) <- centroides_A$sector
   }
 
-  n_groups_A <- nlevels(facA)
-  group_size_A <- as.numeric(table(facA))
+  n_groups_A <- nrow(centroides_A)
+  group_size_A <- as.numeric(table(facA)[as.character(centroides_A$sector)])
   centroid_mat_A <- as.matrix(centroides_A[, -1, drop = FALSE])
 
   ecological_effect_A <- if (n_groups_A <= 1) {
@@ -1543,12 +1594,12 @@ calc_dist_nested <- function(
     c_bar <- colMeans(centroid_mat_A)
     sq_dist <- rowSums(
       (centroid_mat_A -
-        matrix(
-          c_bar,
-          nrow = nrow(centroid_mat_A),
-          ncol = ncol(centroid_mat_A),
-          byrow = TRUE
-        ))^2
+         matrix(
+           c_bar,
+           nrow = nrow(centroid_mat_A),
+           ncol = ncol(centroid_mat_A),
+           byrow = TRUE
+         ))^2
     )
     sqrt(sum(group_size_A * sq_dist) / sum(group_size_A))
   }
@@ -1566,11 +1617,19 @@ calc_dist_nested <- function(
 
   site_size <- as.data.frame(table(coords$sector_site))
   names(site_size) <- c("sector_site", "n_site")
+  site_size$sector_site <- as.character(site_size$sector_site)
 
   site_lookup <- unique(coords[, c("sector", "site", "sector_site")])
-  site_size <- dplyr::left_join(site_size, site_lookup, by = "sector_site")
+  site_lookup$sector_site <- as.character(site_lookup$sector_site)
 
-  # many-to-one join: each site centroid gets its sector centroid
+  site_size <- dplyr::left_join(
+    site_size,
+    site_lookup,
+    by = "sector_site"
+  )
+
+  # Many-to-one join:
+  # each site centroid receives the centroid of its parent sector.
   centroides_BA_join <- dplyr::left_join(
     centroides_BA,
     centroides_A,
@@ -1583,13 +1642,16 @@ calc_dist_nested <- function(
 
   dist_to_sector <- sqrt(
     rowSums(
-      (as.matrix(centroides_BA_join[, axis_cols_site, drop = FALSE]) -
-        as.matrix(centroides_BA_join[, axis_cols_sector], drop = FALSE))^2
+      (
+        as.matrix(centroides_BA_join[, axis_cols_site, drop = FALSE]) -
+          as.matrix(centroides_BA_join[, axis_cols_sector, drop = FALSE])
+      )^2
     )
   )
 
   site_sector_table <- dplyr::left_join(
-    centroides_BA_join[,
+    centroides_BA_join[
+      ,
       c("sector", "site", "sector_site", axis_cols_site, axis_cols_sector),
       drop = FALSE
     ],
@@ -1597,7 +1659,7 @@ calc_dist_nested <- function(
     by = c("sector", "site", "sector_site")
   )
 
-  site_sector_table$dist_to_sector <- dist_to_sector
+  site_sector_table$dist_to_sector <- as.numeric(dist_to_sector)
 
   ecological_effect_BA <- if (nrow(site_sector_table) == 0) {
     0
@@ -1619,7 +1681,7 @@ calc_dist_nested <- function(
     centroids_A = centroides_A,
     centroids_BA = centroides_BA,
     n_groups_A = n_groups_A,
-    n_groups_BA = nlevels(facBA),
+    n_groups_BA = nrow(centroides_BA),
     positive_axes = eig_pos,
     pcoa_points = pcoa_points,
     site_sector_table = site_sector_table
@@ -1795,4 +1857,101 @@ safe_balanced_sampling_es_nested <- function(
       )
     }
   )
+}
+
+#' @keywords internal
+#' @noRD
+#'
+
+rank_fw_contribution <- function(ListParamA, ParamPoolA, weights = NULL) {
+  if (!is.list(ListParamA) || length(ListParamA) == 0) {
+    stop("`ListParamA` must be a non-empty named list.", call. = FALSE)
+  }
+
+  if (is.null(names(ListParamA))) {
+    stop("`ListParamA` must be named by group or sector.", call. = FALSE)
+  }
+
+  if (!all(c("Species", "fw_pool") %in% names(ParamPoolA))) {
+    stop("`ParamPoolA` must contain columns `Species` and `fw_pool`.", call. = FALSE)
+  }
+
+  groups <- names(ListParamA)
+
+  if (is.null(weights)) {
+    weights <- rep(1, length(groups))
+    names(weights) <- groups
+  }
+
+  if (is.null(names(weights))) {
+    stop("`weights` must be a named numeric vector.", call. = FALSE)
+  }
+
+  weights <- weights[groups]
+
+  param_A <- purrr::imap_dfr(ListParamA, function(obj, group_i) {
+    par_i <- as.data.frame(obj$par)
+
+    if (!all(c("Species", "fw") %in% names(par_i))) {
+      stop(
+        "Each element of `ListParamA` must contain `$par` with columns ",
+        "`Species` and `fw`.",
+        call. = FALSE
+      )
+    }
+
+    data.frame(
+      Species = par_i$Species,
+      group = group_i,
+      fw = par_i$fw,
+      stringsAsFactors = FALSE
+    )
+  })
+
+  all_species <- sort(unique(c(param_A$Species, ParamPoolA$Species)))
+
+  param_A <- tidyr::complete(
+    param_A,
+    Species = all_species,
+    group = groups,
+    fill = list(fw = 0)
+  )
+
+  weights_df <- data.frame(
+    group = names(weights),
+    weight = as.numeric(weights),
+    stringsAsFactors = FALSE
+  )
+
+  param_A <- dplyr::left_join(param_A, weights_df, by = "group")
+
+  param_A <- dplyr::left_join(
+    param_A,
+    ParamPoolA[, c("Species", "fw_pool")],
+    by = "Species"
+  )
+
+  out <- param_A |>
+    dplyr::group_by(Species) |>
+    dplyr::summarise(
+      score = sqrt(
+        sum(weight * (fw - fw_pool)^2, na.rm = TRUE) /
+          sum(weight, na.rm = TRUE)
+      ),
+      .groups = "drop"
+    ) |>
+    dplyr::mutate(
+      norm = if (sum(score, na.rm = TRUE) > 0) {
+        score / sum(score, na.rm = TRUE)
+      } else {
+        0
+      }
+    ) |>
+    dplyr::transmute(
+      species = Species,
+      norm = norm
+    ) |>
+    dplyr::arrange(dplyr::desc(norm))
+
+  out
 }

@@ -20,23 +20,6 @@ sim_es_nested <- function(
   model,
   jitter.base
 ) {
-  # get values for size limits
-  data[, 1] <- as.factor(data[, 1])
-  data[, 2] <- as.factor(data[, 2])
-  factSect <- data[, 1]
-  nSect <- nlevels(factSect) # number of treatments
-  nivel <- levels(factSect)
-
-  ## Simulated data for H0
-  # Create a list to store the results
-  ListSim0 <- vector(mode = "list", length = nSect)
-  names(ListSim0) <- nivel
-
-  ListParam0 <- vector(mode = "list", length = nSect)
-  names(ListParam0) <- nivel
-  ListParamA <- vector(mode = "list", length = nSect)
-  names(ListParamA) <- nivel
-
   # helper: format one simulated case list
 
   format_sim_nested <- function(dataSim, sector_label, dummy = FALSE) {
@@ -100,6 +83,34 @@ sim_es_nested <- function(
     out
   }
 
+  ###############
+  # Function starts here ===
+  ###############
+
+
+  # get values for size limits
+  data[, 1] <- as.factor(data[, 1])
+  data[, 2] <- as.factor(data[, 2])
+  factSect <- data[, 1]
+  nSect <- nlevels(factSect) # number of treatments
+  nivel <- levels(factSect)
+
+  ## Simulated data for H0
+  # Create a list to store the results
+  ListSim0 <- vector(mode = "list", length = nSect)
+  names(ListSim0) <- nivel
+
+  ListParam0 <- vector(mode = "list", length = nSect)
+  names(ListParam0) <- nivel
+  ListParamA <- vector(mode = "list", length = nSect)
+  names(ListParamA) <- nivel
+
+  data0 <- data
+  data0[, 1] <- "zero"
+  data0[, 2] <- "zerozero"
+
+  Par0 <- assempar(data0[, -1], type = type, Sest.method = Sest.method)
+
   # run the simulation for the different sectors we already have.
   for (i in nivel) {
     # Prepare data by setting replicates to just one value
@@ -122,7 +133,8 @@ sim_es_nested <- function(
         )
       )
 
-    ListParam0[[i]] <- dataParameter0$par[, c(1, 3)]
+    # ListParam0[[i]] <- dataParameter0$par[, c(1, 3)]
+    ListParam0[[i]] <- Par0$par[, c(1, 3)]
 
     dataParameterA <- assempar(
       dataTrimmedA,
@@ -142,7 +154,8 @@ sim_es_nested <- function(
 
     # Calculate simulated communities
     dataSim0 <- simdata(
-      dataParameter0,
+      # dataParameter0,
+      Par0,
       cases = cases,
       N = N,
       sites = M,
@@ -168,7 +181,11 @@ sim_es_nested <- function(
   )
 
   # Calculate species similarity percentage from H0
-  ListContribution <- use_simper_nested(simH0)
+  # ListContribution <- use_simper_nested(simH0)
+  ListContribution <- rank_fw_contribution(
+    ListParamA = ListParamA,
+    ParamPoolA = ListParam0
+  )
 
   ## design and fill the results matrix ----
   NN <- cases * k * (m - 1) * (n - 1)
@@ -190,11 +207,11 @@ sim_es_nested <- function(
   ## design the arrays to store the lists ----
   # Factors matrix and data matrix for Ha
   factEnv <- as.data.frame(simH0[[1]][,
-    (dim(simH0[[1]])[2] - 2):dim(simH0[[1]])[2]
+                                      (dim(simH0[[1]])[2] - 2):dim(simH0[[1]])[2]
   ])
   names(factEnv) <- c("sector", "site", "N")
 
-  rm(simH0, ListSim0)
+  rm(ListSim0)
   gc()
 
   ## Set of parameters for using balancedtwostage ----
@@ -207,8 +224,8 @@ sim_es_nested <- function(
   mn <- cbind(mm, nn)
 
   ## Output container ----
-  resultOut <- vector("list", length = NN * (steps + 1))
-  pcoaOut <- vector("list", length = NN * (steps + 1))
+  resultOut <- vector("list", length = NN * (steps + 2))
+  pcoaOut <- vector("list", length = NN * (steps + 2))
 
   cl <- NULL
 
@@ -242,76 +259,84 @@ sim_es_nested <- function(
     )
   }
 
-  for (st in 1:(steps + 1)) {
+  for (st in 1:(steps + 2)) {
     paso = st - 1
 
     stepSim <- vector(mode = "list", length = nSect)
     names(stepSim) <- nivel
 
-    if (st == 1) {
-      for (i in nivel) {
-        # Calculate simulated communities using Ha param as basis
-        dataSimA <- simdata(
-          ListParamA[[i]],
-          cases = cases,
-          N = N,
-          sites = M,
-          jitter.base = jitter.base
-        )
+    if (st <= (steps + 1)) {
+      if (st == 1) {
+        for (i in nivel) {
+          # Calculate simulated communities using Ha param as basis
+          dataSimA <- simdata(
+            ListParamA[[i]],
+            cases = cases,
+            N = N,
+            sites = M,
+            jitter.base = jitter.base
+          )
 
-        stepSim[[i]] <- format_sim_nested(
-          dataSim = dataSimA,
-          sector_label = i,
-          dummy = dummy
-        )
+          stepSim[[i]] <- format_sim_nested(
+            dataSim = dataSimA,
+            sector_label = i,
+            dummy = dummy
+          )
+        }
+        scenario = "True Ha"
+      } else {
+        # Calculate proportion of species to alter in each sector
+        alpha = paso / steps
+
+        for (i in nivel) {
+          # Makes a progressive selection guided by ListContribution
+          contrib_i <- ListContribution[
+            ListContribution$species %in% ListParamA[[i]]$par$Species,
+          ]
+          adjustN <- min(nrow(contrib_i), ceiling(ListParamA[[i]]$Sest * alpha))
+          adjusting <- dplyr::pull(contrib_i[seq_len(adjustN), "species"])
+
+          parHaTemp <- ListParamA[[i]]
+
+          idx_adj <- which(parHaTemp$par$Species %in% adjusting)
+          fw_pool_adj <- ListParam0$fw_pool[match(
+            parHaTemp$par$Species[idx_adj],
+            ListParam0$Species
+          )]
+
+          parHaTemp$par[idx_adj, "fw"] <- (1 - alpha) *
+            parHaTemp$par[idx_adj, "fw"] +
+            alpha * fw_pool_adj
+
+          # Calculate simulated communities using Ha param as basis
+          dataSimA <- simdata(
+            parHaTemp,
+            cases = cases,
+            N = N,
+            sites = M,
+            jitter.base = jitter.base
+          )
+
+          stepSim[[i]] <- format_sim_nested(
+            dataSim = dataSimA,
+            sector_label = i,
+            dummy = dummy
+          )
+        }
+        scenario = "attenuated"
       }
+
+      simHaTemp <- assemble_cases_nested(
+        sim_list_by_sector = stepSim,
+        cases = cases,
+        nivel = nivel,
+        dummy = dummy
+      )
     } else {
-      # Calculate proportion of species to alter in each sector
-      alpha = paso / steps
-
-      for (i in nivel) {
-        # Hace selección progresiva por ListContribution
-        contrib_i <- ListContribution[
-          ListContribution$species %in% ListParamA[[i]]$par$Species,
-        ]
-        adjustN <- min(nrow(contrib_i), ceiling(ListParamA[[i]]$Sest * alpha))
-        adjusting <- dplyr::pull(contrib_i[seq_len(adjustN), "species"])
-
-        parHaTemp <- ListParamA[[i]]
-
-        idx_adj <- which(parHaTemp$par$Species %in% adjusting)
-        fw_pool_adj <- ListParam0$fw_pool[match(
-          parHaTemp$par$Species[idx_adj],
-          ListParam0$Species
-        )]
-
-        parHaTemp$par[idx_adj, "fw"] <- (1 - alpha) *
-          parHaTemp$par[idx_adj, "fw"] +
-          alpha * fw_pool_adj
-
-        # Calculate simulated communities using Ha param as basis
-        dataSimA <- simdata(
-          parHaTemp,
-          cases = cases,
-          N = N,
-          sites = M,
-          jitter.base = jitter.base
-        )
-
-        stepSim[[i]] <- format_sim_nested(
-          dataSim = dataSimA,
-          sector_label = i,
-          dummy = dummy
-        )
-      }
+      simHaTemp <- simH0
+      rm(simH0)
+      scenario = "True H0"
     }
-
-    simHaTemp <- assemble_cases_nested(
-      sim_list_by_sector = stepSim,
-      cases = cases,
-      nivel = nivel,
-      dummy = dummy
-    )
 
     # Simulation arguments ---
     xH0 <- dim(simHaTemp[[1]])[1]
@@ -374,6 +399,7 @@ sim_es_nested <- function(
       data.frame(
         reduction_level = paso / steps,
         step = paso,
+        scenario = scenario,
         dat_sim = resultsHa[i, "dat.sim"],
         k = resultsHa[i, "k"],
         m = resultsHa[i, "m"],
@@ -403,27 +429,47 @@ sim_es_nested <- function(
     pcoaOut[idx] <- lapply(seq_len(NN), function(i) {
       cur <- result1[[i]]
       pts <- cur$pcoa_points
+
       pts$reduction_level <- paso / steps
       pts$step <- paso
+      pts$scenario <- scenario
+      pts$dat_sim <- resultsHa[i, "dat.sim"]
+      pts$k <- resultsHa[i, "k"]
+      pts$m <- resultsHa[i, "m"]
+      pts$n <- resultsHa[i, "n"]
+
       pts
     })
 
     rm(HaSim, result1)
     gc()
 
-    cat("Step ", paso, ": Done! - ", steps - paso, " remaining")
+    if(paso < steps){
+      cat("Step ", paso, ": Done! - ", steps - paso, " remaining")
+    } else {
+      cat("Last round... Now testing H0")
+    }
+
   }
   if (useParallel && !is.null(cl)) {
     parabar::stop_backend(cl)
     cl <- NULL
   }
 
+  # resultOut <- readRDS("./pruebas/resultOut.rds")
+  # pcoaOut <- readRDS("./pruebas/pcoaOut.rds")
   resultOut <- dplyr::bind_rows(resultOut)
+  resultH0 <- resultOut[resultOut$scenario == "True H0", ]
+  resultOutPath <- resultOut[resultOut$scenario != "True H0", ]
   pcoaOut <- dplyr::bind_rows(pcoaOut)
+  pcoaOutH0 <- pcoaOut[pcoaOut$scenario == "True H0", ]
+  pcoaOutPath <- pcoaOut[pcoaOut$scenario != "True H0", ]
 
   es_obj <- new_effect_size_data(
-    data = resultOut,
-    pcoa = pcoaOut,
+    data = resultOutPath,
+    pcoa = pcoaOutPath,
+    dataH0 = resultH0,
+    pcoaH0 = pcoaOutH0,
     call = match.call(),
     model = model
   )
@@ -456,6 +502,22 @@ sim_es_single <- function(
   model = "single.factor",
   jitter.base = 0.5
 ) {
+  format_sim_single <- function(dataSim, dummy = FALSE){
+    out <- lapply(dataSim, function(df){
+      new_names <- gsub(
+        "unseen\\.species\\s*(\\d+)",
+        paste0("unseen.species.", "\\1"),
+        names(df)
+      )
+      names(df) <- new_names
+      df
+    })
+    if(dummy == TRUE){
+      out <- lapply(out, dplyr::mutate, dummy = 1)
+    }
+    out
+  }
+
   # read data and store it in two objects, one for H0 and one for Ha ----
   datH0 <- data
   datH0[, 1] <- as.factor("zero")
@@ -463,6 +525,11 @@ sim_es_single <- function(
   datHa[, 1] <- as.factor(data[, 1])
   a <- nlevels(datHa[, 1])
   M <- a
+
+  if(dummy){
+    datHa$dummy = 1
+    datH0$dummy = 1
+  }
 
   ## Helper matrix to store labels ----
   NN <- cases * k * (n - 1)
@@ -490,12 +557,9 @@ sim_es_single <- function(
   parH0 <- SSP::assempar(data = datH0, type = type, Sest.method = Sest.method)
   parHa <- SSP::assempar(data = datHa, type = type, Sest.method = Sest.method)
 
-  ## Calculate species similarity percentage from Ha ----
-  sppContribution <- use_simper(datHa)
-
   ## Output container ----
-  resultOut <- vector("list", length = NN * (steps + 1))
-  pcoaOut <- vector("list", length = NN * (steps + 1))
+  resultOut <- vector("list", length = NN * (steps + 2))
+  pcoaOut <- vector("list", length = NN * (steps + 2))
 
   simH0 <- SSP::simdata(
     parH0,
@@ -511,95 +575,157 @@ sim_es_single <- function(
 
   H0Sim <- simH0
 
-  if (dummy == TRUE) {
-    yH0 <- yH0 + 1
-    for (i in seq_len(casesHa)) {
-      H0Sim[[i]] <- cbind(simH0[[i]], dummy = 1)
-      H0Sim[[i]] <- H0Sim[[i]][, c(1:(yH0 - 3), (yH0), (yH0 - 2):(yH0 - 1))]
-    }
+  simH0 <- format_sim_single(simH0)
+  H0Sim <- array(unlist(H0Sim), dim = c(xH0, yH0, casesHa))
+
+  datH0Sim <- data.frame(
+    sites = H0Sim[,,1][,ncol(H0Sim[,,1])],
+    H0Sim[,,1][, 1:(ncol(H0Sim[,,1])-2)]
+  )
+
+  names <- c("sites", parH0$par$Species)
+  colnames(datH0Sim) <- names
+
+  ## Calculate species similarity percentage from Ha ----
+  # sppContribution <- use_simper(datH0Sim)
+
+  ListParamA <- vector("list", length = a)
+  names(ListParamA) <- levels(datHa[, 1])
+
+  for (i in names(ListParamA)) {
+    dataTrimmedA <- datHa[datHa[, 1] == i, , drop = FALSE]
+
+    dataParameterA_i <- SSP::assempar(
+      dataTrimmedA,
+      type = type,
+      Sest.method = Sest.method
+    )
+
+    dataParameterA_i$par <- dataParameterA_i$par |>
+      dplyr::mutate(
+        Species = sub(
+          "unseen\\.species\\s*(\\d+)",
+          "unseen.species.\\1",
+          Species
+        )
+      )
+
+    ListParamA[[i]] <- dataParameterA_i
   }
 
-  rm(simH0)
-  H0Sim <- array(unlist(H0Sim), dim = c(xH0, yH0, casesHa))
+  ParamPoolA <- data.frame(Species = parH0$par$Species,
+                           fw_pool = parH0$par$fw)
+
+  sppContribution <- rank_fw_contribution(
+    ListParamA = ListParamA,
+    ParamPoolA = ParamPoolA
+  )
 
   # Loop for species contribution attenuation ----
   n_spp <- dim(sppContribution)[1]
   propSpp <- 1 / steps
 
-  for (st in 1:(steps + 1)) {
-    paso = st - 1
-    # Calculate number of species to alter
-    removing <- paso * propSpp
-    adjustN <- ceiling(nrow(sppContribution) * removing)
+  # Output container
+  resultOut <- vector(mode = "list", length = NN * (steps + 2))
+  pcoaOut <- vector(mode = "list", length = NN * (steps + 2))
 
-    if (adjustN != 0) {
-      adjusting <- sppContribution[1:adjustN, 1]
+  cl <- NULL
 
-      # Obtain H0 parameters from null hypothesis
-      zeroParameter <- parH0$par[
-        parH0$par$Species %in% adjusting,
-        c(1, 3)
-      ]
+  if (useParallel) {
+    parabar::configure_bar(type = "basic", style = 3)
 
-      # Alter the Ha parameters with the corresponding null hypothesis version
-      parHaTemp <- parHa
-      parHaTemp$par[
-        parHaTemp$par$Species %in% adjusting,
-        c(3)
-      ] <- zeroParameter[, 2]
-    } else {
-      parHaTemp <- parHa
-    }
-
-    simHa <- SSP::simdata(
-      parHaTemp,
-      cases = cases,
-      N = N,
-      sites = M,
-      jitter.base = jitter.base
+    cl <- parabar::start_backend(
+      cores = parallelly::availableCores() / 2,
+      cluster_type = "psock",
+      backend_type = "async"
     )
 
-    # Simulation arguments ---
-    xH0 <- dim(simHa[[1]])[1]
-    yH0 <- dim(simHa[[1]])[2]
-    casesHa <- length(simHa)
+    on.exit(
+      {
+        if (!is.null(cl)) {
+          try(parabar::stop_backend(cl), silent = TRUE)
+        }
+      },
+      add = TRUE
+    )
 
-    HaSim <- simHa
+    parabar::export(
+      cl,
+      variables = c(
+        "balanced_sampling_es",
+        "dbmanova_oneway",
+        "calc_dist"
+      ),
+      environment = asNamespace("ecocbo")
+    )
+  }
 
-    if (dummy == TRUE) {
-      yH0 <- yH0 + 1
-      for (i in seq_len(casesHa)) {
-        HaSim[[i]] <- cbind(simHa[[i]], dummy = 1)
-        HaSim[[i]] <- HaSim[[i]][, c(1:(yH0 - 3), (yH0), (yH0 - 2):(yH0 - 1))]
-      }
+  for (st in 1:(steps + 2)) {
+    paso = st - 1
+
+    if(st == 1){
+      # Calculate simulated communities using Ha
+      simHa <- simdata(
+        parHa,
+        cases = cases,
+        N = N,
+        sites = M,
+        jitter.base = jitter.base
+      )
+      stepSim <- format_sim_single(simHa, dummy)
+      scenario = "True Ha"
+      rm(simHa)
+    } else if(st <= (steps + 1)){
+      alpha = paso / steps
+
+      contrib <- sppContribution[sppContribution$species %in% parHa$par$Species,]
+      adjustN <- min(
+        nrow(contrib),
+        ceiling(parHa$Sest * alpha)
+      )
+
+      adjusting <- contrib[seq_len(adjustN), "species"]
+
+      # copy Ha parameters
+      parHaTemp <- parHa
+
+      # identify species to attenuate
+      idx_adj <- which(parHaTemp$par$Species %in% adjusting)
+
+      # match H0 expected abundance values
+      fw_pool_adj <- parH0$par$fw[
+        match(
+          parHaTemp$par$Species[idx_adj],
+          parH0$par$Species
+        )
+      ]
+
+      parHaTemp$par[idx_adj, "fw"] <- (1 - alpha) * parHaTemp$par[idx_adj, "fw"] + alpha * fw_pool_adj
+
+      # Gradually attenuate Ha parameters
+      dataSimA <- simdata(
+        parHaTemp,
+        cases = cases,
+        N = N,
+        sites = M,
+        jitter.base = jitter.base
+      )
+      stepSim <- format_sim_single(dataSimA, dummy)
+      scenario <- "attenuated"
+      rm(dataSimA)
+    } else {
+      stepSim <- simH0
+      scenario <- "True H0"
     }
 
-    rm(simHa)
+    HaSim <- array(unlist(stepSim), dim = c(xH0, yH0, casesHa))
 
-    HaSim <- array(unlist(HaSim), dim = c(xH0, yH0, casesHa))
+    rm(stepSim)
+    gc()
 
-    # Loop to calculate ecological and inferential effect sizes ----
+    # # Loop to calculate ecological and inferential effect sizes ----
 
     if (useParallel) {
-      # Registering the cluster of workers with parabar
-      parabar::configure_bar(type = "basic", style = 3)
-      cl <- parabar::start_backend(
-        cores = parallelly::availableCores() / 2,
-        cluster_type = "psock",
-        backend_type = "async"
-      )
-
-      # Exporing functions needed for the parallel iterations
-      parabar::export(
-        cl,
-        variables = c(
-          "balanced_sampling_es",
-          "dbmanova_oneway",
-          "calc_dist"
-        ),
-        environment = asNamespace("ecocbo")
-      )
-
       # Executing the loop in parallel
       result1 <- parabar::par_lapply(
         cl,
@@ -614,8 +740,6 @@ sim_es_single <- function(
         transformation,
         method
       )
-
-      parabar::stop_backend(cl)
     } else {
       pb <- txtProgressBar(max = NN, style = 3)
       result1 <- vector("list", length = NN)
@@ -639,7 +763,6 @@ sim_es_single <- function(
       }
       close(pb)
     }
-
     idx <- (paso * NN + 1):((paso + 1) * NN)
 
     resultOut[idx] <- lapply(seq_len(NN), function(i) {
@@ -647,6 +770,7 @@ sim_es_single <- function(
       data.frame(
         reduction_level = paso / steps,
         step = paso,
+        scenario = scenario,
         dat_sim = resultsHa[i, "dat.sim"],
         k = resultsHa[i, "k"],
         m = resultsHa[i, "m"],
@@ -669,18 +793,33 @@ sim_es_single <- function(
       pts <- cur$pcoa_points
       pts$reduction_level <- paso / steps
       pts$step <- paso
+      pts$scenario <- scenario
       pts
     })
 
-    cat("Step ", paso, ": Done! - ", steps - paso, " remaining")
+    if(paso < steps){
+      cat("Step ", paso, ": Done! - ", steps - paso, " remaining")
+    } else {
+      cat("Last round... Now testing H0")
+    }
+  }
+
+  if(useParallel){
+    parabar::stop_backend(cl)
   }
 
   resultOut <- dplyr::bind_rows(resultOut)
+  resultH0 <- resultOut[resultOut$scenario == "True H0", ]
+  resultOutPath <- resultOut[resultOut$scenario != "True H0", ]
   pcoaOut <- dplyr::bind_rows(pcoaOut)
+  pcoaOutH0 <- pcoaOut[pcoaOut$scenario == "True H0", ]
+  pcoaOutPath <- pcoaOut[pcoaOut$scenario != "True H0", ]
 
   es_obj <- new_effect_size_data(
-    data = resultOut,
-    pcoa = pcoaOut,
+    data = resultOutPath,
+    pcoa = pcoaOutPath,
+    dataH0 = resultH0,
+    pcoaH0 = pcoaOutH0,
     call = match.call(),
     model = model
   )

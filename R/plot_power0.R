@@ -239,9 +239,10 @@ density_plot <- function(results, powr, m = NULL, n, method, cVar, model,
                        fill = "#E69F00", color = "#E69F00",
                        alpha = 0.5)+
     geom_vline(xintercept = xIntersect, linetype = 2)+
-    geom_label(aes(x = xIntersect + 1, y = 0.95,
-                   label = paste0("Fcrit = ",round(xIntersect, 2))),
-               alpha = 0.2, nudge_x = 0.1)+
+    geom_text(aes(#x = xIntersect+0.5, y = 0.95,
+                  x = Inf, y = Inf,
+                  vjust = 1.2, hjust = 1.2,
+                   label = paste0("Fcrit = ",round(xIntersect, 2))))+
     theme_bw()+
     scale_x_continuous(name = "pseudoF",
                        breaks = function(x)seq(floor(bottom), ceiling(top)))+
@@ -269,11 +270,6 @@ density_plot <- function(results, powr, m = NULL, n, method, cVar, model,
         geom_label(aes(x = top - 1, y = 0.9, label = cVarLabel))
     }
   }
-
-  # if(method == "density"){
-  #   p1 <- p1 +
-  #     geom_label(aes(x = top - 1, y = 0.9, label = cVarLabel))
-  # }
   return(p1)
 }
 
