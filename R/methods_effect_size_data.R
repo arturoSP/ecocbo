@@ -27,6 +27,8 @@
 #' @return An object of class `effect_size_data`, or subclass
 #'   `effect_size_data_nested` for nested outputs.
 #' @export
+#'
+
 new_effect_size_data <- function(
   data,
   centroid_distances = NULL,
@@ -70,6 +72,7 @@ new_effect_size_data <- function(
 #'
 #' @return Invisibly returns `TRUE` if validation passes.
 #' @keywords internal
+#' @noRd
 validate_effect_size_data <- function(x, variant = NULL) {
   if (!is.data.frame(x)) {
     stop("`x` must be a data.frame or effect_size_data object.", call. = FALSE)
@@ -154,6 +157,7 @@ validate_effect_size_data <- function(x, variant = NULL) {
 #' Remove effect_size_data S3 classes before ordinary data-frame operations
 #'
 #' @keywords internal
+#' @noRd
 .as_plain_effect_size_df <- function(x) {
   class(x) <- setdiff(
     class(x),
@@ -164,16 +168,19 @@ validate_effect_size_data <- function(x, variant = NULL) {
 }
 
 #' @export
+#' @noRd
 as.data.frame.effect_size_data <- function(x, ...) {
   .as_plain_effect_size_df(x)
 }
 
 #' @export
+#' @noRd
 as.data.frame.effect_size_data_nested <- function(x, ...) {
   .as_plain_effect_size_df(x)
 }
 
 #' @keywords internal
+#' @noRd
 .extract_h0_data <- function(x) {
   dataH0 <- attr(x, "dataH0")
 
@@ -198,6 +205,7 @@ as.data.frame.effect_size_data_nested <- function(x, ...) {
 }
 
 #' @keywords internal
+#' @noRd
 .es_ok_vec <- function(df) {
   if ("ok" %in% names(df)) {
     return(df$ok %in% TRUE)
@@ -207,6 +215,7 @@ as.data.frame.effect_size_data_nested <- function(x, ...) {
 }
 
 #' @keywords internal
+#' @noRd
 .es_check_required_cols <- function(df, cols, object_name = "data") {
   missing_cols <- setdiff(cols, names(df))
 
@@ -228,6 +237,7 @@ as.data.frame.effect_size_data_nested <- function(x, ...) {
 # =========================================================
 
 #' @keywords internal
+#' @noRd
 .print_effect_size_data_common <- function(
   x,
   digits = max(3L, getOption("digits") - 2L),
@@ -381,6 +391,7 @@ as.data.frame.effect_size_data_nested <- function(x, ...) {
 #'
 #' @return Invisibly returns `x`.
 #' @export
+#'
 print.effect_size_data <- function(
   x,
   digits = max(3L, getOption("digits") - 2L),
@@ -404,6 +415,7 @@ print.effect_size_data <- function(
 #'
 #' @return Invisibly returns `x`.
 #' @export
+#'
 print.effect_size_data_nested <- function(
   x,
   digits = max(3L, getOption("digits") - 2L),
@@ -423,6 +435,7 @@ print.effect_size_data_nested <- function(
 # =========================================================
 
 #' @keywords internal
+#' @noRd
 .es_base_theme <- function() {
   ggplot2::theme_bw() +
     ggplot2::theme(
@@ -433,6 +446,7 @@ print.effect_size_data_nested <- function(
 }
 
 #' @keywords internal
+#' @noRd
 .es_center <- function(z, summary_stat = c("median", "mean")) {
   summary_stat <- match.arg(summary_stat)
   if (summary_stat == "mean") {
@@ -443,6 +457,7 @@ print.effect_size_data_nested <- function(
 }
 
 #' @keywords internal
+#' @noRd
 .es_low <- function(
   z,
   summary_stat = c("median", "mean"),
@@ -463,6 +478,7 @@ print.effect_size_data_nested <- function(
 }
 
 #' @keywords internal
+#' @noRd
 .es_high <- function(
   z,
   summary_stat = c("median", "mean"),
@@ -483,6 +499,7 @@ print.effect_size_data_nested <- function(
 }
 
 #' @keywords internal
+#' @noRd
 .summarise_effect_size_data <- function(
   x,
   inferential_var = c("omega2", "R2", "pseudoF"),
@@ -517,6 +534,7 @@ print.effect_size_data_nested <- function(
 }
 
 #' @keywords internal
+#' @noRd
 .plot_effect_size_stacked <- function(
   x,
   inferential_var = c("omega2", "R2", "pseudoF"),
@@ -618,6 +636,7 @@ print.effect_size_data_nested <- function(
 }
 
 #' @keywords internal
+#' @noRd
 .plot_effect_size_scatter <- function(
   x,
   inferential_var = c("omega2", "R2", "pseudoF"),
@@ -697,28 +716,39 @@ print.effect_size_data_nested <- function(
 }
 
 #' @keywords internal
+#' @noRd
 .plot_effect_size_ordination <- function(
-    x,
-    reduction_levels = NULL,
-    selection = c("median", "first", "min", "max"),
-    effect_col = "ecological_effect",
-    group_var = "group",
-    color_var = group_var,
-    label_var = group_var,
-    legend_title = "Group",
-    show_centroids = TRUE,
-    label_centroids = TRUE,
-    point_alpha = 0.7,
-    point_size = 1.8,
-    centroid_size = 2.8,
-    facet_ncol = NULL
+  x,
+  reduction_levels = NULL,
+  selection = c("median", "first", "min", "max"),
+  effect_col = "ecological_effect",
+  group_var = "group",
+  color_var = group_var,
+  label_var = group_var,
+  legend_title = "Group",
+  show_centroids = TRUE,
+  label_centroids = TRUE,
+  point_alpha = 0.7,
+  point_size = 1.8,
+  centroid_size = 2.8,
+  facet_ncol = NULL
 ) {
   selection <- match.arg(selection)
 
   pcoa_df <- .extract_pcoa_data(x)
 
-  required_pcoa_cols <- unique(c(group_var, color_var, label_var, "Axis1", "Axis2"))
-  .es_check_required_cols(pcoa_df, required_pcoa_cols, object_name = "stored PCoA data")
+  required_pcoa_cols <- unique(c(
+    group_var,
+    color_var,
+    label_var,
+    "Axis1",
+    "Axis2"
+  ))
+  .es_check_required_cols(
+    pcoa_df,
+    required_pcoa_cols,
+    object_name = "stored PCoA data"
+  )
 
   plot_df <- .select_representative_pcoa(
     x = x,
@@ -777,17 +807,18 @@ print.effect_size_data_nested <- function(
 }
 
 #' @keywords internal
+#' @noRd
 .plot_effect_size_nested_ordination <- function(
-    x,
-    component = c("A", "BA"),
-    reduction_levels = NULL,
-    selection = c("median", "first", "min", "max"),
-    show_centroids = TRUE,
-    label_centroids = TRUE,
-    point_alpha = 0.7,
-    point_size = 1.8,
-    centroid_size = 2.8,
-    facet_ncol = NULL
+  x,
+  component = c("A", "BA"),
+  reduction_levels = NULL,
+  selection = c("median", "first", "min", "max"),
+  show_centroids = TRUE,
+  label_centroids = TRUE,
+  point_alpha = 0.7,
+  point_size = 1.8,
+  centroid_size = 2.8,
+  facet_ncol = NULL
 ) {
   component <- match.arg(component)
 
@@ -831,6 +862,7 @@ print.effect_size_data_nested <- function(
 }
 
 #' @keywords internal
+#' @noRd
 .summarise_effect_size_data_nested <- function(
   x,
   component = c("A", "BA"),
@@ -878,6 +910,7 @@ print.effect_size_data_nested <- function(
 }
 
 #' @keywords internal
+#' @noRd
 .plot_effect_size_nested_stacked <- function(
   x,
   component = c("A", "BA"),
@@ -1028,31 +1061,32 @@ print.effect_size_data_nested <- function(
 #'
 #' @return A ggplot object or a patchwork object.
 #' @export
+#'
 plot.effect_size_data <- function(
-    x,
-    type = c("stacked", "scatter", "ordination", "true_h0", "ES_H0"),
-    inferential_var = c("omega2", "R2", "pseudoF"),
-    summary_stat = c("median", "mean"),
-    interval = c("iqr", "sd"),
-    color_by = c("reduction_level", "none"),
-    scatter_data = c("summary", "raw"),
-    reduction_levels = NULL,
-    selection = c("median", "first", "min", "max"),
-    show_centroids = TRUE,
-    label_centroids = TRUE,
-    ribbon_alpha = 0.25,
-    point_alpha = 0.7,
-    line_size = 0.4,
-    point_size = 1.8,
-    centroid_size = 2.8,
-    facet_ncol = NULL,
-    add_smooth = FALSE,
-    h0_alpha = 0.05,
-    h0_x_var = c("pseudoF", "ecological_effect", "omega2", "R2"),
-    h0_color_by = c("reduction_level", "step", "none"),
-    facet_effort = FALSE,
-    h0_quantile_type = 7,
-    ...
+  x,
+  type = c("stacked", "scatter", "ordination", "true_h0", "ES_H0"),
+  inferential_var = c("omega2", "R2", "pseudoF"),
+  summary_stat = c("median", "mean"),
+  interval = c("iqr", "sd"),
+  color_by = c("reduction_level", "none"),
+  scatter_data = c("summary", "raw"),
+  reduction_levels = NULL,
+  selection = c("median", "first", "min", "max"),
+  show_centroids = TRUE,
+  label_centroids = TRUE,
+  ribbon_alpha = 0.25,
+  point_alpha = 0.7,
+  line_size = 0.4,
+  point_size = 1.8,
+  centroid_size = 2.8,
+  facet_ncol = NULL,
+  add_smooth = FALSE,
+  h0_alpha = 0.05,
+  h0_x_var = c("pseudoF", "ecological_effect", "omega2", "R2"),
+  h0_color_by = c("reduction_level", "step", "none"),
+  facet_effort = FALSE,
+  h0_quantile_type = 7,
+  ...
 ) {
   validate_effect_size_data(x)
 
@@ -1130,11 +1164,13 @@ plot.effect_size_data <- function(
 # =========================================================
 
 #' @keywords internal
+#' @noRd
 .es_quantile_name <- function(p) {
   paste0("q", formatC(100 * p, format = "fg", width = 1, digits = 0))
 }
 
 #' @keywords internal
+#' @noRd
 .summarise_vector <- function(
   z,
   center = c("median", "mean"),
@@ -1175,6 +1211,7 @@ plot.effect_size_data <- function(
 }
 
 #' @keywords internal
+#' @noRd
 .summarise_by_reduction <- function(df, inferential_var, center, probs) {
   dplyr::group_by(df, reduction_level) |>
     dplyr::group_modify(function(.x, .y) {
@@ -1346,6 +1383,7 @@ summary.effect_size_data <- function(
 }
 
 #' @keywords internal
+#' @noRd
 .plot_effect_size_nested_scatter <- function(
   x,
   component = c("A", "BA"),
@@ -1493,35 +1531,35 @@ summary.effect_size_data <- function(
 #' @return A ggplot object or a patchwork object.
 #' @export
 plot.effect_size_data_nested <- function(
-    x,
-    type = c("stacked", "scatter", "ordination", "true_h0", "ES_H0"),
-    component = c("A", "BA"),
-    inferential_var = c("omega2", "R2", "pseudoF"),
-    summary_stat = c("median", "mean"),
-    interval = c("iqr", "sd"),
-    color_by = c("reduction_level", "none"),
-    scatter_data = c("summary", "raw"),
-    reduction_levels = NULL,
-    selection = c("median", "first", "min", "max"),
-    show_centroids = TRUE,
-    label_centroids = TRUE,
-    ribbon_alpha = 0.25,
-    point_alpha = 0.7,
-    line_size = 0.4,
-    point_size = 1.8,
-    centroid_size = 2.8,
-    facet_ncol = NULL,
-    add_smooth = FALSE,
-    h0_alpha = 0.05,
-    h0_x_var = c("pseudoF", "ecological_effect", "omega2", "R2"),
-    h0_color_by = c("reduction_level", "step", "none"),
-    facet_effort = FALSE,
-    facet_subset = c("reduced", "all", "all_n", "all_m"),
-    facet_start_at = 2,
-    facet_m_value = NULL,
-    facet_n_value = NULL,
-    h0_quantile_type = 7,
-    ...
+  x,
+  type = c("stacked", "scatter", "ordination", "true_h0", "ES_H0"),
+  component = c("A", "BA"),
+  inferential_var = c("omega2", "R2", "pseudoF"),
+  summary_stat = c("median", "mean"),
+  interval = c("iqr", "sd"),
+  color_by = c("reduction_level", "none"),
+  scatter_data = c("summary", "raw"),
+  reduction_levels = NULL,
+  selection = c("median", "first", "min", "max"),
+  show_centroids = TRUE,
+  label_centroids = TRUE,
+  ribbon_alpha = 0.25,
+  point_alpha = 0.7,
+  line_size = 0.4,
+  point_size = 1.8,
+  centroid_size = 2.8,
+  facet_ncol = NULL,
+  add_smooth = FALSE,
+  h0_alpha = 0.05,
+  h0_x_var = c("pseudoF", "ecological_effect", "omega2", "R2"),
+  h0_color_by = c("reduction_level", "step", "none"),
+  facet_effort = FALSE,
+  facet_subset = c("reduced", "all", "all_n", "all_m"),
+  facet_start_at = 2,
+  facet_m_value = NULL,
+  facet_n_value = NULL,
+  h0_quantile_type = 7,
+  ...
 ) {
   validate_effect_size_data(x, variant = "nested")
 
@@ -1670,6 +1708,7 @@ print.summary_effect_size_data <- function(
 }
 
 #' @keywords internal
+#' @noRd
 .extract_pcoa_data <- function(x) {
   pcoa <- attr(x, "pcoa")
 
@@ -1706,12 +1745,13 @@ print.summary_effect_size_data <- function(
 }
 
 #' @keywords internal
+#' @noRd
 .select_representative_pcoa <- function(
-    x,
-    pcoa_df,
-    effect_col = "ecological_effect",
-    reduction_levels = NULL,
-    selection = c("median", "first", "min", "max")
+  x,
+  pcoa_df,
+  effect_col = "ecological_effect",
+  reduction_levels = NULL,
+  selection = c("median", "first", "min", "max")
 ) {
   selection <- match.arg(selection)
 
@@ -1719,7 +1759,9 @@ print.summary_effect_size_data <- function(
 
   if (!effect_col %in% names(df)) {
     stop(
-      "Column `", effect_col, "` is not available in the object.",
+      "Column `",
+      effect_col,
+      "` is not available in the object.",
       call. = FALSE
     )
   }
@@ -1795,11 +1837,12 @@ print.summary_effect_size_data <- function(
 }
 
 #' @keywords internal
+#' @noRd
 .compute_pcoa_centroids <- function(
-    df,
-    group_var = "group",
-    color_var = group_var,
-    label_var = group_var
+  df,
+  group_var = "group",
+  color_var = group_var,
+  label_var = group_var
 ) {
   vars_to_keep <- unique(c(group_var, color_var, label_var))
 
@@ -1826,11 +1869,12 @@ print.summary_effect_size_data <- function(
 #' Summarise empirical rejection rates using the explicit True H0 scenario
 #'
 #' @keywords internal
+#' @noRd
 .summarise_true_h0_rejection_single <- function(
-    x,
-    h0_alpha = 0.05,
-    quantile_type = 7,
-    include_true_h0 = TRUE
+  x,
+  h0_alpha = 0.05,
+  quantile_type = 7,
+  include_true_h0 = TRUE
 ) {
   df <- as.data.frame(x)
   dataH0 <- .extract_h0_data(x)
@@ -1975,16 +2019,17 @@ print.summary_effect_size_data <- function(
 }
 
 #' @keywords internal
+#' @noRd
 .plot_effect_size_true_h0 <- function(
-    x,
-    h0_alpha = 0.05,
-    h0_x_var = c("pseudoF", "ecological_effect", "omega2", "R2"),
-    h0_color_by = c("reduction_level", "step", "none"),
-    facet_effort = FALSE,
-    facet_ncol = NULL,
-    quantile_type = 7,
-    point_alpha = 0.7,
-    point_size = 1.8
+  x,
+  h0_alpha = 0.05,
+  h0_x_var = c("pseudoF", "ecological_effect", "omega2", "R2"),
+  h0_color_by = c("reduction_level", "step", "none"),
+  facet_effort = FALSE,
+  facet_ncol = NULL,
+  quantile_type = 7,
+  point_alpha = 0.7,
+  point_size = 1.8
 ) {
   h0_x_var <- match.arg(h0_x_var)
   h0_color_by <- match.arg(h0_color_by)
@@ -2087,12 +2132,13 @@ print.summary_effect_size_data <- function(
 #' Summarise empirical rejection rates for nested effect-size objects
 #'
 #' @keywords internal
+#' @noRd
 .summarise_true_h0_rejection_nested <- function(
-    x,
-    component = c("A", "BA"),
-    h0_alpha = 0.05,
-    quantile_type = 7,
-    include_true_h0 = TRUE
+  x,
+  component = c("A", "BA"),
+  h0_alpha = 0.05,
+  quantile_type = 7,
+  include_true_h0 = TRUE
 ) {
   component <- match.arg(component)
 
@@ -2244,21 +2290,22 @@ print.summary_effect_size_data <- function(
 }
 
 #' @keywords internal
+#' @noRd
 .plot_effect_size_nested_true_h0 <- function(
-    x,
-    component = c("A", "BA"),
-    h0_alpha = 0.05,
-    h0_x_var = c("pseudoF", "ecological_effect", "omega2", "R2"),
-    h0_color_by = c("reduction_level", "step", "none"),
-    facet_effort = FALSE,
-    facet_subset = c("reduced", "all", "all_n", "all_m"),
-    facet_start_at = 2,
-    facet_m_value = NULL,
-    facet_n_value = NULL,
-    facet_ncol = NULL,
-    quantile_type = 7,
-    point_alpha = 0.7,
-    point_size = 1.8
+  x,
+  component = c("A", "BA"),
+  h0_alpha = 0.05,
+  h0_x_var = c("pseudoF", "ecological_effect", "omega2", "R2"),
+  h0_color_by = c("reduction_level", "step", "none"),
+  facet_effort = FALSE,
+  facet_subset = c("reduced", "all", "all_n", "all_m"),
+  facet_start_at = 2,
+  facet_m_value = NULL,
+  facet_n_value = NULL,
+  facet_ncol = NULL,
+  quantile_type = 7,
+  point_alpha = 0.7,
+  point_size = 1.8
 ) {
   component <- match.arg(component)
   h0_x_var <- match.arg(h0_x_var)
@@ -2297,7 +2344,11 @@ print.summary_effect_size_data <- function(
   x_lab <- switch(
     h0_x_var,
     pseudoF = paste0("Mean pseudo-F (", component_lab, ")"),
-    ecological_effect = paste0("Mean ecological effect size (", component_lab, ")"),
+    ecological_effect = paste0(
+      "Mean ecological effect size (",
+      component_lab,
+      ")"
+    ),
     omega2 = if (component == "A") {
       expression("Mean " * omega[A]^2)
     } else {
@@ -2395,12 +2446,13 @@ print.summary_effect_size_data <- function(
 #' - "all_m": keep all m values for one selected n
 #'
 #' @keywords internal
+#' @noRd
 .order_effort_facets <- function(
-    df,
-    subset = c("all", "reduced", "all_n", "all_m"),
-    start_at = 2,
-    facet_m_value = NULL,
-    facet_n_value = NULL
+  df,
+  subset = c("all", "reduced", "all_n", "all_m"),
+  start_at = 2,
+  facet_m_value = NULL,
+  facet_n_value = NULL
 ) {
   subset <- match.arg(subset)
 
@@ -2424,7 +2476,6 @@ print.summary_effect_size_data <- function(
 
     df <- df |>
       dplyr::semi_join(keep_pairs, by = c("m", "n"))
-
   } else if (subset == "all_n") {
     if (is.null(facet_m_value)) {
       facet_m_value <- max(effort_df$.m_num, na.rm = TRUE)
@@ -2432,7 +2483,6 @@ print.summary_effect_size_data <- function(
 
     df <- df |>
       dplyr::filter(.m_num == facet_m_value)
-
   } else if (subset == "all_m") {
     if (is.null(facet_n_value)) {
       facet_n_value <- max(effort_df$.n_num, na.rm = TRUE)
@@ -2465,6 +2515,7 @@ print.summary_effect_size_data <- function(
 #' Shape values for effect-size scenarios
 #'
 #' @keywords internal
+#' @noRd
 .es_scenario_shapes <- function() {
   c(
     "attenuated" = 16,
@@ -2482,6 +2533,7 @@ print.summary_effect_size_data <- function(
 #' (2,2), (3,3), ..., (10,10), (10,11), ..., (10,15)
 #'
 #' @keywords internal
+#' @noRd
 .select_nested_effort_subset <- function(df, start_at = 2) {
   effort_df <- df |>
     dplyr::distinct(m, n) |>
@@ -2500,7 +2552,10 @@ print.summary_effect_size_data <- function(
   max_n <- max(effort_df$.n_num, na.rm = TRUE)
   diag_end <- min(max_m, max_n)
 
-  start_at <- max(start_at, min(effort_df$.m_num, effort_df$.n_num, na.rm = TRUE))
+  start_at <- max(
+    start_at,
+    min(effort_df$.m_num, effort_df$.n_num, na.rm = TRUE)
+  )
 
   diag_pairs <- tibble::tibble(
     .m_num = seq.int(start_at, diag_end),

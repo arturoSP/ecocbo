@@ -20,7 +20,7 @@ sim_ES(
   method = "bray",
   dummy = TRUE,
   useParallel = TRUE,
-  model = NULL,
+  model = c("single.factor", "nested.symmetric"),
   jitter.base = 0.5
 )
 }
