@@ -523,7 +523,7 @@ print.effect_size_data_nested <- function(
     )
   }
 
-  dplyr::group_by(df, reduction_level) |>
+  dplyr::group_by(df, .data$reduction_level) |>
     dplyr::summarise(
       eco_center = .es_center(ecological_effect, summary_stat),
       eco_low = .es_low(ecological_effect, summary_stat, interval),
@@ -572,26 +572,26 @@ print.effect_size_data_nested <- function(
       axis.ticks = ggplot2::element_line(linewidth = 0.2)
     )
 
-  p_eco <- ggplot2::ggplot(df_sum, ggplot2::aes(x = reduction_level)) +
+  p_eco <- ggplot2::ggplot(df_sum, ggplot2::aes(x = .data$reduction_level)) +
     ggplot2::geom_ribbon(
-      ggplot2::aes(ymin = eco_low, ymax = eco_high),
+      ggplot2::aes(ymin = .data$eco_low, ymax = .data$eco_high),
       alpha = ribbon_alpha
     ) +
-    ggplot2::geom_line(ggplot2::aes(y = eco_center), linewidth = line_size) +
-    ggplot2::geom_point(ggplot2::aes(y = eco_center), size = point_size) +
+    ggplot2::geom_line(ggplot2::aes(y = .data$eco_center), linewidth = line_size) +
+    ggplot2::geom_point(ggplot2::aes(y = .data$eco_center), size = point_size) +
     ggplot2::labs(
       x = NULL,
       y = "Ecological effect size"
     ) +
     base_theme
 
-  p_inf <- ggplot2::ggplot(df_sum, ggplot2::aes(x = reduction_level)) +
+  p_inf <- ggplot2::ggplot(df_sum, ggplot2::aes(x = .data$reduction_level)) +
     ggplot2::geom_ribbon(
-      ggplot2::aes(ymin = inf_low, ymax = inf_high),
+      ggplot2::aes(ymin = .data$inf_low, ymax = .data$inf_high),
       alpha = ribbon_alpha
     ) +
-    ggplot2::geom_line(ggplot2::aes(y = inf_center), linewidth = line_size) +
-    ggplot2::geom_point(ggplot2::aes(y = inf_center), size = point_size) +
+    ggplot2::geom_line(ggplot2::aes(y = .data$inf_center), linewidth = line_size) +
+    ggplot2::geom_point(ggplot2::aes(y = .data$inf_center), size = point_size) +
     ggplot2::labs(
       x = "Reduction level",
       y = y_lab_inf
@@ -623,9 +623,9 @@ print.effect_size_data_nested <- function(
     )
   )
 
-  ggplot2::ggplot(df_long, ggplot2::aes(x = reduction_level, y = center)) +
+  ggplot2::ggplot(df_long, ggplot2::aes(x = .data$reduction_level, y = .data$center)) +
     ggplot2::geom_ribbon(
-      ggplot2::aes(ymin = low, ymax = high),
+      ggplot2::aes(ymin = .data$low, ymax = .data$high),
       alpha = ribbon_alpha
     ) +
     ggplot2::geom_line(linewidth = line_size) +
@@ -667,7 +667,7 @@ print.effect_size_data_nested <- function(
   }
 
   if (scatter_data == "summary") {
-    df <- dplyr::group_by(df, reduction_level) |>
+    df <- dplyr::group_by(df, .data$reduction_level) |>
       dplyr::summarise(
         ecological_effect = .es_center(ecological_effect, summary_stat),
         inferential_value = .es_center(.data[[inferential_var]], summary_stat),
@@ -686,14 +686,14 @@ print.effect_size_data_nested <- function(
 
   mapping <- if (color_by == "reduction_level") {
     ggplot2::aes(
-      x = ecological_effect,
-      y = inferential_value,
-      color = reduction_level
+      x = .data$ecological_effect,
+      y = .data$inferential_value,
+      color = .data$reduction_level
     )
   } else {
     ggplot2::aes(
-      x = ecological_effect,
-      y = inferential_value
+      x = .data$ecological_effect,
+      y = .data$inferential_value
     )
   }
 
@@ -772,7 +772,7 @@ print.effect_size_data_nested <- function(
 
   p <- ggplot2::ggplot(
     plot_df,
-    ggplot2::aes(x = Axis1, y = Axis2, color = .color)
+    ggplot2::aes(x = .data$Axis1, y = .data$Axis2, color = .data$.color)
   ) +
     ggplot2::geom_point(alpha = point_alpha, size = point_size)
 
@@ -780,7 +780,7 @@ print.effect_size_data_nested <- function(
     p <- p +
       ggplot2::geom_point(
         data = centroids,
-        ggplot2::aes(x = Axis1, y = Axis2, color = .color),
+        ggplot2::aes(x = .data$Axis1, y = .data$Axis2, color = .data$.color),
         inherit.aes = FALSE,
         size = centroid_size,
         shape = 4
@@ -791,7 +791,12 @@ print.effect_size_data_nested <- function(
     p <- p +
       ggplot2::geom_text(
         data = centroids,
-        ggplot2::aes(x = Axis1, y = Axis2, label = .label, color = .color),
+        ggplot2::aes(
+          x = .data$Axis1,
+          y = .data$Axis2,
+          label = .data$.label,
+          color = .data$.color
+        ),
         inherit.aes = FALSE,
         vjust = -0.7,
         show.legend = FALSE
@@ -799,7 +804,7 @@ print.effect_size_data_nested <- function(
   }
 
   p +
-    ggplot2::facet_wrap(~panel_label, ncol = facet_ncol) +
+    ggplot2::facet_wrap(ggplot2::vars(.data$panel_label), ncol = facet_ncol) +
     ggplot2::coord_equal() +
     ggplot2::labs(
       x = "PCoA 1",
@@ -900,7 +905,7 @@ print.effect_size_data_nested <- function(
     )
   }
 
-  dplyr::group_by(df, reduction_level) |>
+  dplyr::group_by(df, .data$reduction_level) |>
     dplyr::summarise(
       eco_center = .es_center(.data[[eco_col]], summary_stat),
       eco_low = .es_low(.data[[eco_col]], summary_stat, interval),
@@ -958,26 +963,26 @@ print.effect_size_data_nested <- function(
       axis.ticks = ggplot2::element_line(linewidth = 0.2)
     )
 
-  p_eco <- ggplot2::ggplot(df_sum, ggplot2::aes(x = reduction_level)) +
+  p_eco <- ggplot2::ggplot(df_sum, ggplot2::aes(x = .data$reduction_level)) +
     ggplot2::geom_ribbon(
-      ggplot2::aes(ymin = eco_low, ymax = eco_high),
+      ggplot2::aes(ymin = .data$eco_low, ymax = .data$eco_high),
       alpha = ribbon_alpha
     ) +
-    ggplot2::geom_line(ggplot2::aes(y = eco_center), linewidth = line_size) +
-    ggplot2::geom_point(ggplot2::aes(y = eco_center), size = point_size) +
+    ggplot2::geom_line(ggplot2::aes(y = .data$eco_center), linewidth = line_size) +
+    ggplot2::geom_point(ggplot2::aes(y = .data$eco_center), size = point_size) +
     ggplot2::labs(
       x = NULL,
       y = y_lab_eco
     ) +
     base_theme
 
-  p_inf <- ggplot2::ggplot(df_sum, ggplot2::aes(x = reduction_level)) +
+  p_inf <- ggplot2::ggplot(df_sum, ggplot2::aes(x = .data$reduction_level)) +
     ggplot2::geom_ribbon(
-      ggplot2::aes(ymin = inf_low, ymax = inf_high),
+      ggplot2::aes(ymin = .data$inf_low, ymax = .data$inf_high),
       alpha = ribbon_alpha
     ) +
-    ggplot2::geom_line(ggplot2::aes(y = inf_center), linewidth = line_size) +
-    ggplot2::geom_point(ggplot2::aes(y = inf_center), size = point_size) +
+    ggplot2::geom_line(ggplot2::aes(y = .data$inf_center), linewidth = line_size) +
+    ggplot2::geom_point(ggplot2::aes(y = .data$inf_center), size = point_size) +
     ggplot2::labs(
       x = "Reduction level",
       y = switch(
@@ -1022,9 +1027,9 @@ print.effect_size_data_nested <- function(
     )
   )
 
-  ggplot2::ggplot(df_long, ggplot2::aes(x = reduction_level, y = center)) +
+  ggplot2::ggplot(df_long, ggplot2::aes(x = .data$reduction_level, y = .data$center)) +
     ggplot2::geom_ribbon(
-      ggplot2::aes(ymin = low, ymax = high),
+      ggplot2::aes(ymin = .data$low, ymax = .data$high),
       alpha = ribbon_alpha
     ) +
     ggplot2::geom_line(linewidth = line_size) +
@@ -1217,7 +1222,7 @@ plot.effect_size_data <- function(
 #' @keywords internal
 #' @noRd
 .summarise_by_reduction <- function(df, inferential_var, center, probs) {
-  dplyr::group_by(df, reduction_level) |>
+  dplyr::group_by(df, .data$reduction_level) |>
     dplyr::group_modify(function(.x, .y) {
       eco <- .summarise_vector(
         .x$ecological_effect,
@@ -1428,7 +1433,7 @@ summary.effect_size_data <- function(
   }
 
   if (scatter_data == "summary") {
-    df <- dplyr::group_by(df, reduction_level) |>
+    df <- dplyr::group_by(df, .data$reduction_level) |>
       dplyr::summarise(
         ecological_effect = .es_center(.data[[eco_col]], summary_stat),
         inferential = .es_center(.data[[inf_col]], summary_stat),
@@ -1786,7 +1791,7 @@ print.summary_effect_size_data <- function(
     selection,
     median = {
       targets <- df |>
-        dplyr::group_by(reduction_level) |>
+        dplyr::group_by(.data$reduction_level) |>
         dplyr::summarise(
           target_eco = stats::median(.data[[effect_col]], na.rm = TRUE),
           .groups = "drop"
@@ -1795,30 +1800,30 @@ print.summary_effect_size_data <- function(
       df |>
         dplyr::inner_join(targets, by = "reduction_level") |>
         dplyr::mutate(
-          .dist_to_target = abs(.data[[effect_col]] - target_eco)
+          .dist_to_target = abs(.data[[effect_col]] - .data$target_eco)
         ) |>
-        dplyr::group_by(reduction_level) |>
-        dplyr::slice_min(.dist_to_target, n = 1, with_ties = FALSE) |>
+        dplyr::group_by(.data$reduction_level) |>
+        dplyr::slice_min(.data$.dist_to_target, n = 1, with_ties = FALSE) |>
         dplyr::ungroup() |>
         dplyr::select(dplyr::all_of(id_cols))
     },
     first = {
       df |>
-        dplyr::group_by(reduction_level) |>
+        dplyr::group_by(.data$reduction_level) |>
         dplyr::slice_head(n = 1) |>
         dplyr::ungroup() |>
         dplyr::select(dplyr::all_of(id_cols))
     },
     min = {
       df |>
-        dplyr::group_by(reduction_level) |>
+        dplyr::group_by(.data$reduction_level) |>
         dplyr::slice_min(.data[[effect_col]], n = 1, with_ties = FALSE) |>
         dplyr::ungroup() |>
         dplyr::select(dplyr::all_of(id_cols))
     },
     max = {
       df |>
-        dplyr::group_by(reduction_level) |>
+        dplyr::group_by(.data$reduction_level) |>
         dplyr::slice_max(.data[[effect_col]], n = 1, with_ties = FALSE) |>
         dplyr::ungroup() |>
         dplyr::select(dplyr::all_of(id_cols))
@@ -1852,13 +1857,13 @@ print.summary_effect_size_data <- function(
 
   out <- df |>
     dplyr::group_by(
-      panel_label,
-      reduction_level,
+      .data$panel_label,
+      .data$reduction_level,
       dplyr::across(dplyr::all_of(vars_to_keep))
     ) |>
     dplyr::summarise(
-      Axis1 = mean(Axis1, na.rm = TRUE),
-      Axis2 = mean(Axis2, na.rm = TRUE),
+      Axis1 = mean(.data$Axis1, na.rm = TRUE),
+      Axis2 = mean(.data$Axis2, na.rm = TRUE),
       .groups = "drop"
     )
 
@@ -1912,15 +1917,15 @@ print.summary_effect_size_data <- function(
 
   crit_by_effort <- dataH0 |>
     dplyr::filter(
-      .ok,
-      is.finite(pseudoF)
+      .data$.ok,
+      is.finite(.data$pseudoF)
     ) |>
-    dplyr::group_by(m, n) |>
+    dplyr::group_by(.data$m, .data$n) |>
     dplyr::summarise(
       n_H0 = dplyr::n(),
       pseudoFcrit = unname(
         stats::quantile(
-          pseudoF,
+          .data$pseudoF,
           probs = 1 - h0_alpha,
           na.rm = TRUE,
           type = quantile_type
@@ -1941,24 +1946,24 @@ print.summary_effect_size_data <- function(
     ) |>
     dplyr::mutate(
       reject = dplyr::case_when(
-        !.ok ~ NA,
-        !is.finite(pseudoF) | is.na(pseudoFcrit) ~ NA,
-        TRUE ~ pseudoF > pseudoFcrit
+        !.data$.ok ~ NA,
+        !is.finite(.data$pseudoF) | is.na(.data$pseudoFcrit) ~ NA,
+        TRUE ~ .data$pseudoF > .data$pseudoFcrit
       )
     ) |>
-    dplyr::filter(!is.na(reject)) |>
+    dplyr::filter(!is.na(.data$reject)) |>
     dplyr::group_by(
-      scenario,
-      step,
-      reduction_level,
-      m,
-      n
+      .data$scenario,
+      .data$step,
+      .data$reduction_level,
+      .data$m,
+      .data$n
     ) |>
     dplyr::summarise(
-      rejection_rate = mean(reject, na.rm = TRUE),
-      n_valid = sum(!is.na(reject)),
-      n_H0 = dplyr::first(n_H0),
-      pseudoFcrit = dplyr::first(pseudoFcrit),
+      rejection_rate = mean(.data$reject, na.rm = TRUE),
+      n_valid = sum(!is.na(.data$reject)),
+      n_H0 = dplyr::first(.data$n_H0),
+      pseudoFcrit = dplyr::first(.data$pseudoFcrit),
       dplyr::across(
         dplyr::all_of(metric_cols),
         ~ mean(.x, na.rm = TRUE),
@@ -1986,24 +1991,24 @@ print.summary_effect_size_data <- function(
       step = NA_integer_,
       reduction_level = NA_real_,
       reject = dplyr::case_when(
-        !.ok ~ NA,
-        !is.finite(pseudoF) | is.na(pseudoFcrit) ~ NA,
-        TRUE ~ pseudoF > pseudoFcrit
+        !.data$.ok ~ NA,
+        !is.finite(.data$pseudoF) | is.na(.data$pseudoFcrit) ~ NA,
+        TRUE ~ .data$pseudoF > .data$pseudoFcrit
       )
     ) |>
-    dplyr::filter(!is.na(reject)) |>
+    dplyr::filter(!is.na(.data$reject)) |>
     dplyr::group_by(
-      scenario,
-      step,
-      reduction_level,
-      m,
-      n
+      .data$scenario,
+      .data$step,
+      .data$reduction_level,
+      .data$m,
+      .data$n
     ) |>
     dplyr::summarise(
-      rejection_rate = mean(reject, na.rm = TRUE),
-      n_valid = sum(!is.na(reject)),
-      n_H0 = dplyr::first(n_H0),
-      pseudoFcrit = dplyr::first(pseudoFcrit),
+      rejection_rate = mean(.data$reject, na.rm = TRUE),
+      n_valid = sum(!is.na(.data$reject)),
+      n_H0 = dplyr::first(.data$n_H0),
+      pseudoFcrit = dplyr::first(.data$pseudoFcrit),
       dplyr::across(
         dplyr::all_of(h0_metric_cols),
         ~ mean(.x, na.rm = TRUE),
@@ -2183,10 +2188,10 @@ print.summary_effect_size_data <- function(
 
   crit_by_effort <- dataH0 |>
     dplyr::filter(
-      .ok,
+      .data$.ok,
       is.finite(.data[[pseudoF_col]])
     ) |>
-    dplyr::group_by(m, n) |>
+    dplyr::group_by(.data$m, .data$n) |>
     dplyr::summarise(
       n_H0 = dplyr::n(),
       pseudoFcrit = unname(
@@ -2212,24 +2217,24 @@ print.summary_effect_size_data <- function(
     ) |>
     dplyr::mutate(
       reject = dplyr::case_when(
-        !.ok ~ NA,
-        !is.finite(.data[[pseudoF_col]]) | is.na(pseudoFcrit) ~ NA,
-        TRUE ~ .data[[pseudoF_col]] > pseudoFcrit
+        !.data$.ok ~ NA,
+        !is.finite(.data[[pseudoF_col]]) | is.na(.data$pseudoFcrit) ~ NA,
+        TRUE ~ .data[[pseudoF_col]] > .data$pseudoFcrit
       )
     ) |>
-    dplyr::filter(!is.na(reject)) |>
+    dplyr::filter(!is.na(.data$reject)) |>
     dplyr::group_by(
-      scenario,
-      step,
-      reduction_level,
-      m,
-      n
+      .data$scenario,
+      .data$step,
+      .data$reduction_level,
+      .data$m,
+      .data$n
     ) |>
     dplyr::summarise(
-      rejection_rate = mean(reject, na.rm = TRUE),
-      n_valid = sum(!is.na(reject)),
-      n_H0 = dplyr::first(n_H0),
-      pseudoFcrit = dplyr::first(pseudoFcrit),
+      rejection_rate = mean(.data$reject, na.rm = TRUE),
+      n_valid = sum(!is.na(.data$reject)),
+      n_H0 = dplyr::first(.data$n_H0),
+      pseudoFcrit = dplyr::first(.data$pseudoFcrit),
       dplyr::across(
         dplyr::all_of(metric_cols),
         ~ mean(.x, na.rm = TRUE),
@@ -2257,24 +2262,24 @@ print.summary_effect_size_data <- function(
       step = NA_integer_,
       reduction_level = NA_real_,
       reject = dplyr::case_when(
-        !.ok ~ NA,
-        !is.finite(.data[[pseudoF_col]]) | is.na(pseudoFcrit) ~ NA,
-        TRUE ~ .data[[pseudoF_col]] > pseudoFcrit
+        !.data$.ok ~ NA,
+        !is.finite(.data[[pseudoF_col]]) | is.na(.data$pseudoFcrit) ~ NA,
+        TRUE ~ .data[[pseudoF_col]] > .data$pseudoFcrit
       )
     ) |>
-    dplyr::filter(!is.na(reject)) |>
+    dplyr::filter(!is.na(.data$reject)) |>
     dplyr::group_by(
-      scenario,
-      step,
-      reduction_level,
-      m,
-      n
+      .data$scenario,
+      .data$step,
+      .data$reduction_level,
+      .data$m,
+      .data$n
     ) |>
     dplyr::summarise(
-      rejection_rate = mean(reject, na.rm = TRUE),
-      n_valid = sum(!is.na(reject)),
-      n_H0 = dplyr::first(n_H0),
-      pseudoFcrit = dplyr::first(pseudoFcrit),
+      rejection_rate = mean(.data$reject, na.rm = TRUE),
+      n_valid = sum(!is.na(.data$reject)),
+      n_H0 = dplyr::first(.data$n_H0),
+      pseudoFcrit = dplyr::first(.data$pseudoFcrit),
       dplyr::across(
         dplyr::all_of(h0_metric_cols),
         ~ mean(.x, na.rm = TRUE),

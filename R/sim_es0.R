@@ -129,7 +129,7 @@ sim_es_nested <- function(
         Species = sub(
           "unseen\\.species\\s*(\\d+)",
           "unseen.species.\\1",
-          Species
+          .data$Species
         )
       )
 
@@ -146,7 +146,7 @@ sim_es_nested <- function(
         Species = sub(
           "unseen\\.species\\s*(\\d+)",
           "unseen.species.\\1",
-          Species
+          .data$Species
         )
       )
 
@@ -606,7 +606,7 @@ sim_es_single <- function(
         Species = sub(
           "unseen\\.species\\s*(\\d+)",
           "unseen.species.\\1",
-          Species
+          .data$Species
         )
       )
 

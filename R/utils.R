@@ -1072,14 +1072,14 @@ use_simper <- function(datHa) {
       average = weight_spp[[i]]["average"]
     ) |>
       dplyr::mutate(
-        norm = average / sum(average)
+        norm = .data$average / sum(.data$average)
       )
   }
 
   # Se identifica especes con mayor contribución promedio
   relevant_spp <- do.call(rbind, flat_weight) |>
     stats::aggregate(norm ~ species, FUN = mean) |>
-    dplyr::arrange(desc(norm))
+    dplyr::arrange(dplyr::desc(.data$norm))
 
   return(relevant_spp)
 }
@@ -1129,7 +1129,7 @@ use_simper_nested <- function(datHa) {
 
   # Collapse observations to site level
   site_level <- pooled |>
-    dplyr::group_by(sector, sites) |>
+    dplyr::group_by(.data$sector, .data$sites) |>
     dplyr::summarise(
       dplyr::across(
         dplyr::all_of(species_cols),
@@ -1184,9 +1184,9 @@ use_simper_nested <- function(datHa) {
 
   # Se identifica especes con mayor contribución promedio
   relevant_spp <- dplyr::bind_rows(flat_weight) |>
-    dplyr::group_by(species) |>
-    dplyr::summarise(norm = mean(norm, na.rm = TRUE), .groups = "drop") |>
-    dplyr::arrange(dplyr::desc(norm))
+    dplyr::group_by(.data$species) |>
+    dplyr::summarise(norm = mean(.data$norm, na.rm = TRUE), .groups = "drop") |>
+    dplyr::arrange(dplyr::desc(.data$norm))
 
   return(relevant_spp)
 }
@@ -1623,13 +1623,14 @@ pool_fw_across_sectors <- function(ListParam0, sector_weights = NULL) {
 
   # 4. Weighted average across sectors
   param_pool <- param_long |>
-    dplyr::group_by(Species) |>
+    dplyr::group_by(.data$Species) |>
     dplyr::summarise(
-      fw_pool = sum(fw * weight, na.rm = TRUE) / sum(weight, na.rm = TRUE),
-      n_sectors_present = sum(fw > 0, na.rm = TRUE),
+      fw_pool = sum(.data$fw * .data$weight, na.rm = TRUE) /
+        sum(.data$weight, na.rm = TRUE),
+      n_sectors_present = sum(.data$fw > 0, na.rm = TRUE),
       .groups = "drop"
     ) |>
-    dplyr::arrange(Species)
+    dplyr::arrange(.data$Species)
 
   return(param_pool)
 }
@@ -1801,26 +1802,26 @@ rank_fw_contribution <- function(ListParamA, ParamPoolA, weights = NULL) {
   )
 
   out <- param_A |>
-    dplyr::group_by(Species) |>
+    dplyr::group_by(.data$Species) |>
     dplyr::summarise(
       score = sqrt(
-        sum(weight * (fw - fw_pool)^2, na.rm = TRUE) /
-          sum(weight, na.rm = TRUE)
+        sum(.data$weight * (.data$fw - .data$fw_pool)^2, na.rm = TRUE) /
+          sum(.data$weight, na.rm = TRUE)
       ),
       .groups = "drop"
     ) |>
     dplyr::mutate(
-      norm = if (sum(score, na.rm = TRUE) > 0) {
-        score / sum(score, na.rm = TRUE)
+      norm = if (sum(.data$score, na.rm = TRUE) > 0) {
+        .data$score / sum(.data$score, na.rm = TRUE)
       } else {
         0
       }
     ) |>
     dplyr::transmute(
-      species = Species,
-      norm = norm
+      species = .data$Species,
+      norm = .data$norm
     ) |>
-    dplyr::arrange(dplyr::desc(norm))
+    dplyr::arrange(dplyr::desc(.data$norm))
 
   out
 }
@@ -1838,9 +1839,14 @@ prep_pilot_sampler <- function(factEnvP) {
   fact_indexed <- factEnvP |>
     dplyr::mutate(
       .row_id = dplyr::row_number(),
-      sector = as.factor(sector),
-      site = as.factor(site),
-      site_nested = interaction(sector, site, drop = TRUE, sep = "_")
+      sector = as.factor(.data$sector),
+      site = as.factor(.data$site),
+      site_nested = interaction(
+        .data$sector,
+        .data$site,
+        drop = TRUE,
+        sep = "_"
+      )
     )
 
   sites_by_sector <- split(
@@ -1998,11 +2004,11 @@ run_one_pilot_iteration <- function(
   comm_sub <- comm_pilot[row_ids, , drop = FALSE]
 
   fact_sub <- sampled$fact_sub |>
-    dplyr::select(-.row_id) |>
+    dplyr::select(-dplyr::all_of(".row_id")) |>
     dplyr::mutate(
-      sector = droplevels(sector),
-      site = droplevels(site),
-      site_nested = droplevels(site_nested)
+      sector = droplevels(.data$sector),
+      site = droplevels(.data$site),
+      site_nested = droplevels(.data$site_nested)
     )
 
   result <- tryCatch(
@@ -2137,15 +2143,17 @@ run_pilot_rarefaction <- function(
 
   jobs <- pilot_effort_grid |>
     dplyr::select(
-      effort_id,
-      m,
-      n,
-      total_sites,
-      total_subsamples,
-      prop_full_pilot
+      dplyr::all_of(c(
+        "effort_id",
+        "m",
+        "n",
+        "total_sites",
+        "total_subsamples",
+        "prop_full_pilot"
+      ))
     ) |>
     dplyr::slice(rep(dplyr::row_number(), each = n_iter)) |>
-    dplyr::group_by(effort_id) |>
+    dplyr::group_by(.data$effort_id) |>
     dplyr::mutate(iter = dplyr::row_number()) |>
     dplyr::ungroup()
 
