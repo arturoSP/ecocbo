@@ -189,14 +189,19 @@ empirical_power <- function(
     dplyr::transmute(
       sector = as.factor(.data[[sector_col]]),
       site = as.factor(.data[[site_col]]),
-      site_id = interaction(sector, site, drop = TRUE, sep = "_")
+      site_id = interaction(
+        .data[[sector_col]],
+        .data[[site_col]],
+        drop = TRUE,
+        sep = "_"
+      )
     )
 
   site_counts <- factEnv_nested |>
-    dplyr::count(sector, site_id, name = "n_subsamples")
+    dplyr::count(.data$sector, .data$site_id, name = "n_subsamples")
 
   sites_by_sector <- site_counts |>
-    dplyr::count(sector, name = "n_sites")
+    dplyr::count(.data$sector, name = "n_sites")
 
   n_sectors <- dplyr::n_distinct(factEnv_nested$sector)
   m_max <- min(sites_by_sector$n_sites)
@@ -247,17 +252,17 @@ empirical_power <- function(
   ) |>
     dplyr::mutate(
       n_sectors = n_sectors,
-      total_sites = n_sectors * m,
-      total_subsamples = n_sectors * m * n,
-      prop_full_pilot = total_subsamples / max(total_subsamples),
-      effort_id = sprintf("m%02d_n%02d", m, n),
+      total_sites = n_sectors * .data$m,
+      total_subsamples = n_sectors * .data$m * .data$n,
+      prop_full_pilot = .data$total_subsamples / max(.data$total_subsamples),
+      effort_id = sprintf("m%02d_n%02d", .data$m, .data$n),
       effort_label = sprintf(
         "m = %d sites/sector; n = %d subsamples/site",
-        m,
-        n
+        .data$m,
+        .data$n
       )
     ) |>
-    dplyr::arrange(dplyr::desc(m), dplyr::desc(n))
+    dplyr::arrange(dplyr::desc(.data$m), dplyr::desc(.data$n))
 
   # ------------------------------------------------------------
   # 4. Execute the empirical rarefaction
@@ -285,26 +290,26 @@ empirical_power <- function(
 
   power_summary <- results |>
     dplyr::group_by(
-      m,
-      n,
-      total_sites,
-      total_subsamples,
-      prop_full_pilot
+      .data$m,
+      .data$n,
+      .data$total_sites,
+      .data$total_subsamples,
+      .data$prop_full_pilot
     ) |>
     dplyr::summarise(
-      n_success = sum(is.na(error)),
-      n_failed = sum(!is.na(error)),
-      power_A = mean(p_A < alpha, na.rm = TRUE),
-      power_BA = mean(p_BA < alpha, na.rm = TRUE),
-      pseudoF_A_median = stats::median(pseudoF_A, na.rm = TRUE),
-      pseudoF_A_q025 = stats::quantile(pseudoF_A, 0.025, na.rm = TRUE),
-      pseudoF_A_q975 = stats::quantile(pseudoF_A, 0.975, na.rm = TRUE),
-      pseudoF_BA_median = stats::median(pseudoF_BA, na.rm = TRUE),
-      pseudoF_BA_q025 = stats::quantile(pseudoF_BA, 0.025, na.rm = TRUE),
-      pseudoF_BA_q975 = stats::quantile(pseudoF_BA, 0.975, na.rm = TRUE),
+      n_success = sum(is.na(.data$error)),
+      n_failed = sum(!is.na(.data$error)),
+      power_A = mean(.data$p_A < alpha, na.rm = TRUE),
+      power_BA = mean(.data$p_BA < alpha, na.rm = TRUE),
+      pseudoF_A_median = stats::median(.data$pseudoF_A, na.rm = TRUE),
+      pseudoF_A_q025 = stats::quantile(.data$pseudoF_A, 0.025, na.rm = TRUE),
+      pseudoF_A_q975 = stats::quantile(.data$pseudoF_A, 0.975, na.rm = TRUE),
+      pseudoF_BA_median = stats::median(.data$pseudoF_BA, na.rm = TRUE),
+      pseudoF_BA_q025 = stats::quantile(.data$pseudoF_BA, 0.025, na.rm = TRUE),
+      pseudoF_BA_q975 = stats::quantile(.data$pseudoF_BA, 0.975, na.rm = TRUE),
       .groups = "drop"
     ) |>
-    dplyr::arrange(dplyr::desc(m), dplyr::desc(n))
+    dplyr::arrange(dplyr::desc(.data$m), dplyr::desc(.data$n))
 
   # ------------------------------------------------------------
   # 6. Plot
@@ -316,10 +321,10 @@ empirical_power <- function(
     p_power <- ggplot2::ggplot(
       power_summary,
       ggplot2::aes(
-        x = n,
-        y = power_A,
-        group = factor(m),
-        colour = factor(m)
+        x = .data$n,
+        y = .data$power_A,
+        group = factor(.data$m),
+        colour = factor(.data$m)
       )
     ) +
       ggplot2::geom_line() +

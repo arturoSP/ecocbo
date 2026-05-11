@@ -14,9 +14,9 @@ utils::globalVariables(
     "fCrit",
     "m",
     "n",
+    "norm",
     "sector",
     "sites",
-    "PU",
-    "idx"
+    "species"
   )
 )
