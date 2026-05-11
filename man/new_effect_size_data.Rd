@@ -21,6 +21,10 @@ new_effect_size_data(
 
 \item{pcoa}{Optional list or object storing PCoA results.}
 
+\item{dataH0}{Null hypothesis community.}
+
+\item{pcoaH0}{Null hypothesis community PCoA results.}
+
 \item{call}{Optional matched call.}
 
 \item{model}{Optional model label. Expected values include

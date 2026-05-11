@@ -1554,6 +1554,7 @@ calc_dist_nested <- function(
 
 #' pooling fw between sectors
 #' @keywords internal
+#' @importFrom purrr imap_dfr
 #' @noRd
 #'
 
@@ -1724,6 +1725,7 @@ safe_balanced_sampling_es_nested <- function(
 }
 
 #' @keywords internal
+#' @importFrom purrr imap_dfr
 #' @noRd
 #'
 
@@ -2098,6 +2100,11 @@ run_one_pilot_iteration <- function(
 #'   `parallel = TRUE`.
 #' @param progress Logical. If `TRUE`, a text progress bar is displayed through
 #'   `progressr`.
+#'
+#' @importFrom furrr future_map_dfr furrr_options
+#' @importFrom future plan multisession
+#' @importFrom progressr handlers progressor with_progress
+#' @importFrom purrr map_dfr
 #'
 #' @return
 #' A data frame with one row per subsampling iteration and effort combination.

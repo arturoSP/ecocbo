@@ -296,10 +296,10 @@ empirical_power <- function(
       n_failed = sum(!is.na(error)),
       power_A = mean(p_A < alpha, na.rm = TRUE),
       power_BA = mean(p_BA < alpha, na.rm = TRUE),
-      pseudoF_A_median = median(pseudoF_A, na.rm = TRUE),
+      pseudoF_A_median = stats::median(pseudoF_A, na.rm = TRUE),
       pseudoF_A_q025 = stats::quantile(pseudoF_A, 0.025, na.rm = TRUE),
       pseudoF_A_q975 = stats::quantile(pseudoF_A, 0.975, na.rm = TRUE),
-      pseudoF_BA_median = median(pseudoF_BA, na.rm = TRUE),
+      pseudoF_BA_median = stats::median(pseudoF_BA, na.rm = TRUE),
       pseudoF_BA_q025 = stats::quantile(pseudoF_BA, 0.025, na.rm = TRUE),
       pseudoF_BA_q975 = stats::quantile(pseudoF_BA, 0.975, na.rm = TRUE),
       .groups = "drop"

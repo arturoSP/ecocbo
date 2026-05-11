@@ -78,8 +78,8 @@
 #'                         dummy = FALSE, useParallel = FALSE,
 #'                         model = "single.factor",
 #'                         jitter.base = 0)
-#' }
 #' ES1
+#' }
 #'
 
 sim_ES <- function(

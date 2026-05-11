@@ -30,7 +30,8 @@ RoxygenNote: 7.3.3
 Imports: 
     ggplot2, ggpubr, stats, rlang, tibble,
     dplyr, tidyr, tidyselect, parabar, parallelly,
-    vegan, SSP (>= 1.1.0), plotly
+    vegan, SSP (>= 1.1.0), plotly, patchwork, progressr, purrr,
+    furrr, future
 Depends: 
     R (>= 4.1.0)
 LazyData: true

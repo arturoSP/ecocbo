@@ -20,6 +20,8 @@
 #' @param data A data frame with the effect size results.
 #' @param centroid_distances Optional list or object storing centroid distance matrices.
 #' @param pcoa Optional list or object storing PCoA results.
+#' @param dataH0 Null hypothesis community.
+#' @param pcoaH0 Null hypothesis community PCoA results.
 #' @param call Optional matched call.
 #' @param model Optional model label. Expected values include
 #'   `"single.factor"` and `"nested.symmetric"`.
@@ -534,6 +536,7 @@ print.effect_size_data_nested <- function(
 }
 
 #' @keywords internal
+#' @importFrom patchwork wrap_plots
 #' @noRd
 .plot_effect_size_stacked <- function(
   x,
@@ -910,6 +913,7 @@ print.effect_size_data_nested <- function(
 }
 
 #' @keywords internal
+#' @importFrom patchwork wrap_plots
 #' @noRd
 .plot_effect_size_nested_stacked <- function(
   x,

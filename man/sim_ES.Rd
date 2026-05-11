@@ -106,8 +106,8 @@ ES1 <- sim_ES(data = epiDat, steps = 10, type = "counts", Sest.method = "average
                         dummy = FALSE, useParallel = FALSE,
                         model = "single.factor",
                         jitter.base = 0)
-}
 ES1
+}
 
 }
 \references{
