@@ -525,9 +525,9 @@ print.effect_size_data_nested <- function(
 
   dplyr::group_by(df, .data$reduction_level) |>
     dplyr::summarise(
-      eco_center = .es_center(ecological_effect, summary_stat),
-      eco_low = .es_low(ecological_effect, summary_stat, interval),
-      eco_high = .es_high(ecological_effect, summary_stat, interval),
+      eco_center = .es_center(.data$ecological_effect, summary_stat),
+      eco_low = .es_low(.data$ecological_effect, summary_stat, interval),
+      eco_high = .es_high(.data$ecological_effect, summary_stat, interval),
       inf_center = .es_center(.data[[inferential_var]], summary_stat),
       inf_low = .es_low(.data[[inferential_var]], summary_stat, interval),
       inf_high = .es_high(.data[[inferential_var]], summary_stat, interval),
@@ -630,7 +630,7 @@ print.effect_size_data_nested <- function(
     ) +
     ggplot2::geom_line(linewidth = line_size) +
     ggplot2::geom_point(size = point_size) +
-    ggplot2::facet_wrap(~metric, ncol = 1, scales = "free_y") +
+    ggplot2::facet_wrap(ggplot2::vars(.data$metric), ncol = 1, scales = "free_y") +
     ggplot2::labs(
       x = "Reduction level",
       y = NULL
@@ -669,7 +669,7 @@ print.effect_size_data_nested <- function(
   if (scatter_data == "summary") {
     df <- dplyr::group_by(df, .data$reduction_level) |>
       dplyr::summarise(
-        ecological_effect = .es_center(ecological_effect, summary_stat),
+        ecological_effect = .es_center(.data$ecological_effect, summary_stat),
         inferential_value = .es_center(.data[[inferential_var]], summary_stat),
         .groups = "drop"
       )
@@ -1034,7 +1034,7 @@ print.effect_size_data_nested <- function(
     ) +
     ggplot2::geom_line(linewidth = line_size) +
     ggplot2::geom_point(size = point_size) +
-    ggplot2::facet_wrap(~metric, ncol = 1, scales = "free_y") +
+    ggplot2::facet_wrap(ggplot2::vars(.data$metric), ncol = 1, scales = "free_y") +
     ggplot2::labs(
       x = "Reduction level",
       y = NULL
@@ -1470,7 +1470,7 @@ summary.effect_size_data <- function(
   } else {
     df <- dplyr::transmute(
       df,
-      reduction_level = reduction_level,
+      reduction_level = .data$reduction_level,
       ecological_effect = .data[[eco_col]],
       inferential = .data[[inf_col]]
     )
@@ -1479,9 +1479,9 @@ summary.effect_size_data <- function(
   p <- ggplot2::ggplot(
     df,
     ggplot2::aes(
-      x = ecological_effect,
-      y = inferential,
-      color = if (color_by == "reduction_level") reduction_level else NULL
+      x = .data$ecological_effect,
+      y = .data$inferential,
+      color = if (color_by == "reduction_level") .data$reduction_level else NULL
     )
   ) +
     ggplot2::geom_point(alpha = point_alpha, size = point_size) +
@@ -1900,9 +1900,9 @@ print.summary_effect_size_data <- function(
   out <- dplyr::inner_join(pcoa_df, selected, by = id_cols)
 
   reduction_order <- selected |>
-    dplyr::distinct(reduction_level) |>
-    dplyr::arrange(reduction_level) |>
-    dplyr::pull(reduction_level)
+    dplyr::distinct(.data$reduction_level) |>
+    dplyr::arrange(.data$reduction_level) |>
+    dplyr::pull("reduction_level")
 
   out$panel_label <- factor(
     paste0("Reduction = ", out$reduction_level),
@@ -2151,8 +2151,8 @@ print.summary_effect_size_data <- function(
       df_sum,
       ggplot2::aes(
         x = .data[[x_col]],
-        y = rejection_rate,
-        shape = scenario
+        y = .data$rejection_rate,
+        shape = .data$scenario
       )
     )
   } else {
@@ -2160,9 +2160,9 @@ print.summary_effect_size_data <- function(
       df_sum,
       ggplot2::aes(
         x = .data[[x_col]],
-        y = rejection_rate,
+        y = .data$rejection_rate,
         color = .data[[h0_color_by]],
-        shape = scenario
+        shape = .data$scenario
       )
     )
   }
@@ -2197,7 +2197,7 @@ print.summary_effect_size_data <- function(
   if (facet_effort) {
     p <- p +
       ggplot2::facet_wrap(
-        ~effort_label,
+        ggplot2::vars(.data$effort_label),
         ncol = facet_ncol
       )
   }
@@ -2459,8 +2459,8 @@ print.summary_effect_size_data <- function(
       df_sum,
       ggplot2::aes(
         x = .data[[x_col]],
-        y = rejection_rate,
-        shape = scenario
+        y = .data$rejection_rate,
+        shape = .data$scenario
       )
     )
   } else {
@@ -2468,9 +2468,9 @@ print.summary_effect_size_data <- function(
       df_sum,
       ggplot2::aes(
         x = .data[[x_col]],
-        y = rejection_rate,
+        y = .data$rejection_rate,
         color = .data[[h0_color_by]],
-        shape = scenario
+        shape = .data$scenario
       )
     )
   }
@@ -2505,7 +2505,7 @@ print.summary_effect_size_data <- function(
   if (facet_effort) {
     p <- p +
       ggplot2::facet_wrap(
-        ~effort_label,
+        ggplot2::vars(.data$effort_label),
         ncol = facet_ncol
       )
   }
@@ -2536,9 +2536,9 @@ print.summary_effect_size_data <- function(
   df$.n_num <- suppressWarnings(as.numeric(as.character(df$n)))
 
   effort_df <- df |>
-    dplyr::distinct(m, n, .m_num, .n_num) |>
-    dplyr::filter(!is.na(.m_num), !is.na(.n_num)) |>
-    dplyr::arrange(.m_num, .n_num)
+    dplyr::distinct(.data$m, .data$n, .data$.m_num, .data$.n_num) |>
+    dplyr::filter(!is.na(.data$.m_num), !is.na(.data$.n_num)) |>
+    dplyr::arrange(.data$.m_num, .data$.n_num)
 
   if (nrow(effort_df) == 0) {
     df$effort_label <- factor(character(0))
@@ -2558,24 +2558,24 @@ print.summary_effect_size_data <- function(
     }
 
     df <- df |>
-      dplyr::filter(.m_num == facet_m_value)
+      dplyr::filter(.data$.m_num == facet_m_value)
   } else if (subset == "all_m") {
     if (is.null(facet_n_value)) {
       facet_n_value <- max(effort_df$.n_num, na.rm = TRUE)
     }
 
     df <- df |>
-      dplyr::filter(.n_num == facet_n_value)
+      dplyr::filter(.data$.n_num == facet_n_value)
   }
 
   df <- df |>
-    dplyr::arrange(.m_num, .n_num, m, n)
+    dplyr::arrange(.data$.m_num, .data$.n_num, .data$m, .data$n)
 
   effort_levels <- df |>
-    dplyr::distinct(m, n, .m_num, .n_num) |>
-    dplyr::arrange(.m_num, .n_num, m, n) |>
-    dplyr::transmute(label = paste0("m = ", m, ", n = ", n)) |>
-    dplyr::pull(label)
+    dplyr::distinct(.data$m, .data$n, .data$.m_num, .data$.n_num) |>
+    dplyr::arrange(.data$.m_num, .data$.n_num, .data$m, .data$n) |>
+    dplyr::transmute(label = paste0("m = ", .data$m, ", n = ", .data$n)) |>
+    dplyr::pull("label")
 
   df$effort_label <- factor(
     paste0("m = ", df$m, ", n = ", df$n),
@@ -2612,13 +2612,13 @@ print.summary_effect_size_data <- function(
 #' @noRd
 .select_nested_effort_subset <- function(df, start_at = 2) {
   effort_df <- df |>
-    dplyr::distinct(m, n) |>
+    dplyr::distinct(.data$m, .data$n) |>
     dplyr::mutate(
-      .m_num = suppressWarnings(as.numeric(as.character(m))),
-      .n_num = suppressWarnings(as.numeric(as.character(n)))
+      .m_num = suppressWarnings(as.numeric(as.character(.data$m))),
+      .n_num = suppressWarnings(as.numeric(as.character(.data$n)))
     ) |>
-    dplyr::filter(!is.na(.m_num), !is.na(.n_num)) |>
-    dplyr::arrange(.m_num, .n_num)
+    dplyr::filter(!is.na(.data$.m_num), !is.na(.data$.n_num)) |>
+    dplyr::arrange(.data$.m_num, .data$.n_num)
 
   if (nrow(effort_df) == 0) {
     return(effort_df[, c("m", "n"), drop = FALSE])
@@ -2659,7 +2659,7 @@ print.summary_effect_size_data <- function(
 
   effort_df |>
     dplyr::semi_join(selected_num, by = c(".m_num", ".n_num")) |>
-    dplyr::distinct(m, n, .m_num, .n_num) |>
-    dplyr::arrange(.m_num, .n_num) |>
-    dplyr::select(m, n)
+    dplyr::distinct(.data$m, .data$n, .data$.m_num, .data$.n_num) |>
+    dplyr::arrange(.data$.m_num, .data$.n_num) |>
+    dplyr::select(dplyr::all_of(c("m", "n")))
 }

@@ -228,16 +228,16 @@ balanced_sampling_es <- function(
   )
 
   psu_sel <- df_idx |>
-    dplyr::distinct(PU) |>
+    dplyr::distinct(.data$PU) |>
     dplyr::slice_sample(n = m) |>
-    dplyr::pull(PU)
+    dplyr::pull("PU")
 
   sel_rows <- df_idx |>
-    dplyr::filter(PU %in% psu_sel) |>
-    dplyr::group_by(PU) |>
+    dplyr::filter(.data$PU %in% psu_sel) |>
+    dplyr::group_by(.data$PU) |>
     dplyr::slice_sample(n = n / m) |>
     dplyr::ungroup() |>
-    dplyr::pull(idx)
+    dplyr::pull("idx")
 
   sel <- matrix(0L, nrow = nrow(df_idx), ncol = 1)
   sel[sel_rows, 1] <- 1L
@@ -382,17 +382,17 @@ balanced_sampling <- function(
 
   # 1) Select PSUs (distinct m)
   psu_sel <- df_idx |>
-    dplyr::distinct(PU) |>
+    dplyr::distinct(.data$PU) |>
     dplyr::slice_sample(n = m) |>
-    dplyr::pull(PU)
+    dplyr::pull("PU")
 
   # 2) Select SSU within each PSU (n per PSU)
   sel_rows <- df_idx |>
-    dplyr::filter(PU %in% psu_sel) |>
-    dplyr::group_by(PU) |>
+    dplyr::filter(.data$PU %in% psu_sel) |>
+    dplyr::group_by(.data$PU) |>
     dplyr::slice_sample(n = n / m) |>
     dplyr::ungroup() |>
-    dplyr::pull(idx)
+    dplyr::pull("idx")
 
   # 3) Build a matrix with 0/1 to use as filter pointer
   sel <- matrix(0L, nrow = nrow(df_idx), ncol = 1)
@@ -638,18 +638,18 @@ balanced_sampling_es_nested <- function(
 
   # 1) Selección de PSUs
   psu_sel <- tibble::tibble(PU = PU_vec) |>
-    dplyr::distinct(PU) |>
+    dplyr::distinct(.data$PU) |>
     dplyr::slice_sample(n = m_psu) |>
-    dplyr::pull(PU)
+    dplyr::pull("PU")
 
   # 2) Selección de SSUs dentro de cada PSU seleccionada
   indice <- tibble::tibble(row_id = row_id, PU = PU_vec) |>
-    dplyr::filter(PU %in% psu_sel) |>
-    dplyr::group_by(PU) |>
+    dplyr::filter(.data$PU %in% psu_sel) |>
+    dplyr::group_by(.data$PU) |>
     dplyr::slice_sample(n = n_ssu) |>
     dplyr::ungroup() |>
-    dplyr::arrange(row_id) |>
-    dplyr::pull(row_id)
+    dplyr::arrange(.data$row_id) |>
+    dplyr::pull("row_id")
 
   ones_n <- rep(indice, nSect)
   ones_s <- rep(c(0:(nSect - 1)) * M * N, each = length(indice))
@@ -843,18 +843,18 @@ balanced_sampling2 <- function(
 
   # 1) Selección de PSUs
   psu_sel <- tibble::tibble(PU = PU_vec) |>
-    dplyr::distinct(PU) |>
+    dplyr::distinct(.data$PU) |>
     dplyr::slice_sample(n = m_psu) |>
-    dplyr::pull(PU)
+    dplyr::pull("PU")
 
   # 2) Selección de SSUs dentro de cada PSU seleccionada
   indice <- tibble::tibble(row_id = row_id, PU = PU_vec) |>
-    dplyr::filter(PU %in% psu_sel) |>
-    dplyr::group_by(PU) |>
+    dplyr::filter(.data$PU %in% psu_sel) |>
+    dplyr::group_by(.data$PU) |>
     dplyr::slice_sample(n = n_ssu) |>
     dplyr::ungroup() |>
-    dplyr::arrange(row_id) |>
-    dplyr::pull(row_id)
+    dplyr::arrange(.data$row_id) |>
+    dplyr::pull("row_id")
 
   ones_n <- rep(indice, nSect)
   ones_s <- rep(c(0:(nSect - 1)) * M * N, each = length(indice))
@@ -1841,12 +1841,7 @@ prep_pilot_sampler <- function(factEnvP) {
       .row_id = dplyr::row_number(),
       sector = as.factor(.data$sector),
       site = as.factor(.data$site),
-      site_nested = interaction(
-        .data$sector,
-        .data$site,
-        drop = TRUE,
-        sep = "_"
-      )
+      site_nested = interaction(.data$sector, .data$site, drop = TRUE, sep = "_")
     )
 
   sites_by_sector <- split(
