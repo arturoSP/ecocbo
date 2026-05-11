@@ -970,198 +970,65 @@ label_permanova <- function(
   method,
   transformation,
   dummy,
-  model
+  model,
+  permutations = 999
 ) {
+  dataP <- as.data.frame(dataP)
+  factEnvP <- as.data.frame(factEnvP)
+
   if (dummy) {
     dataP$dummy = 1
   }
 
-  # Apply transformation and calculate distance matrix
+  # Apply transformation
   if (transformation == "square root") {
     x.t <- sqrt(dataP)
-    d <- vegan::vegdist(x.t, method = method)
   } else if (transformation == "fourth root") {
     x.t <- sqrt(sqrt(dataP))
-    d <- vegan::vegdist(x.t, method = method)
   } else if (transformation == "Log (X+1)") {
     x.t <- log(dataP + 1)
-    d <- vegan::vegdist(x.t, method = method)
   } else if (transformation == "P/A") {
     x.t <- 1 * (dataP > 0)
-    d <- vegan::vegdist(x.t, method = method, binary = TRUE)
   } else {
     x.t <- dataP
-    d <- vegan::vegdist(x.t, method = method)
   }
   rm(dataP)
 
-  # Compute the number of permutations available to the experiment,
-  # then compare it with the given k
-  a = nlevels(as.factor(factEnvP[, 1])) # number of treatments (A)
-  b = length(unique(as.factor(factEnvP[, 2]))) # number of replicates (B)
-  factEnvP["secsit"] <- paste0(factEnvP[, 1], factEnvP[, 2]) # intersections AB
-  nBA = nlevels(as.factor(factEnvP$secsit)) # number of intersections AB
-  nRep = dim(factEnvP)[1] / nBA # number of times we're repeating each intersection
-  nNm = unique(factEnvP[, 1]) # unique values for the sectors
-  nScSt = unique(factEnvP$secsit) # unique values for the intersections site-sector
+  permList <- vector("list", permutations + 1L)
 
-  permutaciones_rep <- replicate(
-    999,
-    expr = factEnvP[sample(nrow(factEnvP)), ],
-    simplify = FALSE
-  )
-
-  # calculates SS for all
-  SST <- SS(d)[2]
-
-  permList <- vector("list", 999 + 1)
-  # degrees of freedom
-  DoFA <- a - 1
-  DoFBA <- a * (b - 1)
-  DoFR <- a * b * (nRep - 1)
-  DoFT <- (a * b * nRep) - 1
-
-  for (i in c(1:999)) {
+  for (i in seq_len(permutations)) {
     # dataframe in this iteration
-    currentPerm <- permutaciones_rep[[i]]
+    currentPerm <- factEnvP[sample(nrow(factEnvP)), , drop = FALSE]
 
-    # calculates SS within replicates
-    # secsite_groups <- split(rownames(permutaciones_rep[[i]]), factEnvP$secsit)
-    secsite_groups <- split(rownames(x.t), currentPerm$secsit)
-    listR <- sapply(
-      secsite_groups,
-      function(rw) {
-        SS(vegan::vegdist(x.t[rw, ], method = method))
-      },
-      simplify = "array"
+    Fperm <- dbmanova_nested(
+      x.t,
+      currentPerm,
+      transformation = "none",
+      method = method,
+      model = model,
+      return = "table"
     )
-    SSR <- sum(listR[2, ])
-    # calculates SS_B(A)
-    # sector_groups <- split(rownames(permutaciones_rep[[i]]), factEnvP[,1])
-    sector_groups <- split(rownames(x.t), currentPerm$Locality)
 
-    listBA <- sapply(
-      sector_groups,
-      function(rw) {
-        dBA <- vegan::vegdist(x.t[rw, ], method = "bray")
-        tCentroid <- vegan::betadisper(
-          dBA,
-          group = currentPerm[rw, "secsit"],
-          type = "centroid",
-          bias.adjust = FALSE
-        )
-        Eig <- which(tCentroid$eig > 0)
-        SS(vegan::vegdist(
-          tCentroid$centroids[, Eig, drop = FALSE],
-          method = "euclidean"
-        ))
-      },
-      simplify = "array"
-    )
-    SSBA <- sum(listBA[2, ]) * nRep # * nRep is added so that when calculating
-    # the variation between nested groups it is weighted by the size of the subgroup
-    # rm(sector_groups, listBA)
+    colnames(Fperm) <- c("Source", "DoF", "SS", "MS", "F")
+    rownames(Fperm) <- c("A", "B(A)", "R", "T")
 
-    # calculates SSA
-    SSA <- SST - SSBA - SSR
-
-    # fill the permanova table
-    # mean squares
-    MSA <- SSA / DoFA
-    MSBA <- SSBA / DoFBA
-    MSR <- SSR / DoFR
-
-    # observed pseudoF
-    FobsA <- MSA / MSBA
-    FobsBA <- MSBA / MSR
-
-    Fobs <- as.data.frame(matrix(nrow = 4, ncol = 4))
-    colnames(Fobs) <- c("SS", "DoF", "MS", "F")
-    rownames(Fobs) <- c("A", "B(A)", "R", "T")
-    Fobs[1, 1] <- SSA
-    Fobs[1, 2] <- DoFA
-    Fobs[1, 3] <- MSA
-    Fobs[1, 4] <- FobsA
-    Fobs[2, 1] <- SSBA
-    Fobs[2, 2] <- DoFBA
-    Fobs[2, 3] <- MSBA
-    Fobs[2, 4] <- FobsBA
-    Fobs[3, 1] <- SSR
-    Fobs[3, 2] <- DoFR
-    Fobs[3, 3] <- MSR
-    Fobs[4, 1] <- SST
-    Fobs[4, 2] <- DoFT
-
-    permList[[i]] <- Fobs
+    permList[[i]] <- Fperm
   }
 
   # Compute ANOVA for the original data
-  secsite_groups <- split(rownames(factEnvP), factEnvP$secsit)
-  listR <- sapply(
-    secsite_groups,
-    function(rw) {
-      SS(vegan::vegdist(x.t[rw, ], method = method))
-    },
-    simplify = "array"
+  Fobs <- dbmanova_nested(
+    x.t,
+    factEnvP,
+    transformation = "none",
+    method = method,
+    model = model,
+    return = "table"
   )
-  SSR <- sum(listR[2, ])
-  # calculates SS_B(A)
-  sector_groups <- split(rownames(factEnvP), factEnvP[, 1])
 
-  listBA <- sapply(
-    sector_groups,
-    function(rw) {
-      dBA <- vegan::vegdist(x.t[rw, ], method = "bray")
-      tCentroid <- vegan::betadisper(
-        dBA,
-        group = factEnvP[rw, "secsit"],
-        type = "centroid",
-        bias.adjust = FALSE
-      )
-      Eig <- which(tCentroid$eig > 0)
-      SS(vegan::vegdist(
-        tCentroid$centroids[, Eig, drop = FALSE],
-        method = "euclidean"
-      ))
-    },
-    simplify = "array"
-  )
-  SSBA <- sum(listBA[2, ]) * nRep
-
-  # calculates SSA
-  SSA <- SST - SSBA - SSR
-
-  # fill the permanova table
-  # mean squares
-  MSA <- SSA / DoFA
-  MSBA <- SSBA / DoFBA
-  MSR <- SSR / DoFR
-
-  # observed pseudoF
-  FobsA <- MSA / MSBA
-  FobsBA <- MSBA / MSR
-
-  Fobs <- as.data.frame(matrix(nrow = 4, ncol = 4))
-  colnames(Fobs) <- c("SS", "DoF", "MS", "F")
+  colnames(Fobs) <- c("Source", "DoF", "SS", "MS", "F")
   rownames(Fobs) <- c("A", "B(A)", "R", "T")
-  Fobs[1, 1] <- SSA
-  Fobs[1, 2] <- DoFA
-  Fobs[1, 3] <- MSA
-  Fobs[1, 4] <- FobsA
-  Fobs[2, 1] <- SSBA
-  Fobs[2, 2] <- DoFBA
-  Fobs[2, 3] <- MSBA
-  Fobs[2, 4] <- FobsBA
-  Fobs[3, 1] <- SSR
-  Fobs[3, 2] <- DoFR
-  Fobs[3, 3] <- MSR
-  Fobs[4, 1] <- SST
-  Fobs[4, 2] <- DoFT
+  permList[[permutations + 1L]] <- Fobs
 
-  # Only necessary for full PERMANOVA
-  permList[[1000]] <- Fobs
-
-  # If this were full PERMANOVA, it's necessary to change the return to permList
   return(permList)
 }
 
@@ -1438,12 +1305,12 @@ calc_dist <- function(datHa, method = "bray", return = c("matrix", "both")) {
     c_bar <- colMeans(centroid_mat)
     sq_dist <- rowSums(
       (centroid_mat -
-         matrix(
-           c_bar,
-           nrow = nrow(centroid_mat),
-           ncol = ncol(centroid_mat),
-           byrow = TRUE
-         ))^2
+        matrix(
+          c_bar,
+          nrow = nrow(centroid_mat),
+          ncol = ncol(centroid_mat),
+          byrow = TRUE
+        ))^2
     )
     sqrt(sum(group_size * sq_dist) / sum(group_size))
   }
@@ -1482,10 +1349,10 @@ calc_dist <- function(datHa, method = "bray", return = c("matrix", "both")) {
 #'
 
 calc_dist_nested <- function(
-    x,
-    factEnv,
-    method = "bray",
-    return = c("matrix", "both")
+  x,
+  factEnv,
+  method = "bray",
+  return = c("matrix", "both")
 ) {
   return <- match.arg(return)
 
@@ -1594,12 +1461,12 @@ calc_dist_nested <- function(
     c_bar <- colMeans(centroid_mat_A)
     sq_dist <- rowSums(
       (centroid_mat_A -
-         matrix(
-           c_bar,
-           nrow = nrow(centroid_mat_A),
-           ncol = ncol(centroid_mat_A),
-           byrow = TRUE
-         ))^2
+        matrix(
+          c_bar,
+          nrow = nrow(centroid_mat_A),
+          ncol = ncol(centroid_mat_A),
+          byrow = TRUE
+        ))^2
     )
     sqrt(sum(group_size_A * sq_dist) / sum(group_size_A))
   }
@@ -1642,16 +1509,13 @@ calc_dist_nested <- function(
 
   dist_to_sector <- sqrt(
     rowSums(
-      (
-        as.matrix(centroides_BA_join[, axis_cols_site, drop = FALSE]) -
-          as.matrix(centroides_BA_join[, axis_cols_sector, drop = FALSE])
-      )^2
+      (as.matrix(centroides_BA_join[, axis_cols_site, drop = FALSE]) -
+        as.matrix(centroides_BA_join[, axis_cols_sector, drop = FALSE]))^2
     )
   )
 
   site_sector_table <- dplyr::left_join(
-    centroides_BA_join[
-      ,
+    centroides_BA_join[,
       c("sector", "site", "sector_site", axis_cols_site, axis_cols_sector),
       drop = FALSE
     ],
@@ -1860,7 +1724,7 @@ safe_balanced_sampling_es_nested <- function(
 }
 
 #' @keywords internal
-#' @noRD
+#' @noRd
 #'
 
 rank_fw_contribution <- function(ListParamA, ParamPoolA, weights = NULL) {
@@ -1873,7 +1737,10 @@ rank_fw_contribution <- function(ListParamA, ParamPoolA, weights = NULL) {
   }
 
   if (!all(c("Species", "fw_pool") %in% names(ParamPoolA))) {
-    stop("`ParamPoolA` must contain columns `Species` and `fw_pool`.", call. = FALSE)
+    stop(
+      "`ParamPoolA` must contain columns `Species` and `fw_pool`.",
+      call. = FALSE
+    )
   }
 
   groups <- names(ListParamA)
@@ -1954,4 +1821,398 @@ rank_fw_contribution <- function(ListParamA, ParamPoolA, weights = NULL) {
     dplyr::arrange(dplyr::desc(norm))
 
   out
+}
+
+
+######
+######
+######
+
+#' @return a list
+#' @keywords internal
+#' @noRd
+
+prep_pilot_sampler <- function(factEnvP) {
+  fact_indexed <- factEnvP |>
+    dplyr::mutate(
+      .row_id = dplyr::row_number(),
+      sector = as.factor(sector),
+      site = as.factor(site),
+      site_nested = interaction(sector, site, drop = TRUE, sep = "_")
+    )
+
+  sites_by_sector <- split(
+    x = as.character(unique(fact_indexed$site_nested)),
+    f = sub("_.*$", "", as.character(unique(fact_indexed$site_nested)))
+  )
+
+  site_table <- unique(
+    fact_indexed[, c("sector", "site_nested")]
+  )
+
+  sites_by_sector <- split(
+    as.character(site_table$site_nested),
+    site_table$sector
+  )
+
+  rows_by_site <- split(
+    fact_indexed$.row_id,
+    fact_indexed$site_nested
+  )
+
+  list(
+    fact_indexed = fact_indexed,
+    sites_by_sector = sites_by_sector,
+    rows_by_site = rows_by_site
+  )
+}
+
+#' @return a list
+#' @keywords internal
+#' @noRd
+
+sample_pilot_nested_fast <- function(pilot_sampler, m, n) {
+  selected_sites <- unlist(
+    lapply(
+      pilot_sampler$sites_by_sector,
+      function(site_ids) sample(site_ids, size = m, replace = FALSE)
+    ),
+    use.names = FALSE
+  )
+
+  selected_rows <- unlist(
+    lapply(
+      selected_sites,
+      function(site_id) {
+        sample(
+          pilot_sampler$rows_by_site[[site_id]],
+          size = n,
+          replace = FALSE
+        )
+      }
+    ),
+    use.names = FALSE
+  )
+
+  selected_rows <- sort(selected_rows)
+
+  sampled_fact <- pilot_sampler$fact_indexed[selected_rows, , drop = FALSE]
+
+  list(
+    row_ids = selected_rows,
+    fact_sub = sampled_fact
+  )
+}
+
+#' @return a list
+#' @keywords internal
+#' @noRd
+
+run_permanova_label <- function(
+  comm_sub,
+  fact_sub,
+  permutations = 999,
+  method,
+  transformation,
+  dummy,
+  model
+) {
+  comm_sub <- as.data.frame(comm_sub)
+
+  fact_sub <- as.data.frame(
+    fact_sub[, c("sector", "site")]
+  )
+
+  # Muy importante: alinear filas internamente
+  rownames(comm_sub) <- seq_len(nrow(comm_sub))
+  rownames(fact_sub) <- seq_len(nrow(fact_sub))
+
+  fit <- label_permanova(
+    dataP = comm_sub,
+    factEnvP = fact_sub,
+    method = method,
+    transformation = transformation,
+    dummy = dummy,
+    model = model,
+    permutations = permutations
+  )
+
+  obs_id <- permutations + 1L
+
+  a_f <- vapply(
+    fit,
+    function(tabla) tabla["A", "F"],
+    numeric(1)
+  )
+
+  ba_f <- vapply(
+    fit,
+    function(tabla) tabla["B(A)", "F"],
+    numeric(1)
+  )
+
+  fa_obs <- a_f[obs_id]
+  fa_perm <- a_f[seq_len(permutations)]
+
+  fba_obs <- ba_f[obs_id]
+  fba_perm <- ba_f[seq_len(permutations)]
+
+  p_value_a <- (sum(fa_perm >= fa_obs, na.rm = TRUE) + 1) /
+    (permutations + 1)
+
+  p_value_ba <- (sum(fba_perm >= fba_obs, na.rm = TRUE) + 1) /
+    (permutations + 1)
+
+  tibble::tibble(
+    pseudoF_A = fa_obs,
+    p_A = p_value_a,
+    pseudoF_BA = fba_obs,
+    p_BA = p_value_ba
+  )
+}
+
+#' @return a list
+#' @keywords internal
+#' @noRd
+
+run_one_pilot_iteration <- function(
+  job,
+  pilot_sampler,
+  comm_pilot,
+  permutations = 999,
+  method,
+  transformation,
+  dummy,
+  model
+) {
+  sampled <- sample_pilot_nested_fast(
+    pilot_sampler = pilot_sampler,
+    m = job$m,
+    n = job$n
+  )
+
+  row_ids <- sampled$row_ids
+
+  comm_sub <- comm_pilot[row_ids, , drop = FALSE]
+
+  fact_sub <- sampled$fact_sub |>
+    dplyr::select(-.row_id) |>
+    dplyr::mutate(
+      sector = droplevels(sector),
+      site = droplevels(site),
+      site_nested = droplevels(site_nested)
+    )
+
+  result <- tryCatch(
+    {
+      run_permanova_label(
+        comm_sub = comm_sub,
+        fact_sub = fact_sub,
+        permutations = permutations,
+        method = method,
+        transformation = transformation,
+        dummy = dummy,
+        model = model
+      ) |>
+        dplyr::mutate(error = NA_character_)
+    },
+    error = function(e) {
+      tibble::tibble(
+        pseudoF_A = NA_real_,
+        p_A = NA_real_,
+        pseudoF_BA = NA_real_,
+        p_BA = NA_real_,
+        error = conditionMessage(e)
+      )
+    }
+  )
+
+  dplyr::bind_cols(
+    job,
+    tibble::tibble(
+      n_rows = nrow(fact_sub),
+      n_sectors = dplyr::n_distinct(fact_sub$sector),
+      n_sites_total = dplyr::n_distinct(fact_sub$site_nested)
+    ),
+    result
+  )
+}
+
+#' Run empirical rarefaction over a pilot-data sampling grid
+#'
+#' @description
+#' Internal computational engine used by [empirical_power()] to estimate
+#' empirical detection probability from pilot data. The function takes a
+#' predefined grid of nested sampling efforts and repeatedly subsamples the
+#' pilot data at each effort combination. For each subsample, it applies the
+#' internal PERMANOVA workflow and stores pseudo-F statistics and p-values for
+#' the fixed factor and the nested factor.
+#'
+#' @details
+#' The function assumes that `factEnvP` has already been standardized to contain
+#' at least two columns named `sector` and `site`, where `sector` represents the
+#' fixed factor of interest and `site` represents the sampling unit nested within
+#' sector. The function preserves all sector levels and varies the number of
+#' sites per sector (`m`) and the number of subsamples per site (`n`) according
+#' to `pilot_effort_grid`.
+#'
+#' For each row in `pilot_effort_grid`, the function creates `n_iter`
+#' independent subsampling jobs. Each job is passed to
+#' `run_one_pilot_iteration()`, which performs the nested subsampling and calls
+#' the PERMANOVA wrapper. The output from all jobs is row-bound into a single
+#' results data frame.
+#'
+#' If `parallel = TRUE`, jobs are evaluated using `furrr::future_map_dfr()` with
+#' a `future::multisession` backend. If `parallel = FALSE`, jobs are evaluated
+#' sequentially using `purrr::map_dfr()`. Progress reporting is handled through
+#' the `progressr` package.
+#'
+#' @param comm_pilot A data frame, matrix, or object coercible to a data frame
+#'   containing the community data. Rows must correspond to the rows in
+#'   `factEnvP`.
+#' @param factEnvP A data frame containing the standardized nested design
+#'   factors. It must include columns named `sector` and `site`.
+#' @param pilot_effort_grid A data frame defining the sampling-effort
+#'   combinations to evaluate. It must contain at least the columns `effort_id`,
+#'   `m`, `n`, `total_sites`, `total_subsamples`, and `prop_full_pilot`.
+#' @param n_iter Integer. Number of independent subsampling iterations to run for
+#'   each row of `pilot_effort_grid`.
+#' @param permutations Integer. Number of permutations used by the internal
+#'   PERMANOVA routine for each subsampled dataset.
+#' @param seed Integer. Random seed used for reproducible sequential execution
+#'   and for parallel random-number generation through `furrr`.
+#' @param method Character string specifying the dissimilarity method used by the
+#'   internal PERMANOVA workflow. Typically `"bray"`.
+#' @param transformation Character string specifying the transformation applied
+#'   to the community data before dissimilarity calculation. Supported values
+#'   depend on the internal PERMANOVA helper and typically include `"none"`,
+#'   `"square root"`, `"fourth root"`, `"Log (X+1)"`, and `"P/A"`.
+#' @param dummy Logical. If `TRUE`, a dummy variable is added before calculating
+#'   dissimilarities.
+#' @param model Character string specifying the PERMANOVA model. This workflow is
+#'   intended for `"nested.symmetric"`.
+#' @param parallel Logical. If `TRUE`, the rarefaction jobs are evaluated in
+#'   parallel using `furrr` and `future`. If `FALSE`, jobs are evaluated
+#'   sequentially.
+#' @param workers Integer. Number of parallel workers to use when
+#'   `parallel = TRUE`.
+#' @param progress Logical. If `TRUE`, a text progress bar is displayed through
+#'   `progressr`.
+#'
+#' @return
+#' A data frame with one row per subsampling iteration and effort combination.
+#' The output includes the sampling-effort metadata from `pilot_effort_grid`,
+#' the iteration number, the number of sampled rows, the number of sectors, the
+#' number of nested sites, pseudo-F statistics and p-values for the fixed sector
+#' effect and the nested site-within-sector effect, and an `error` column
+#' containing diagnostic messages when an iteration fails.
+#'
+#' @keywords internal
+
+run_pilot_rarefaction <- function(
+  comm_pilot,
+  factEnvP,
+  pilot_effort_grid,
+  n_iter = 999,
+  permutations = 999,
+  seed = 123,
+  method,
+  transformation,
+  dummy,
+  model,
+  parallel = FALSE,
+  workers = max(1, parallelly::availableCores() - 1),
+  progress = TRUE
+) {
+  stopifnot(nrow(comm_pilot) == nrow(factEnvP))
+
+  pilot_sampler <- prep_pilot_sampler(factEnvP)
+
+  jobs <- pilot_effort_grid |>
+    dplyr::select(
+      effort_id,
+      m,
+      n,
+      total_sites,
+      total_subsamples,
+      prop_full_pilot
+    ) |>
+    dplyr::slice(rep(dplyr::row_number(), each = n_iter)) |>
+    dplyr::group_by(effort_id) |>
+    dplyr::mutate(iter = dplyr::row_number()) |>
+    dplyr::ungroup()
+
+  n_jobs <- nrow(jobs)
+
+  run_one_fun <- run_one_pilot_iteration
+
+  worker_fun <- function(i) {
+    run_one_fun(
+      job = jobs[i, ],
+      pilot_sampler = pilot_sampler,
+      comm_pilot = comm_pilot,
+      permutations = permutations,
+      method = method,
+      transformation = transformation,
+      dummy = dummy,
+      model = model
+    )
+  }
+
+  if (progress) {
+    progressr::handlers(global = TRUE)
+    progressr::handlers("txtprogressbar")
+  }
+
+  if (parallel) {
+    old_plan <- future::plan()
+    on.exit(future::plan(old_plan), add = TRUE)
+
+    future::plan(
+      future::multisession,
+      workers = workers
+    )
+
+    results <- progressr::with_progress({
+      p <- progressr::progressor(steps = n_jobs)
+
+      furrr::future_map_dfr(
+        seq_len(n_jobs),
+        function(i) {
+          p(sprintf(
+            "m = %s, n = %s, iter = %s",
+            jobs$m[i],
+            jobs$n[i],
+            jobs$iter[i]
+          ))
+          worker_fun(i)
+        },
+        .options = furrr::furrr_options(
+          seed = seed,
+          scheduling = 1
+        )
+      )
+    })
+  } else {
+    set.seed(seed)
+
+    results <- progressr::with_progress({
+      p <- progressr::progressor(steps = n_jobs)
+
+      purrr::map_dfr(
+        seq_len(n_jobs),
+        function(i) {
+          p(sprintf(
+            "m = %s, n = %s, iter = %s",
+            jobs$m[i],
+            jobs$n[i],
+            jobs$iter[i]
+          ))
+          worker_fun(i)
+        }
+      )
+    })
+  }
+
+  results
 }
