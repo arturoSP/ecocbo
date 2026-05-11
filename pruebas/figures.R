@@ -45,31 +45,35 @@ scoresMacro$zone[scoresMacro$zone == "Wet"] <- "Intertidal"
 scoresMacro$transect <- rownames(scoresMacro)
 
 fig2.a <- scoresMacro |>
-  mutate(Zone = zone)|>
+  mutate(Zone = zone) |>
   ggplot(aes(x = NMDS1, y = NMDS2, color = zone)) +
-  stat_ellipse(level = 0.8,
-               alpha = 0.3,
-               show.legend = FALSE)+
+  stat_ellipse(level = 0.8, alpha = 0.3, show.legend = FALSE) +
   geom_point(size = 3) +
-  annotate("text",
-           label = "A",
-           x = -Inf,
-           y = Inf,
-           vjust = 1.5,
-           hjust = -1.0,
-           size = 5)+
-  annotate("text",
-           x = Inf,
-           y = Inf ,
-           vjust = 1.0,
-           hjust = 1.0,
-           size = 3,
-           label = paste0("2D Stress = ", round(nmdsMacro$stress, 3))) +
+  annotate(
+    "text",
+    label = "A",
+    x = -Inf,
+    y = Inf,
+    vjust = 1.5,
+    hjust = -1.0,
+    size = 5
+  ) +
+  annotate(
+    "text",
+    x = Inf,
+    y = Inf,
+    vjust = 1.0,
+    hjust = 1.0,
+    size = 3,
+    label = paste0("2D Stress = ", round(nmdsMacro$stress, 3))
+  ) +
   theme_bw() +
-  theme(panel.grid = element_blank(),
-        axis.text = element_blank(),
-        axis.ticks = element_blank(),
-        panel.border = element_rect(linewidth = 0.5))
+  theme(
+    panel.grid = element_blank(),
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    panel.border = element_rect(linewidth = 0.5)
+  )
 
 fig2.a
 
@@ -94,31 +98,41 @@ scoresEpi <- as.data.frame(vegan::scores(nmdsEpi, display = "sites")) |>
   bind_cols(epiTransformed[c(1:2)])
 
 fig2.b <- scoresEpi |>
-  mutate(Sector = factor(sector,
-                         levels = c("E", "M", "I"),
-                         labels = c("External", "Intermediate", "Internal")))|>
+  mutate(
+    Sector = factor(
+      sector,
+      levels = c("E", "M", "I"),
+      labels = c("External", "Intermediate", "Internal")
+    )
+  ) |>
   ggplot(aes(x = NMDS1, y = NMDS2, color = Sector)) +
   geom_point(size = 3) +
-  annotate("text",
-           label = "B",
-           x = -Inf,
-           y = Inf,
-           vjust = 1.5,
-           hjust = -1.0,
-           size = 5)+
-  annotate("text",
-           x = Inf,
-           y = Inf ,
-           vjust = 1.0,
-           hjust = 1.0,
-           size = 3,
-           label = paste0("2D Stress = ", round(nmdsEpi$stress, 3))) +
+  annotate(
+    "text",
+    label = "B",
+    x = -Inf,
+    y = Inf,
+    vjust = 1.5,
+    hjust = -1.0,
+    size = 5
+  ) +
+  annotate(
+    "text",
+    x = Inf,
+    y = Inf,
+    vjust = 1.0,
+    hjust = 1.0,
+    size = 3,
+    label = paste0("2D Stress = ", round(nmdsEpi$stress, 3))
+  ) +
   theme_bw() +
-  theme(panel.grid = element_blank(),
-        axis.text = element_blank(),
-        # axis.title = element_blank(),
-        axis.ticks = element_blank(),
-        panel.border = element_rect(linewidth = 0.5))
+  theme(
+    panel.grid = element_blank(),
+    axis.text = element_blank(),
+    # axis.title = element_blank(),
+    axis.ticks = element_blank(),
+    panel.border = element_rect(linewidth = 0.5)
+  )
 
 fig2.b
 
@@ -147,33 +161,41 @@ scoresFish <- as.data.frame(vegan::scores(nmdsFish, display = "sites")) |>
 scoresFish$transect <- rownames(scoresFish)
 
 fig2.c <- scoresFish |>
-  mutate(Region = factor(REGION,
-                         levels = c("NORTH", "EAST", "SOUTH", "WEST"),
-                         labels = c("North", "East", "South", "West")))|>
+  mutate(
+    Region = factor(
+      REGION,
+      levels = c("NORTH", "EAST", "SOUTH", "WEST"),
+      labels = c("North", "East", "South", "West")
+    )
+  ) |>
   ggplot(aes(x = NMDS1, y = NMDS2, color = Region)) +
-  stat_ellipse(level = 0.8,
-               alpha = 0.3,
-               show.legend = FALSE)+
+  stat_ellipse(level = 0.8, alpha = 0.3, show.legend = FALSE) +
   geom_point(size = 3) +
-  annotate("text",
-           label = "C",
-           x = -Inf,
-           y = Inf,
-           vjust = 1.5,
-           hjust = -1.0,
-           size = 5)+
-  annotate("text",
-           x = Inf,
-           y = Inf ,
-           vjust = 1.0,
-           hjust = 1.0,
-           size = 3,
-           label = paste0("2D Stress = ", round(nmdsFish$stress, 3))) +
+  annotate(
+    "text",
+    label = "C",
+    x = -Inf,
+    y = Inf,
+    vjust = 1.5,
+    hjust = -1.0,
+    size = 5
+  ) +
+  annotate(
+    "text",
+    x = Inf,
+    y = Inf,
+    vjust = 1.0,
+    hjust = 1.0,
+    size = 3,
+    label = paste0("2D Stress = ", round(nmdsFish$stress, 3))
+  ) +
   theme_bw() +
-  theme(panel.grid = element_blank(),
-        axis.text = element_blank(),
-        axis.ticks = element_blank(),
-        panel.border = element_rect(linewidth = 0.5))
+  theme(
+    panel.grid = element_blank(),
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    panel.border = element_rect(linewidth = 0.5)
+  )
 
 fig2.c
 
@@ -203,7 +225,7 @@ ggsave(
 #Beach macrofauna
 dataMacro <- dataMacro[, names(dataMacro) != "dummy"]
 simResMacro <- prep_data(
-  as.data.frame(dataMacro[,-1]),
+  as.data.frame(dataMacro[, -1]),
   type = "counts",
   Sest.method = "average",
   cases = 50,
@@ -316,43 +338,62 @@ ggsave(
 
 # Figure S1.1 -------------------------------------------------------------------------------------------------------------------------------------------
 #Beach macrofauna
-ES1 <- sim_ES(dataMacro[,-1],
-              steps = 10,
-              type = "counts",
-              Sest.method = "average",
-              cases = 5,
-              N = 100,
-              M = NULL,
-              n = 30,
-              m = NULL,
-              k = 30,
-              transformation = "none",
-              method = "bray",
-              dummy = TRUE,
-              useParallel = TRUE,
-              model = "single.factor",
-              jitter.base = 0.5)
+ES1 <- sim_ES(
+  dataMacro[, -1],
+  steps = 10,
+  type = "counts",
+  Sest.method = "average",
+  cases = 5,
+  N = 100,
+  M = NULL,
+  n = 30,
+  m = NULL,
+  k = 30,
+  transformation = "none",
+  method = "bray",
+  dummy = TRUE,
+  useParallel = TRUE,
+  model = "single.factor",
+  jitter.base = 0.5
+)
 
-figS1_1.a <- plot(ES1, type = "stacked", inferential_var = "omega2")+
-  annotate("text",
-           label = "A",
-           x = -Inf,
-           y = Inf,
-           vjust = 1.5,
-           hjust = -1.0,
-           size = 5)
+figS1_1.a <- plot(ES1, type = "stacked", inferential_var = "omega2") +
+  annotate(
+    "text",
+    label = "A",
+    x = -Inf,
+    y = Inf,
+    vjust = 1.5,
+    hjust = -1.0,
+    size = 5
+  )
 
 #Mangroove root epibionts
-ES2 <- sim_ES(SSP::epibionts, steps = 6, cases = 4, M = 20, n = 20, m = 15, k = 30, model = "nested.symmetric")
+ES2 <- sim_ES(
+  SSP::epibionts,
+  steps = 6,
+  cases = 4,
+  M = 20,
+  n = 20,
+  m = 15,
+  k = 30,
+  model = "nested.symmetric"
+)
 
-figS1_1.b <- plot.effect_size_data_nested(ES2, type = "stacked", inferential_var = "omega2")+
-  annotate("text",
-           label = "B",
-           x = -Inf,
-           y = Inf,
-           vjust = 1.5,
-           hjust = -1.0,
-           size = 5)
+figS1_1.b <- plot.effect_size_data_nested(
+  ES2,
+  type = "stacked",
+  inferential_var = "omega2"
+) +
+  annotate(
+    "text",
+    label = "B",
+    x = -Inf,
+    y = Inf,
+    vjust = 1.5,
+    hjust = -1.0,
+    size = 5
+  )
 
 fig_ES_simper <- figS1_1.a / figS1_1.b
 
@@ -378,24 +419,38 @@ ggsave(
 
 # Figure S1.2 -------------------------------------------------------------------------------------------------------------------------------------------
 #Beach macrofauna
-figS1_2.a <- plot(ES1, type = "scatter", inferential_var = "omega2", add_smooth = TRUE)+
-  annotate("text",
-           label = "A",
-           x = -Inf,
-           y = Inf,
-           vjust = 1.5,
-           hjust = -1.0,
-           size = 5)
+figS1_2.a <- plot(
+  ES1,
+  type = "scatter",
+  inferential_var = "omega2",
+  add_smooth = TRUE
+) +
+  annotate(
+    "text",
+    label = "A",
+    x = -Inf,
+    y = Inf,
+    vjust = 1.5,
+    hjust = -1.0,
+    size = 5
+  )
 
 #Mangroove root epibionts
-figS1_2.b <- plot.effect_size_data_nested(ES2, type = "scatter", inferential_var = "omega2", add_smooth = TRUE)+
-  annotate("text",
-           label = "B",
-           x = -Inf,
-           y = Inf,
-           vjust = 1.5,
-           hjust = -1.0,
-           size = 5)
+figS1_2.b <- plot.effect_size_data_nested(
+  ES2,
+  type = "scatter",
+  inferential_var = "omega2",
+  add_smooth = TRUE
+) +
+  annotate(
+    "text",
+    label = "B",
+    x = -Inf,
+    y = Inf,
+    vjust = 1.5,
+    hjust = -1.0,
+    size = 5
+  )
 
 fig_ES_scatter <- figS1_2.a / figS1_2.b
 
@@ -421,19 +476,29 @@ ggsave(
 
 # Figure S1.3 -------------------------------------------------------------------------------------------------------------------------------------------
 #Beach macrofauna
-figS1_3.a <- plot(ES1, type = "true_h0", h0_x_var = "ecological_effect", facet_effort = TRUE)
+figS1_3.a <- plot(
+  ES1,
+  type = "true_h0",
+  h0_x_var = "ecological_effect",
+  facet_effort = TRUE
+)
 
 #Mangroove root epibionts
-figS1_3.b <- plot.effect_size_data_nested(ES2, type = "true_h0",
-                                          h0_x_var = "ecological_effect",
-                                          facet_effort = FALSE)+
-  annotate("text",
-           label = "B",
-           x = -Inf,
-           y = Inf,
-           vjust = 1.5,
-           hjust = -1.0,
-           size = 5)
+figS1_3.b <- plot.effect_size_data_nested(
+  ES2,
+  type = "true_h0",
+  h0_x_var = "ecological_effect",
+  facet_effort = FALSE
+) +
+  annotate(
+    "text",
+    label = "B",
+    x = -Inf,
+    y = Inf,
+    vjust = 1.5,
+    hjust = -1.0,
+    size = 5
+  )
 
 fig_ES_trueH0 <- figS1_3.a
 
@@ -459,16 +524,25 @@ ggsave(
 
 # Figure S1.4 -------------------------------------------------------------------------------------------------------------------------------------------
 #Beach macrofauna
-figS1_4.a <- plot(ES1, type = "ordination", reduction_levels = c(0, 0.3, 0.6, 1),
-                  label_centroids = FALSE,
-                  point_alpha = 0.5, point_size = 1)+
+figS1_4.a <- plot(
+  ES1,
+  type = "ordination",
+  reduction_levels = c(0, 0.3, 0.6, 1),
+  label_centroids = FALSE,
+  point_alpha = 0.5,
+  point_size = 1
+) +
   ggplot2::stat_ellipse()
 
 
-figS1_4.b <- plot.effect_size_data_nested(ES2, type = "ordination",
-                             reduction_levels = c(0, 1/3, 2/3, 1),
-                             label_centroids = FALSE,
-                             point_alpha = 0.5, point_size = 1)+
+figS1_4.b <- plot.effect_size_data_nested(
+  ES2,
+  type = "ordination",
+  reduction_levels = c(0, 1 / 3, 2 / 3, 1),
+  label_centroids = FALSE,
+  point_alpha = 0.5,
+  point_size = 1
+) +
   ggplot2::stat_ellipse()
 
 fig_ES_centroid <- figS1_4.a / figS1_4.b
@@ -486,6 +560,176 @@ ggsave(
 ggsave(
   "./figures/figure_S1_4.png",
   plot = fig_ES_centroid,
+  device = "png",
+  width = 18,
+  height = 16,
+  units = "cm",
+  dpi = 600
+)
+
+# Figure S1.5 -------------------------------------------------------------------------------------------------------------------------------------------
+# Fish from Puerto Rico (different dataset)
+
+dataFish <- readr::read_csv(
+  "data-raw/PRCRMP_Fish_Biomass.csv",
+  locale = readr::locale(encoding = "ISO-8859-1")
+) |>
+  filter(YEAR == 2021) |>
+  mutate(
+    REGION = stringr::str_replace_all(
+      REGION,
+      c(
+        "Mona/Desecheo" = "WEST",
+        "Vieques/Culebra" = "EAST",
+        "Southeast" = "EAST"
+      )
+    )
+  ) |>
+  mutate(
+    REGION = ifelse(
+      LOCATION == "Fajardo",
+      "NORTH",
+      ifelse(
+        LOCATION == "Vega Baja",
+        "NORTH",
+        ifelse(
+          LOCATION == "La Parguera",
+          "SOUTH",
+          ifelse(LOCATION == "San Juan", "NORTH", REGION)
+        )
+      )
+    )
+  ) |>
+  filter(REGION != "Southeast") |>
+  mutate(REGION = stringr::str_to_upper(REGION)) |>
+  select(-c(YEAR, `DEPTH ZONE`, `SITE NAME`, TRANSECT)) |>
+  mutate(across(everything(), ~ replace_na(.x, 0))) |>
+  filter(REGION != "SOUTHWEST") |>
+  as.data.frame() |>
+  select(-1) |>
+  mutate(REGION = factor(REGION), LOCATION = factor(LOCATION))
+
+FishTransformed <- dataFish |>
+  mutate(LOCATION = factor(LOCATION)) |>
+  mutate(across(where(is.numeric), ~ log(.x + 1)))
+
+sim_Fish_2 <- prep_data(
+  FishTransformed,
+  type = "cover",
+  Sest.method = "average",
+  cases = 20,
+  N = 100,
+  M = 50,
+  n = 20,
+  m = 10,
+  k = 50,
+  transformation = "none",
+  method = "bray",
+  dummy = TRUE,
+  useParallel = TRUE,
+  model = "nested.symmetric",
+  jitter.base = 0.4
+)
+
+beta_Fish_2 <- sim_beta(sim_Fish_2, alpha = 0.05)
+
+plot_power(beta_Fish_2, m = 3, n = 5, method = "power")
+
+## S1.5.a -----------------------------------------------------------------------------------------
+FigS1_5.a <- empirical_power(
+  comm_pilot = FishTransformed[, -c(1, 2)],
+  factEnv = FishTransformed[, c(1, 2)],
+  sector_col = "REGION",
+  site_col = "LOCATION",
+  method = "bray",
+  transformation = "none",
+  dummy = TRUE,
+  model = "nested.symmetric",
+  n_iter = 199,
+  permutations = 199,
+  seed = 42,
+  min_m = 2,
+  min_n = 2,
+  expected_n_sectors = NULL,
+  alpha = 0.05,
+  parallel = TRUE,
+  workers = max(1, (parallelly::availableCores() - 2)),
+  progress = TRUE,
+  make_plot = TRUE
+)
+
+FigS1_5_a <- FigS1_5.a$plot +
+  annotate(
+    "text",
+    label = "A",
+    x = -Inf,
+    y = Inf,
+    vjust = 1.5,
+    hjust = -1.0,
+    size = 5
+  ) +
+  labs(title = "Empirical rarefaction", subtitle = NULL, x = "") +
+  scale_x_continuous() +
+  coord_cartesian(ylim = c(0, 0.6)) +
+  theme(
+    legend.position = c(0.88, 0.78),
+    legend.background = element_rect(
+      fill = scales::alpha("white", 0.7),
+      color = NA
+    )
+  )
+
+FigS1_5.b <- plot_power(beta_Fish_2, m = 3, n = 5, method = "power") +
+  annotate(
+    "text",
+    label = "B",
+    x = -Inf,
+    y = Inf,
+    vjust = 1.5,
+    hjust = -1.0,
+    size = 5
+  ) +
+  coord_cartesian(xlim = c(2, 5), ylim = c(0, 0.6)) +
+  labs(title = "Simulated power (m = 3)", x = "", y = "Estimated power") +
+  scale_x_continuous()
+
+FigS1_5.c <- plot_power(beta_Fish_2, m = 2, n = 5, method = "power") +
+  annotate(
+    "text",
+    label = "C",
+    x = -Inf,
+    y = Inf,
+    vjust = 1.5,
+    hjust = -1.0,
+    size = 5
+  ) +
+  coord_cartesian(xlim = c(2, 5), ylim = c(0, 0.6)) +
+  labs(
+    title = "Simulated power (m = 2)",
+    x = "Subsamples per site (n)",
+    y = "Estimated power"
+  ) +
+  scale_x_continuous()
+
+
+FigS1_5.b
+FigS1_5.c
+
+fig_empirical_power <- FigS1_5_a / FigS1_5.b / FigS1_5.c
+
+ggsave(
+  "./figures/figure_S1_5.pdf",
+  plot = fig_empirical_power,
+  device = "pdf",
+  width = 18,
+  height = 16,
+  units = "cm",
+  dpi = 600
+)
+
+ggsave(
+  "./figures/figure_S1_5.png",
+  plot = fig_empirical_power,
   device = "png",
   width = 18,
   height = 16,
