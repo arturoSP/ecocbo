@@ -1056,11 +1056,39 @@ print.effect_size_data_nested <- function(
 #'   `reduction_level` or not.
 #' @param scatter_data Whether scatter should show raw observations
 #'   or summaries by `reduction_level`.
+#' @param reduction_levels Reduction levels to keep when `type = "ordination"`.
+#'   Passed to `.plot_effect_size_ordination()`.
+#' @param selection How to select representative ordinations per reduction level
+#'   when `type = "ordination"`; one of `"median"`, `"first"`, `"min"`, or
+#'   `"max"`. Passed to `.plot_effect_size_ordination()`.
+#' @param show_centroids Logical; show group centroids when
+#'   `type = "ordination"`. Passed to `.plot_effect_size_ordination()`.
+#' @param label_centroids Logical; label group centroids when
+#'   `type = "ordination"`. Passed to `.plot_effect_size_ordination()`.
 #' @param ribbon_alpha Alpha transparency for ribbons in stacked plots.
-#' @param point_alpha Alpha transparency for points in scatter plots.
+#' @param point_alpha Alpha transparency for points in scatter, ordination, and
+#'   True-H0 plots.
 #' @param line_size Line width in stacked plots.
 #' @param point_size Point size.
+#' @param centroid_size Point size for centroids when `type = "ordination"`.
+#'   Passed to `.plot_effect_size_ordination()`.
+#' @param facet_ncol Number of facet columns for ordination plots and for
+#'   True-H0 plots when `facet_effort = TRUE`.
 #' @param add_smooth Logical; add linear smooth to scatter plot.
+#' @param h0_alpha Significance level used to draw the dashed reference line
+#'   and to compute True-H0 pseudo-F critical values when `type = "true_h0"` or
+#'   `type = "ES_H0"`. Passed to `.plot_effect_size_true_h0()`.
+#' @param h0_x_var Variable to place on the x-axis of True-H0 plots; one of
+#'   `"pseudoF"`, `"ecological_effect"`, `"omega2"`, or `"R2"`. Passed to
+#'   `.plot_effect_size_true_h0()`.
+#' @param h0_color_by Variable used to color True-H0 points; one of
+#'   `"reduction_level"`, `"step"`, or `"none"`. Passed to
+#'   `.plot_effect_size_true_h0()`.
+#' @param facet_effort Logical; facet True-H0 plots by sampling effort (`m`,
+#'   `n`). Passed to `.plot_effect_size_true_h0()`.
+#' @param h0_quantile_type Quantile algorithm passed as `type` to
+#'   [stats::quantile()] when computing True-H0 pseudo-F critical values for
+#'   `type = "true_h0"` or `type = "ES_H0"`.
 #' @param ... Unused, reserved for future extensions.
 #'
 #' @return A ggplot object or a patchwork object.
@@ -1519,17 +1547,56 @@ summary.effect_size_data <- function(
 #'   `reduction_level` or not.
 #' @param scatter_data Whether scatter should show raw observations
 #'   or summaries by `reduction_level`.
-#' @param reduction_levels Reduction levels to keep in ordination plots.
-#' @param selection How to select representative ordinations per reduction level.
-#' @param show_centroids Logical; show centroids in ordination plot.
-#' @param label_centroids Logical; label centroids in ordination plot.
+#' @param reduction_levels Reduction levels to keep when `type = "ordination"`.
+#'   Passed through `.plot_effect_size_nested_ordination()` to
+#'   `.plot_effect_size_ordination()`.
+#' @param selection How to select representative ordinations per reduction level
+#'   when `type = "ordination"`; one of `"median"`, `"first"`, `"min"`, or
+#'   `"max"`. Passed through `.plot_effect_size_nested_ordination()` to
+#'   `.plot_effect_size_ordination()`.
+#' @param show_centroids Logical; show centroids when `type = "ordination"`.
+#'   Passed through `.plot_effect_size_nested_ordination()` to
+#'   `.plot_effect_size_ordination()`.
+#' @param label_centroids Logical; label centroids when `type = "ordination"`.
+#'   Passed through `.plot_effect_size_nested_ordination()` to
+#'   `.plot_effect_size_ordination()`.
 #' @param ribbon_alpha Alpha transparency for ribbons in stacked plots.
-#' @param point_alpha Alpha transparency for points in scatter plots.
+#' @param point_alpha Alpha transparency for points in scatter, ordination, and
+#'   True-H0 plots.
 #' @param line_size Line width in stacked plots.
 #' @param point_size Point size.
-#' @param centroid_size Point size for centroids in ordination plots.
-#' @param facet_ncol Number of columns in ordination faceting.
+#' @param centroid_size Point size for centroids when `type = "ordination"`.
+#'   Passed through `.plot_effect_size_nested_ordination()` to
+#'   `.plot_effect_size_ordination()`.
+#' @param facet_ncol Number of facet columns for ordination plots and for
+#'   True-H0 plots when `facet_effort = TRUE`.
 #' @param add_smooth Logical; add linear smooth to scatter plot.
+#' @param h0_alpha Significance level used to draw the dashed reference line
+#'   and to compute True-H0 pseudo-F critical values when `type = "true_h0"` or
+#'   `type = "ES_H0"`. Passed to `.plot_effect_size_nested_true_h0()`.
+#' @param h0_x_var Variable to place on the x-axis of True-H0 plots; one of
+#'   `"pseudoF"`, `"ecological_effect"`, `"omega2"`, or `"R2"`. Passed to
+#'   `.plot_effect_size_nested_true_h0()`.
+#' @param h0_color_by Variable used to color True-H0 points; one of
+#'   `"reduction_level"`, `"step"`, or `"none"`. Passed to
+#'   `.plot_effect_size_nested_true_h0()`.
+#' @param facet_effort Logical; facet True-H0 plots by sampling effort (`m`,
+#'   `n`). Passed to `.plot_effect_size_nested_true_h0()`.
+#' @param facet_subset Sampling-effort subset used when `facet_effort = TRUE`;
+#'   one of `"reduced"`, `"all"`, `"all_n"`, or `"all_m"`. Passed to
+#'   `.plot_effect_size_nested_true_h0()`.
+#' @param facet_start_at Starting sampling-effort value for the reduced
+#'   diagonal-and-tail facet path when `facet_subset = "reduced"`. Passed to
+#'   `.plot_effect_size_nested_true_h0()`.
+#' @param facet_m_value The `m` value to keep when `facet_subset = "all_n"`;
+#'   defaults to the maximum available `m` when `NULL`. Passed to
+#'   `.plot_effect_size_nested_true_h0()`.
+#' @param facet_n_value The `n` value to keep when `facet_subset = "all_m"`;
+#'   defaults to the maximum available `n` when `NULL`. Passed to
+#'   `.plot_effect_size_nested_true_h0()`.
+#' @param h0_quantile_type Quantile algorithm passed as `type` to
+#'   [stats::quantile()] when computing True-H0 pseudo-F critical values for
+#'   `type = "true_h0"` or `type = "ES_H0"`.
 #' @param ... Unused, reserved for future extensions.
 #'
 #' @return A ggplot object or a patchwork object.
