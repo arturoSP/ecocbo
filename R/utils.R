@@ -2138,12 +2138,14 @@ run_pilot_rarefaction <- function(
 
   jobs <- pilot_effort_grid |>
     dplyr::select(
-      effort_id,
-      m,
-      n,
-      total_sites,
-      total_subsamples,
-      prop_full_pilot
+      dplyr::all_of(c(
+        "effort_id",
+        "m",
+        "n",
+        "total_sites",
+        "total_subsamples",
+        "prop_full_pilot"
+      ))
     ) |>
     dplyr::slice(rep(dplyr::row_number(), each = n_iter)) |>
     dplyr::group_by(.data$effort_id) |>

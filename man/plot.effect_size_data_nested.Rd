@@ -60,27 +60,75 @@ One of \code{"iqr"} or \code{"sd"}.}
 \item{scatter_data}{Whether scatter should show raw observations
 or summaries by \code{reduction_level}.}
 
-\item{reduction_levels}{Reduction levels to keep in ordination plots.}
+\item{reduction_levels}{Reduction levels to keep when \code{type = "ordination"}.
+Passed through \code{.plot_effect_size_nested_ordination()} to
+\code{.plot_effect_size_ordination()}.}
 
-\item{selection}{How to select representative ordinations per reduction level.}
+\item{selection}{How to select representative ordinations per reduction level
+when \code{type = "ordination"}; one of \code{"median"}, \code{"first"}, \code{"min"}, or
+\code{"max"}. Passed through \code{.plot_effect_size_nested_ordination()} to
+\code{.plot_effect_size_ordination()}.}
 
-\item{show_centroids}{Logical; show centroids in ordination plot.}
+\item{show_centroids}{Logical; show centroids when \code{type = "ordination"}.
+Passed through \code{.plot_effect_size_nested_ordination()} to
+\code{.plot_effect_size_ordination()}.}
 
-\item{label_centroids}{Logical; label centroids in ordination plot.}
+\item{label_centroids}{Logical; label centroids when \code{type = "ordination"}.
+Passed through \code{.plot_effect_size_nested_ordination()} to
+\code{.plot_effect_size_ordination()}.}
 
 \item{ribbon_alpha}{Alpha transparency for ribbons in stacked plots.}
 
-\item{point_alpha}{Alpha transparency for points in scatter plots.}
+\item{point_alpha}{Alpha transparency for points in scatter, ordination, and
+True-H0 plots.}
 
 \item{line_size}{Line width in stacked plots.}
 
 \item{point_size}{Point size.}
 
-\item{centroid_size}{Point size for centroids in ordination plots.}
+\item{centroid_size}{Point size for centroids when \code{type = "ordination"}.
+Passed through \code{.plot_effect_size_nested_ordination()} to
+\code{.plot_effect_size_ordination()}.}
 
-\item{facet_ncol}{Number of columns in ordination faceting.}
+\item{facet_ncol}{Number of facet columns for ordination plots and for
+True-H0 plots when \code{facet_effort = TRUE}.}
 
 \item{add_smooth}{Logical; add linear smooth to scatter plot.}
+
+\item{h0_alpha}{Significance level used to draw the dashed reference line
+and to compute True-H0 pseudo-F critical values when \code{type = "true_h0"} or
+\code{type = "ES_H0"}. Passed to \code{.plot_effect_size_nested_true_h0()}.}
+
+\item{h0_x_var}{Variable to place on the x-axis of True-H0 plots; one of
+\code{"pseudoF"}, \code{"ecological_effect"}, \code{"omega2"}, or \code{"R2"}. Passed to
+\code{.plot_effect_size_nested_true_h0()}.}
+
+\item{h0_color_by}{Variable used to color True-H0 points; one of
+\code{"reduction_level"}, \code{"step"}, or \code{"none"}. Passed to
+\code{.plot_effect_size_nested_true_h0()}.}
+
+\item{facet_effort}{Logical; facet True-H0 plots by sampling effort (\code{m},
+\code{n}). Passed to \code{.plot_effect_size_nested_true_h0()}.}
+
+\item{facet_subset}{Sampling-effort subset used when \code{facet_effort = TRUE};
+one of \code{"reduced"}, \code{"all"}, \code{"all_n"}, or \code{"all_m"}. Passed to
+\code{.plot_effect_size_nested_true_h0()}.}
+
+\item{facet_start_at}{Starting sampling-effort value for the reduced
+diagonal-and-tail facet path when \code{facet_subset = "reduced"}. Passed to
+\code{.plot_effect_size_nested_true_h0()}.}
+
+\item{facet_m_value}{The \code{m} value to keep when \code{facet_subset = "all_n"};
+defaults to the maximum available \code{m} when \code{NULL}. Passed to
+\code{.plot_effect_size_nested_true_h0()}.}
+
+\item{facet_n_value}{The \code{n} value to keep when \code{facet_subset = "all_m"};
+defaults to the maximum available \code{n} when \code{NULL}. Passed to
+\code{.plot_effect_size_nested_true_h0()}.}
+
+\item{h0_quantile_type}{Quantile algorithm passed as \code{type} to
+\code{\link[stats:quantile]{stats::quantile()}} when computing True-H0 pseudo-F critical values for
+\code{type = "true_h0"} or \code{type = "ES_H0"}.}
 
 \item{...}{Unused, reserved for future extensions.}
 }

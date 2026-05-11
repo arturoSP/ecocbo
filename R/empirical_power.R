@@ -252,8 +252,8 @@ empirical_power <- function(
   ) |>
     dplyr::mutate(
       n_sectors = n_sectors,
-      total_sites = n_sectors * .data$m,
-      total_subsamples = n_sectors * .data$m * .data$n,
+      total_sites = .data$n_sectors * .data$m,
+      total_subsamples = .data$n_sectors * .data$m * .data$n,
       prop_full_pilot = .data$total_subsamples / max(.data$total_subsamples),
       effort_id = sprintf("m%02d_n%02d", .data$m, .data$n),
       effort_label = sprintf(
